@@ -7,8 +7,11 @@ router.post('/upload', upload.single('videoFile'), videoController.uploadVideo);
 router.get('/', videoController.getAllVideos);
 
 // NUEVAS RUTAS
-router.get('/:id', videoController.getVideoById);       // Ver video individual
-router.post('/:id/like', videoController.likeVideo);    // Dar like
-router.post('/:id/comment', videoController.commentVideo); // Comentar
+router.get('/:id', videoController.getVideoById);           // Ver video individual
+router.post('/:id/like', videoController.likeVideo);        // Dar like
+router.delete('/:id/like', videoController.unlikeVideo);    // Quitar like
+router.post('/:id/toggle-like', videoController.toggleLike); // Toggle like
+router.post('/:id/comment', videoController.commentVideo);   // Comentar
+router.delete('/:id/comment/:commentId', videoController.deleteComment); // Eliminar comentario
 
 module.exports = router;
