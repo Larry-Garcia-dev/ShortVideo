@@ -1,0 +1,139 @@
+{
+	"info": {
+		"_postman_id": "b6a8c2f1-4d5e-4f6a-8b9c-0d1e2f3a4b5c",
+		"name": "ShortVideo App API",
+		"description": "Colección de pruebas para el backend de ShortVideo App.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "1. Registro - Exitoso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario_nuevo@test.com\",\n    \"password\": \"UserPass1$\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Crea un usuario cumpliendo los requisitos: 8-12 chars, 1 Mayúscula, 1 número, 1 símbolo."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Registro - Fallido (Password Débil)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"fail@test.com\",\n    \"password\": \"hola123\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Debe fallar porque la contraseña no tiene mayúscula ni símbolo."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Login - Exitoso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario_nuevo@test.com\",\n    \"password\": \"UserPass1$\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login con las credenciales correctas creadas en el paso 1."
+					},
+					"response": []
+				},
+				{
+					"name": "4. Login - Fallido (Password Incorrecto)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"usuario_nuevo@test.com\",\n    \"password\": \"WrongPass1$\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Ejecuta esto 3 veces consecutivas para probar el bloqueo de cuenta."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
