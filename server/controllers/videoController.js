@@ -114,3 +114,66 @@ exports.commentVideo = async (req, res) => {
         res.status(500).json({ error });
     }
 };
+
+// 4. Unlike Video (Toggle like)
+exports.unlikeVideo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId } = req.body;
+
+        const existingLike = await Like.findOne({ where: { videoId: id, userId } });
+        
+        if (!existingLike) {
+            return res.status(400).json({ message: 'You have not liked this video' });
+        }
+
+        await existingLike.destroy();
+        res.json({ message: 'Like removed' });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
+};
+
+// 5. Delete Comment
+exports.deleteComment = async (req, res) => {
+    try {
+        const { id, commentId } = req.params;
+        const { userId } = req.body;
+
+        const comment = await Comment.findByPk(commentId);
+        
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment not found' });
+        }
+
+        // Only allow the comment owner to delete
+        if (comment.userId !== userId) {
+            return res.status(403).json({ message: 'Not authorized to delete this comment' });
+        }
+
+        await comment.destroy();
+        res.json({ message: 'Comment deleted' });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
+};
+
+// 6. Toggle Like (Like if not liked, unlike if already liked)
+exports.toggleLike = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId } = req.body;
+
+        const existingLike = await Like.findOne({ where: { videoId: id, userId } });
+        
+        if (existingLike) {
+            await existingLike.destroy();
+            return res.json({ message: 'Like removed', liked: false });
+        }
+
+        await Like.create({ videoId: id, userId });
+        res.json({ message: 'Like added', liked: true });
+    } catch (error) {
+        res.status(500).json({ error });
+    }
+};
