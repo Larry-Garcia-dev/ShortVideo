@@ -24,3 +24,12 @@ dist-ssr
 *.sw?
 
 .env
+
+# Ignorar todos los videos
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# O ignorar una carpeta completa donde se guardan los videos
+uploads/
