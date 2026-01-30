@@ -7,13 +7,19 @@ function VideoPlayer() {
   const { id } = useParams();
   const [video, setVideo] = useState(null);
   const [commentText, setCommentText] = useState('');
-  const [commentName, setCommentName] = useState('');
   const [likes, setLikes] = useState(0);
   const [comments, setComments] = useState([]);
   const [isLiked, setIsLiked] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '' });
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [volume, setVolume] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [statusLabel, setStatusLabel] = useState('Ready');
   const videoRef = useRef(null);
+  const seekRef = useRef(null);
   
   const user = JSON.parse(localStorage.getItem('user'));
 
@@ -21,18 +27,98 @@ function VideoPlayer() {
     loadVideo();
   }, [id]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = (e.target?.tagName || '').toLowerCase();
+      const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select';
+      
+      if (!isTyping && videoRef.current) {
+        if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+        if (e.key.toLowerCase() === 'j') jump(-10);
+        if (e.key.toLowerCase() === 'k') jump(10);
+        if (e.key.toLowerCase() === 'm') toggleMute();
+        if (e.key.toLowerCase() === 'f') handleFullscreen();
+      }
+      
+      // Post comment shortcut
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (document.activeElement?.id === 'commentInput') {
+          handleComment(e);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, isMuted]);
+
   const loadVideo = () => {
     axios.get(`http://localhost:5000/api/videos/${id}`)
       .then(res => {
         setVideo(res.data);
         setLikes(res.data.Likes?.length || 0);
         setComments(res.data.Comments || []);
-        // Check if user already liked
         if (user && res.data.Likes) {
           setIsLiked(res.data.Likes.some(like => like.userId === user.id));
         }
       })
       .catch(err => console.error(err));
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => showToast('Autoplay blocked - click play'));
+    } else {
+      videoRef.current.pause();
+    }
+  };
+
+  const jump = (seconds) => {
+    if (!videoRef.current) return;
+    videoRef.current.currentTime = Math.max(0, Math.min(videoRef.current.duration || Infinity, videoRef.current.currentTime + seconds));
+    showToast(`${seconds > 0 ? '+' : ''}${seconds}s`);
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !videoRef.current.muted;
+    if (!videoRef.current.muted && videoRef.current.volume === 0) {
+      videoRef.current.volume = 0.6;
+    }
+    setIsMuted(videoRef.current.muted);
+    setVolume(videoRef.current.muted ? 0 : videoRef.current.volume);
+    showToast(videoRef.current.muted ? 'Muted' : 'Sound on');
+  };
+
+  const handleVolumeChange = (e) => {
+    const v = parseFloat(e.target.value);
+    if (videoRef.current) {
+      videoRef.current.volume = v;
+      videoRef.current.muted = v === 0;
+      setVolume(v);
+      setIsMuted(v === 0);
+    }
+  };
+
+  const handleSeek = (e) => {
+    const pct = parseFloat(e.target.value);
+    if (videoRef.current && videoRef.current.duration) {
+      videoRef.current.currentTime = (pct / 100) * videoRef.current.duration;
+    }
+  };
+
+  const handleFullscreen = async () => {
+    try {
+      const player = document.querySelector('.player');
+      if (!document.fullscreenElement) {
+        await player?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (e) {
+      showToast('Fullscreen not available');
+    }
   };
 
   const handleLike = async () => {
@@ -41,12 +127,19 @@ function VideoPlayer() {
       return;
     }
     try {
-      await axios.post(`http://localhost:5000/api/videos/${id}/like`, { userId: user.id });
-      setLikes(likes + 1);
-      setIsLiked(true);
-      showToast('Liked!');
+      if (isLiked) {
+        await axios.delete(`http://localhost:5000/api/videos/${id}/like`, { data: { userId: user.id } });
+        setLikes(likes - 1);
+        setIsLiked(false);
+        showToast('Unliked');
+      } else {
+        await axios.post(`http://localhost:5000/api/videos/${id}/like`, { userId: user.id });
+        setLikes(likes + 1);
+        setIsLiked(true);
+        showToast('Liked!');
+      }
     } catch (error) {
-      showToast(error.response?.data?.message || 'Already liked');
+      showToast(error.response?.data?.message || 'Error');
     }
   };
 
@@ -81,6 +174,7 @@ function VideoPlayer() {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
+    showToast(`Speed: ${speed}x`);
   };
 
   const handleCopyLink = () => {
@@ -90,7 +184,7 @@ function VideoPlayer() {
 
   const showToast = (message) => {
     setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 2000);
+    setTimeout(() => setToast({ show: false, message: '' }), 1200);
   };
 
   const formatTime = (seconds) => {
@@ -124,7 +218,7 @@ function VideoPlayer() {
       <Header />
       
       <div className="wrap" style={{ maxWidth: '1100px', margin: '0 auto', padding: '18px' }}>
-        <div style={{
+        <div className="grid" style={{
           display: 'grid',
           gridTemplateColumns: '1.6fr 0.9fr',
           gap: '14px',
@@ -132,148 +226,234 @@ function VideoPlayer() {
         }}>
           {/* Main Video Section */}
           <section className="panel">
-            <div style={{ padding: '12px' }}>
+            <div className="videoWrap" style={{ padding: '12px' }}>
               {/* Video Player */}
-              <div className="player" style={{ aspectRatio: '16/9' }}>
+              <div className="player" style={{
+                position: 'relative',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                border: '1px solid var(--line)',
+                background: 'rgba(0,0,0,0.35)',
+                boxShadow: '0 26px 90px rgba(0,0,0,0.35)',
+                aspectRatio: '16/9',
+              }}>
                 <video
                   ref={videoRef}
-                  controls
-                  autoPlay
+                  playsInline
+                  preload="metadata"
                   src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
+                  style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
+                  onLoadedMetadata={() => {
+                    setDuration(videoRef.current?.duration || 0);
+                    setStatusLabel('Loaded');
+                  }}
+                  onTimeUpdate={() => {
+                    if (videoRef.current) {
+                      setCurrentTime(videoRef.current.currentTime);
+                    }
+                  }}
+                  onPlay={() => { setIsPlaying(true); setStatusLabel('Playing'); }}
+                  onPause={() => { setIsPlaying(false); setStatusLabel('Paused'); }}
                 />
               </div>
 
-              {/* Controls */}
-              <div style={{
+              {/* Custom Controls */}
+              <div className="controls" style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '10px',
                 marginTop: '12px',
-                border: '1px solid var(--line)',
-                background: 'var(--panel)',
+                border: '1px solid rgba(234,240,255,0.10)',
+                background: 'rgba(255,255,255,0.04)',
                 borderRadius: '18px',
                 padding: '12px',
               }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '10px', 
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--muted)' }}>Speed</label>
-                    <select 
-                      value={playbackSpeed} 
-                      onChange={handleSpeedChange}
-                      className="input"
-                      style={{ padding: '8px 12px', minWidth: 'auto' }}
-                    >
-                      <option value="0.5">0.5x</option>
-                      <option value="0.75">0.75x</option>
-                      <option value="1">1x</option>
-                      <option value="1.25">1.25x</option>
-                      <option value="1.5">1.5x</option>
-                      <option value="2">2x</option>
-                    </select>
-                  </div>
-                  
-                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                    Shortcuts: Space play/pause • J/K +/-10s • M mute • F fullscreen
+                {/* Seek Bar */}
+                <input
+                  ref={seekRef}
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={duration ? (currentTime / duration) * 100 : 0}
+                  onChange={handleSeek}
+                  style={{
+                    width: '100%',
+                    accentColor: 'var(--brand2)',
+                  }}
+                  aria-label="Seek"
+                />
+
+                {/* Controls Row */}
+                <div className="row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button onClick={togglePlay} className="iconBtn" title="Play/Pause (Space)">
+                    {isPlaying ? '⏸️' : '▶️'}
+                  </button>
+                  <button onClick={() => jump(-10)} className="iconBtn" title="Back 10s (J)">
+                    ⏪
+                  </button>
+                  <button onClick={() => jump(10)} className="iconBtn" title="Forward 10s (K)">
+                    ⏩
+                  </button>
+                  <button onClick={toggleMute} className="iconBtn" title="Mute (M)">
+                    {isMuted ? '🔇' : '🔊'}
+                  </button>
+
+                  <span className="time" style={{ fontVariantNumeric: 'tabular-nums', color: 'rgba(234,240,255,0.78)', fontSize: '12px' }}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
+                  
+                  <span style={{ flex: 1 }}></span>
+
+                  <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>Speed</label>
+                  <select 
+                    value={playbackSpeed} 
+                    onChange={handleSpeedChange}
+                    className="select"
+                    title="Playback speed"
+                    style={{
+                      border: '1px solid var(--line)',
+                      background: 'var(--bg)',
+                      color: 'var(--text)',
+                      borderRadius: '14px',
+                      padding: '10px 12px',
+                    }}
+                  >
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1">1x</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                  </select>
+
+                  <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>Vol</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    style={{ maxWidth: '100px', accentColor: 'var(--brand2)' }}
+                  />
+                  
+                  <button onClick={handleFullscreen} className="iconBtn" title="Fullscreen (F)">
+                    ⛶
+                  </button>
+                </div>
+
+                {/* Shortcuts Row */}
+                <div className="row" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>
+                    Shortcuts: Space play/pause | J/K +/-10s | M mute | F fullscreen
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{statusLabel}</span>
                 </div>
               </div>
             </div>
 
             {/* Meta */}
-            <div style={{ padding: '0 12px 12px' }}>
+            <div className="meta" style={{ padding: '0 12px 12px' }}>
               <h1 style={{ margin: '12px 0 6px', fontSize: '18px', letterSpacing: '-0.2px' }}>
                 {video.title}
               </h1>
               
-              <div style={{ 
-                display: 'flex', 
-                gap: '10px', 
-                flexWrap: 'wrap', 
-                alignItems: 'center',
-              }}>
-                <span className="muted">
-                  By <b>{video.User?.email || 'User'}</b>
-                </span>
-                <span className="muted">•</span>
-                <span className="muted">
-                  <span className="count">{video.views?.toLocaleString()}</span> views
-                </span>
-                <span className="muted">•</span>
-                <span className="muted">
-                  <span className="count">{comments.length}</span> comments
-                </span>
+              <div className="metaLine" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span className="muted">By <b>@{video.User?.email?.split('@')[0] || 'Creator'}</b></span>
+                <span className="muted">|</span>
+                <span className="muted"><span className="count">{(video.views || 0).toLocaleString()}</span> views</span>
+                <span className="muted">|</span>
+                <span className="muted"><span className="count">{comments.length}</span> comments</span>
 
                 <span style={{ flex: 1 }}></span>
 
                 <button 
                   onClick={handleLike}
                   className={`likeBtn ${isLiked ? 'liked' : ''}`}
+                  role="button"
                   aria-pressed={isLiked}
+                  tabIndex={0}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 12px',
+                    border: isLiked ? '1px solid rgba(255,77,109,0.30)' : '1px solid var(--line)',
+                    borderRadius: '14px',
+                    background: isLiked ? 'rgba(255,77,109,0.10)' : 'rgba(255,255,255,0.05)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
                 >
-                  <span>{isLiked ? 'Liked' : 'Like'}</span>
+                  <span>❤️</span>
                   <b><span className="count">{likes.toLocaleString()}</span></b>
+                  <span className="muted">{isLiked ? 'Liked' : 'Like'}</span>
                 </button>
               </div>
 
-              <p className="muted" style={{ margin: '12px 0 0', lineHeight: 1.6 }}>
-                {video.description}
-              </p>
-              
-              <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
-                Published on {formatDate(video.createdAt)}
+              <p className="muted" style={{ margin: '10px 0 0' }}>
+                {video.description || 'No description provided.'}
               </p>
             </div>
           </section>
 
           {/* Sidebar: Comments */}
-          <aside className="panel" style={{ padding: '12px' }}>
+          <aside className="panel side" style={{ padding: '12px' }}>
             {/* Comment Form */}
-            <div className="card" style={{ marginBottom: '12px' }}>
-              <h3 style={{ margin: '0 0 12px', fontSize: '14px' }}>Leave a comment</h3>
+            <div className="card" style={{
+              border: '1px solid var(--line)',
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: '18px',
+              padding: '12px',
+              marginBottom: '12px',
+            }}>
+              <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>Leave a comment</h3>
               
               {user ? (
                 <form onSubmit={handleComment}>
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
-                      Your name
-                    </label>
+                  <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>Your name</label>
                     <input
                       className="input"
                       value={user.email}
                       disabled
-                      style={{ width: '100%', opacity: 0.7 }}
+                      placeholder="e.g., Brian"
+                      maxLength={40}
+                      style={{
+                        border: '1px solid var(--line)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: 'var(--text)',
+                        borderRadius: '14px',
+                        padding: '10px 12px',
+                        opacity: 0.7,
+                      }}
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginBottom: '6px' }}>
-                      Comment
-                    </label>
+                  <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>Comment</label>
                     <textarea
+                      id="commentInput"
                       className="input"
                       placeholder="Write something..."
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       maxLength={600}
-                      style={{ width: '100%', minHeight: '80px', resize: 'vertical' }}
+                      style={{
+                        border: '1px solid var(--line)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: 'var(--text)',
+                        borderRadius: '14px',
+                        padding: '10px 12px',
+                        minHeight: '96px',
+                        resize: 'vertical',
+                      }}
                     />
                   </div>
                   
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <button type="submit" className="btn primary">Post</button>
-                    <button 
-                      type="button" 
-                      className="btn"
-                      onClick={() => setCommentText('')}
-                    >
-                      Clear
-                    </button>
+                    <button type="button" className="btn" onClick={() => setCommentText('')}>Clear</button>
                   </div>
                   
                   <div className="muted" style={{ fontSize: '12px', marginTop: '10px' }}>
@@ -289,8 +469,13 @@ function VideoPlayer() {
             </div>
 
             {/* Comments List */}
-            <div className="card">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div className="card" style={{
+              border: '1px solid var(--line)',
+              background: 'rgba(255,255,255,0.04)',
+              borderRadius: '18px',
+              padding: '12px',
+            }}>
+              <div className="hrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0, fontSize: '14px' }}>Comments</h3>
                 <span className="muted" style={{ fontSize: '12px' }}>{comments.length}</span>
               </div>
@@ -300,34 +485,27 @@ function VideoPlayer() {
                   No comments yet. Be the first!
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="commentList" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {comments.map((c, index) => (
-                    <div key={c.id || index} style={{
-                      border: '1px solid var(--line)',
-                      background: 'var(--panel)',
+                    <div key={c.id || index} className="comment" style={{
+                      border: '1px solid rgba(234,240,255,0.10)',
+                      background: 'rgba(255,255,255,0.04)',
                       borderRadius: '16px',
                       padding: '10px',
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        marginBottom: '6px',
-                      }}>
-                        <span style={{ fontWeight: 800, fontSize: '13px' }}>
-                          {c.User?.email || 'User'}
+                      <div className="cTop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <span className="cName" style={{ fontWeight: 800, fontSize: '13px' }}>
+                          @{c.User?.email?.split('@')[0] || 'User'}
                         </span>
-                        <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                        <span className="cTime" style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)', fontVariantNumeric: 'tabular-nums' }}>
                           {c.createdAt ? formatDate(c.createdAt) : 'Just now'}
                         </span>
                       </div>
-                      <p style={{ 
-                        margin: 0, 
-                        color: 'rgba(234, 240, 255, 0.80)',
+                      <p className="cText" style={{ 
+                        margin: '8px 0 0', 
+                        color: 'rgba(234,240,255,0.80)',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
-                        fontSize: '13px',
-                        lineHeight: 1.5,
                       }}>
                         {c.text}
                       </p>
@@ -335,16 +513,6 @@ function VideoPlayer() {
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Actions */}
-            <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
-              <button onClick={handleCopyLink} className="btn" style={{ flex: 1 }}>
-                Copy link
-              </button>
-              <Link to="/" className="btn" style={{ flex: 1, textAlign: 'center' }}>
-                Back to feed
-              </Link>
             </div>
           </aside>
         </div>
