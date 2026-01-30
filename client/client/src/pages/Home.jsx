@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
@@ -11,6 +11,9 @@ function Home() {
   const [activeTab, setActiveTab] = useState('foryou');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
@@ -41,25 +44,56 @@ function Home() {
       (v.User?.email && v.User.email.toLowerCase().includes(q))
     );
     setFilteredVideos(filtered);
+    setCurrentVideoIndex(0);
   };
 
-  const handleShare = (videoId) => {
-    const url = `${window.location.origin}/watch/${videoId}`;
+  const handleShare = () => {
+    const currentVideo = filteredVideos[currentVideoIndex];
+    if (!currentVideo) return;
+    const url = `${window.location.origin}/watch/${currentVideo.id}`;
     navigator.clipboard.writeText(url);
-    showToast('Link copied to clipboard!');
+    showToast('🔗 Link copied to clipboard!');
   };
 
-  const handleLike = async (videoId) => {
+  const handleLike = async () => {
+    const currentVideo = filteredVideos[currentVideoIndex];
+    if (!currentVideo) return;
+    
     if (!user) {
-      showToast('Sign in to like videos');
+      showToast('🔒 Sign in to like videos');
       return;
     }
     try {
-      await axios.post(`http://localhost:5000/api/videos/${videoId}/like`, { userId: user.id });
+      await axios.post(`http://localhost:5000/api/videos/${currentVideo.id}/like`, { userId: user.id });
       loadVideos();
-      showToast('Liked!');
+      showToast('❤️ Liked!');
     } catch (error) {
       showToast(error.response?.data?.message || 'Already liked');
+    }
+  };
+
+  const handleNext = () => {
+    if (currentVideoIndex < filteredVideos.length - 1) {
+      setCurrentVideoIndex(prev => prev + 1);
+      setIsPlaying(false);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentVideoIndex > 0) {
+      setCurrentVideoIndex(prev => prev - 1);
+      setIsPlaying(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
     }
   };
 
@@ -68,10 +102,12 @@ function Home() {
     setTimeout(() => setToast({ show: false, message: '' }), 2000);
   };
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const formatCount = (count) => {
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+    return count;
   };
+
+  const currentVideo = filteredVideos[currentVideoIndex];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -80,7 +116,7 @@ function Home() {
       <div style={{ display: 'flex', flex: 1 }}>
         <Sidebar />
         
-        {/* Main Feed */}
+        {/* Main Content */}
         <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
           {/* Tabs */}
           <div style={{
@@ -88,12 +124,6 @@ function Home() {
             gap: '20px',
             marginBottom: '20px',
             fontWeight: 600,
-            position: 'sticky',
-            top: 0,
-            background: 'var(--bg)',
-            paddingTop: '4px',
-            paddingBottom: '10px',
-            zIndex: 5,
           }}>
             <button
               onClick={() => setActiveTab('foryou')}
@@ -127,142 +157,213 @@ function Home() {
             </button>
           </div>
 
-          {/* Video Feed */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '900px' }}>
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
-                Loading videos...
-              </div>
-            ) : filteredVideos.length === 0 ? (
-              <div className="panel" style={{ padding: '40px', textAlign: 'center' }}>
-                <p style={{ color: 'var(--muted)', marginBottom: '16px' }}>
-                  No videos yet. Be the first to upload one!
-                </p>
-                <Link to="/upload" className="btn primary">
-                  Upload Video
-                </Link>
-              </div>
-            ) : (
-              filteredVideos.map((video) => (
-                <article 
-                  key={video.id} 
-                  className="panel"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    padding: '16px',
-                  }}
-                >
-                  {/* Video Player */}
-                  <Link to={`/watch/${video.id}`} style={{ textDecoration: 'none' }}>
-                    <div className="player" style={{ aspectRatio: '16/9', position: 'relative' }}>
-                      <video
-                        src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        muted
-                        preload="metadata"
-                        onMouseEnter={(e) => e.target.play()}
-                        onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
-                      />
-                      <span className="pill" style={{
-                        position: 'absolute',
-                        top: '12px',
-                        left: '12px',
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(6px)',
-                      }}>
-                        {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
-                      </span>
-                    </div>
-                  </Link>
+          {/* Video Feed - Full screen video layout */}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
+              Loading videos...
+            </div>
+          ) : filteredVideos.length === 0 ? (
+            <div className="panel" style={{ padding: '40px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--muted)', marginBottom: '16px' }}>
+                No videos yet. Be the first to upload one!
+              </p>
+              <Link to="/upload" className="btn primary">
+                📤 Upload Video
+              </Link>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '24px',
+              maxWidth: '900px',
+            }}>
+              {/* Video Player Area */}
+              <div 
+                className="panel"
+                style={{
+                  aspectRatio: '9/16',
+                  maxHeight: 'calc(100vh - 180px)',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  background: 'rgba(0,0,0,0.4)',
+                }}
+                onClick={togglePlay}
+              >
+                {/* Video Label */}
+                <div style={{
+                  position: 'absolute',
+                  top: '16px',
+                  left: '16px',
+                  background: 'rgba(0,0,0,0.6)',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  zIndex: 10,
+                }}>
+                  Video {currentVideoIndex + 1}
+                </div>
 
-                  {/* Video Info */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {currentVideo ? (
+                  <>
+                    <video
+                      ref={videoRef}
+                      src={`http://localhost:5000/${currentVideo.videoUrl.replace(/\\/g, '/')}`}
+                      style={{ 
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover',
+                        borderRadius: '22px',
+                      }}
+                      preload="metadata"
+                      onEnded={() => setIsPlaying(false)}
+                    />
+                    
+                    {/* Play Button Overlay */}
+                    {!isPlaying && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.6)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                      }}>
+                        <span style={{ fontSize: '32px', marginLeft: '4px' }}>▶</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: 'var(--muted)',
+                  }}>
+                    No video selected
+                  </div>
+                )}
+              </div>
+
+              {/* Video Info Section */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {currentVideo && (
+                  <>
                     {/* Creator Info */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--brand), var(--brand2))',
-                        border: '2px solid var(--line)',
-                      }}></div>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '14px' }}>
-                          {video.User ? video.User.email : 'User'}
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                          {formatDate(video.createdAt)}
-                        </div>
-                      </div>
+                      <span style={{ fontWeight: 700, fontSize: '15px' }}>
+                        @{currentVideo.User?.email?.split('@')[0] || 'creator_name'}
+                      </span>
+                      <span style={{ color: 'var(--muted)', fontSize: '14px' }}>•</span>
+                      <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
+                        {formatCount(currentVideo.views || 10000)} views
+                      </span>
                     </div>
 
-                    {/* Title & Description */}
-                    <Link to={`/watch/${video.id}`} style={{ textDecoration: 'none' }}>
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>
-                        {video.title}
-                      </h3>
-                    </Link>
+                    {/* Caption */}
                     <p style={{ 
                       margin: 0, 
                       color: 'var(--muted)', 
-                      fontSize: '13px',
-                      lineHeight: 1.5,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
+                      fontSize: '14px',
+                      lineHeight: 1.6,
                     }}>
-                      {video.description}
+                      {currentVideo.description || 'Wireframe caption for video #1. Desktop feed card with player + metadata.'}
                     </p>
 
-                    {/* Stats */}
-                    <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--muted)' }}>
-                      <span>{video.views} views</span>
-                      <span>{video.Likes ? video.Likes.length : 0} likes</span>
+                    {/* Hashtags */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#hashtag</span>
+                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#trend</span>
+                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#music</span>
                     </div>
 
-                    {/* Actions */}
-                    <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', flexWrap: 'wrap' }}>
+                    {/* Stats */}
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: 'var(--muted)' }}>
+                      <span>❤️ {formatCount(currentVideo.Likes?.length || 1000)}</span>
+                      <span>💬 {currentVideo.Comments?.length || 100}</span>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
                       <button 
-                        onClick={() => handleLike(video.id)} 
+                        onClick={(e) => { e.stopPropagation(); handleLike(); }} 
                         className="btn"
-                        style={{ fontSize: '13px', padding: '8px 14px' }}
+                        style={{ fontSize: '13px', padding: '10px 16px' }}
                       >
-                        Like
+                        ❤️ Like
                       </button>
-                      <Link to={`/watch/${video.id}`} className="btn" style={{ fontSize: '13px', padding: '8px 14px' }}>
-                        Comment
+                      <Link 
+                        to={`/watch/${currentVideo.id}`} 
+                        className="btn" 
+                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                      >
+                        💬 Comment
                       </Link>
                       <button 
-                        onClick={() => handleShare(video.id)} 
+                        onClick={(e) => { e.stopPropagation(); handleShare(); }} 
                         className="btn"
-                        style={{ fontSize: '13px', padding: '8px 14px' }}
+                        style={{ fontSize: '13px', padding: '10px 16px' }}
                       >
-                        Share
+                        📤 Share
+                      </button>
+                      <button 
+                        className="btn"
+                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                      >
+                        ➕ Follow
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                        className="btn primary"
+                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                        disabled={currentVideoIndex >= filteredVideos.length - 1}
+                      >
+                        Next ▶️
                       </button>
                     </div>
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
 
-          {/* Load More Indicator */}
-          {!loading && filteredVideos.length > 0 && (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '20px', 
-              color: 'var(--muted)', 
-              fontSize: '13px' 
-            }}>
-              Scroll to load more
+                    {/* Navigation hint */}
+                    <div style={{ 
+                      marginTop: '16px', 
+                      fontSize: '12px', 
+                      color: 'var(--muted)',
+                    }}>
+                      Video {currentVideoIndex + 1} of {filteredVideos.length}
+                      {currentVideoIndex > 0 && (
+                        <button 
+                          onClick={handlePrevious}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--brand2)',
+                            cursor: 'pointer',
+                            marginLeft: '10px',
+                            fontSize: '12px',
+                          }}
+                        >
+                          ◀️ Previous
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </main>
 
-        <RightPanel />
+        <RightPanel 
+          videos={filteredVideos} 
+          currentVideoIndex={currentVideoIndex}
+          onPlayVideo={(index) => setCurrentVideoIndex(index)}
+        />
       </div>
 
       {/* Toast */}

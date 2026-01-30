@@ -144,7 +144,7 @@ a {
 
 .input, textarea, select {
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: var(--bg);
   color: var(--text);
   border-radius: var(--r14);
   padding: 10px 14px;
@@ -156,6 +156,18 @@ a {
 .input:focus, textarea:focus, select:focus {
   border-color: rgba(124, 92, 255, 0.5);
   background: rgba(255, 255, 255, 0.08);
+}
+
+/* Select dropdown fix */
+select {
+  background-color: var(--bg);
+  cursor: pointer;
+}
+
+select option {
+  background-color: var(--bg);
+  color: var(--text);
+  padding: 10px;
 }
 
 textarea {

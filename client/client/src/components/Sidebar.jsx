@@ -18,54 +18,55 @@ function Sidebar() {
     transition: 'all 0.15s ease',
     border: active ? '1px solid var(--line)' : '1px solid transparent',
     textDecoration: 'none',
+    fontSize: '14px',
   });
 
   return (
     <aside style={{
-      width: '220px',
+      width: '200px',
       borderRight: '1px solid var(--line)',
       padding: '16px',
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh',
+      height: 'calc(100vh - 60px)',
       position: 'sticky',
-      top: 0,
+      top: '60px',
       background: 'rgba(7, 10, 18, 0.5)',
       backdropFilter: 'blur(12px)',
     }}>
-      {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', fontWeight: 850 }}>
-        <div style={{
-          width: '34px',
-          height: '34px',
-          borderRadius: '12px',
-          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%), linear-gradient(135deg, rgba(124,92,255,1), rgba(25,211,255,.8))',
-          border: '1px solid rgba(255,255,255,.18)',
-          boxShadow: '0 18px 45px rgba(124,92,255,.18)',
-        }} aria-hidden="true"></div>
-        <span style={{ fontSize: '18px', letterSpacing: '-0.3px' }}>ShortVideo</span>
-      </div>
-      
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
         <Link to="/" style={navItemStyle(isActive('/'))}>
+          <span>🏠</span>
           <span>Home</span>
         </Link>
-        <Link to="/campaigns" style={navItemStyle(isActive('/campaigns'))}>
-          <span>Campaigns</span>
+        <Link to="/trending" style={navItemStyle(isActive('/trending'))}>
+          <span>🔥</span>
+          <span>Trending</span>
         </Link>
-        <Link to="/upload" style={navItemStyle(isActive('/upload'))}>
-          <span>Upload</span>
+        <Link to="/following" style={navItemStyle(isActive('/following'))}>
+          <span>👥</span>
+          <span>Following</span>
+        </Link>
+        <Link to="/sounds" style={navItemStyle(isActive('/sounds'))}>
+          <span>🎵</span>
+          <span>Sounds</span>
+        </Link>
+        <Link to="/favorites" style={navItemStyle(isActive('/favorites'))}>
+          <span>⭐</span>
+          <span>Favorites</span>
         </Link>
         
         <div style={{ borderTop: '1px solid var(--line)', margin: '12px 0' }}></div>
         
-        <div style={{ padding: '12px 14px', color: 'var(--muted)', fontSize: '13px' }}>
-          Following
-        </div>
-        <div style={{ padding: '12px 14px', color: 'var(--muted)', fontSize: '13px' }}>
-          Favorites
-        </div>
+        <Link to="/campaigns" style={navItemStyle(isActive('/campaigns'))}>
+          <span>🏆</span>
+          <span>Campaigns</span>
+        </Link>
+        <Link to="/upload" style={navItemStyle(isActive('/upload'))}>
+          <span>📤</span>
+          <span>Upload</span>
+        </Link>
       </nav>
       
       {/* Tip */}
@@ -78,7 +79,7 @@ function Sidebar() {
         borderRadius: '12px',
         border: '1px solid var(--line)',
       }}>
-        Tip: Scroll the feed and click videos to watch.
+        <strong>Tip:</strong> <span style={{ color: 'var(--brand2)' }}>Scroll</span> the feed. Click the player area to toggle pause (wireframe).
       </div>
     </aside>
   );

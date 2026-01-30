@@ -25,13 +25,13 @@ function Header({ onSearch }) {
       top: 0,
       zIndex: 20,
       backdropFilter: 'blur(12px)',
-      background: 'rgba(7, 10, 18, 0.55)',
+      background: 'rgba(7, 10, 18, 0.75)',
       borderBottom: '1px solid var(--line)',
+      height: '60px',
     }}>
       <div style={{
-        maxWidth: '1180px',
-        margin: '0 auto',
-        padding: '12px 18px',
+        height: '100%',
+        padding: '0 18px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -48,7 +48,6 @@ function Header({ onSearch }) {
             boxShadow: '0 18px 45px rgba(124,92,255,.18)',
           }} aria-hidden="true"></div>
           <span style={{ fontSize: '16px' }}>ShortVideo</span>
-          <span className="pill">Beta</span>
         </Link>
 
         {/* Search */}
@@ -56,13 +55,14 @@ function Header({ onSearch }) {
           <input
             type="text"
             className="input"
-            placeholder="Search videos, creators, hashtags..."
+            placeholder="🔍 Search videos, creators, hashtags"
             value={searchQuery}
             onChange={handleSearchChange}
             style={{
               width: '100%',
               borderRadius: '20px',
               padding: '10px 18px',
+              background: 'rgba(255,255,255,0.06)',
             }}
           />
         </div>
@@ -71,20 +71,88 @@ function Header({ onSearch }) {
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {user ? (
             <>
-              <Link to="/upload" className="btn primary">
-                Upload
+              <Link 
+                to="/upload" 
+                className="iconBtn"
+                title="Upload"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                ➕
               </Link>
-              <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
-                {user.email}
-              </span>
-              <button onClick={handleLogout} className="btn">
-                Logout
+              <button 
+                className="iconBtn"
+                title="Notifications"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                🔔
               </button>
+              <div 
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, var(--brand), var(--brand2))',
+                  border: '2px solid var(--line)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                }}
+                title={user.email}
+                onClick={handleLogout}
+              >
+                👤
+              </div>
             </>
           ) : (
-            <Link to="/login" className="btn primary">
-              Sign In
-            </Link>
+            <>
+              <button 
+                className="iconBtn"
+                title="Notifications"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                🔔
+              </button>
+              <Link 
+                to="/login" 
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: 'var(--panel)',
+                  border: '1px solid var(--line)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px',
+                }}
+              >
+                👤
+              </Link>
+            </>
           )}
         </div>
       </div>
