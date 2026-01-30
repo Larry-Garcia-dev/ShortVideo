@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
@@ -11,14 +11,37 @@ function Home() {
   const [activeTab, setActiveTab] = useState('foryou');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '' });
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const videoRef = useRef(null);
+  const [likedVideos, setLikedVideos] = useState({});
+  const [followedUsers, setFollowedUsers] = useState({});
+  const [pausedVideos, setPausedVideos] = useState({});
+  const [playingVideoId, setPlayingVideoId] = useState(null);
+  const videoRefs = useRef({});
+  const feedRef = useRef(null);
+  const loadMoreRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     loadVideos();
   }, []);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          // In a real app, you would load more videos here
+          // For now, we just show all videos
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading]);
 
   const loadVideos = () => {
     setLoading(true);
@@ -44,56 +67,67 @@ function Home() {
       (v.User?.email && v.User.email.toLowerCase().includes(q))
     );
     setFilteredVideos(filtered);
-    setCurrentVideoIndex(0);
   };
 
-  const handleShare = () => {
-    const currentVideo = filteredVideos[currentVideoIndex];
-    if (!currentVideo) return;
-    const url = `${window.location.origin}/watch/${currentVideo.id}`;
+  const handleShare = (video) => {
+    const url = `${window.location.origin}/watch/${video.id}`;
     navigator.clipboard.writeText(url);
-    showToast('🔗 Link copied to clipboard!');
+    showToast('Link copied to clipboard!');
   };
 
-  const handleLike = async () => {
-    const currentVideo = filteredVideos[currentVideoIndex];
-    if (!currentVideo) return;
-    
+  const handleLike = async (video) => {
     if (!user) {
-      showToast('🔒 Sign in to like videos');
+      showToast('Sign in to like videos');
       return;
     }
     try {
-      await axios.post(`http://localhost:5000/api/videos/${currentVideo.id}/like`, { userId: user.id });
-      loadVideos();
-      showToast('❤️ Liked!');
+      await axios.post(`http://localhost:5000/api/videos/${video.id}/like`, { userId: user.id });
+      setLikedVideos(prev => ({ ...prev, [video.id]: !prev[video.id] }));
+      showToast(likedVideos[video.id] ? 'Like removed' : 'Liked!');
     } catch (error) {
       showToast(error.response?.data?.message || 'Already liked');
     }
   };
 
-  const handleNext = () => {
-    if (currentVideoIndex < filteredVideos.length - 1) {
-      setCurrentVideoIndex(prev => prev + 1);
-      setIsPlaying(false);
+  const handleFollow = (userId) => {
+    if (!user) {
+      showToast('Sign in to follow creators');
+      return;
     }
+    setFollowedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
+    showToast(followedUsers[userId] ? 'Unfollowed' : 'Following!');
   };
 
-  const handlePrevious = () => {
-    if (currentVideoIndex > 0) {
-      setCurrentVideoIndex(prev => prev - 1);
-      setIsPlaying(false);
-    }
-  };
+  const toggleVideoPlay = (videoId) => {
+    const videoEl = videoRefs.current[videoId];
+    if (!videoEl) return;
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
+    // Pause all other videos first
+    Object.keys(videoRefs.current).forEach(id => {
+      if (id !== videoId && videoRefs.current[id]) {
+        videoRefs.current[id].pause();
       }
-      setIsPlaying(!isPlaying);
+    });
+
+    if (playingVideoId === videoId) {
+      videoEl.pause();
+      setPlayingVideoId(null);
+      setPausedVideos(prev => ({ ...prev, [videoId]: true }));
+    } else {
+      videoEl.play();
+      setPlayingVideoId(videoId);
+      setPausedVideos(prev => ({ ...prev, [videoId]: false }));
+    }
+  };
+
+  const scrollToNext = (currentIndex) => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < filteredVideos.length) {
+      const nextVideo = filteredVideos[nextIndex];
+      const nextCard = document.getElementById(`video-card-${nextVideo.id}`);
+      if (nextCard) {
+        nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -104,26 +138,37 @@ function Home() {
 
   const formatCount = (count) => {
     if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-    return count;
+    return count || 0;
   };
 
-  const currentVideo = filteredVideos[currentVideoIndex];
+  const getCreatorName = (video) => {
+    return video.User?.email?.split('@')[0] || 'creator_name';
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header onSearch={handleSearch} />
       
-      <div style={{ display: 'flex', flex: 1 }}>
+      <div className="layout" style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '220px 1fr 320px', 
+        height: 'calc(100vh - 64px)' 
+      }}>
         <Sidebar />
         
-        {/* Main Content */}
-        <main style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+        {/* Main Feed */}
+        <main ref={feedRef} style={{ padding: '20px', overflowY: 'auto' }}>
           {/* Tabs */}
           <div style={{
             display: 'flex',
             gap: '20px',
-            marginBottom: '20px',
+            marginBottom: '16px',
             fontWeight: 600,
+            position: 'sticky',
+            top: 0,
+            background: 'var(--bg)',
+            paddingTop: '4px',
+            zIndex: 5,
           }}>
             <button
               onClick={() => setActiveTab('foryou')}
@@ -132,7 +177,7 @@ function Home() {
                 border: 'none',
                 color: activeTab === 'foryou' ? 'var(--text)' : 'var(--muted)',
                 cursor: 'pointer',
-                paddingBottom: '8px',
+                paddingBottom: '6px',
                 borderBottom: activeTab === 'foryou' ? '2px solid var(--text)' : '2px solid transparent',
                 fontWeight: 600,
                 fontSize: '15px',
@@ -147,7 +192,7 @@ function Home() {
                 border: 'none',
                 color: activeTab === 'following' ? 'var(--text)' : 'var(--muted)',
                 cursor: 'pointer',
-                paddingBottom: '8px',
+                paddingBottom: '6px',
                 borderBottom: activeTab === 'following' ? '2px solid var(--text)' : '2px solid transparent',
                 fontWeight: 600,
                 fontSize: '15px',
@@ -157,7 +202,7 @@ function Home() {
             </button>
           </div>
 
-          {/* Video Feed - Full screen video layout */}
+          {/* Video Feed */}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
               Loading videos...
@@ -168,59 +213,77 @@ function Home() {
                 No videos yet. Be the first to upload one!
               </p>
               <Link to="/upload" className="btn primary">
-                📤 Upload Video
+                Upload Video
               </Link>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '24px',
-              maxWidth: '900px',
-            }}>
-              {/* Video Player Area */}
-              <div 
-                className="panel"
-                style={{
-                  aspectRatio: '9/16',
-                  maxHeight: 'calc(100vh - 180px)',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  background: 'rgba(0,0,0,0.4)',
-                }}
-                onClick={togglePlay}
-              >
-                {/* Video Label */}
-                <div style={{
-                  position: 'absolute',
-                  top: '16px',
-                  left: '16px',
-                  background: 'rgba(0,0,0,0.6)',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  zIndex: 10,
-                }}>
-                  Video {currentVideoIndex + 1}
-                </div>
+            <div className="feed" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {filteredVideos.map((video, index) => (
+                <article
+                  key={video.id}
+                  id={`video-card-${video.id}`}
+                  className="video-card"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '540px 1fr',
+                    gap: '20px',
+                    background: 'var(--panel)',
+                    border: '1px solid var(--line)',
+                    borderRadius: '14px',
+                    padding: '16px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,.35)',
+                  }}
+                >
+                  {/* Video Player */}
+                  <div
+                    onClick={() => toggleVideoPlay(video.id)}
+                    style={{
+                      background: 'linear-gradient(135deg, #1d202a, #141720)',
+                      borderRadius: '12px',
+                      height: '720px',
+                      display: 'grid',
+                      placeItems: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      filter: pausedVideos[video.id] ? 'grayscale(1) brightness(0.9)' : 'none',
+                    }}
+                  >
+                    {/* Corner Pill */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: '12px',
+                      fontSize: '12px',
+                      color: 'rgba(255,255,255,0.8)',
+                      background: 'rgba(0,0,0,0.35)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      padding: '6px 10px',
+                      borderRadius: '999px',
+                      backdropFilter: 'blur(6px)',
+                      zIndex: 2,
+                    }}>
+                      {pausedVideos[video.id] ? 'Paused' : `Video ${index + 1}`}
+                    </div>
 
-                {currentVideo ? (
-                  <>
                     <video
-                      ref={videoRef}
-                      src={`http://localhost:5000/${currentVideo.videoUrl.replace(/\\/g, '/')}`}
-                      style={{ 
-                        width: '100%', 
-                        height: '100%', 
+                      ref={(el) => videoRefs.current[video.id] = el}
+                      src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
                         objectFit: 'cover',
-                        borderRadius: '22px',
+                        borderRadius: '12px',
                       }}
                       preload="metadata"
-                      onEnded={() => setIsPlaying(false)}
+                      onEnded={() => {
+                        setPlayingVideoId(null);
+                        setPausedVideos(prev => ({ ...prev, [video.id]: true }));
+                      }}
                     />
-                    
+
                     {/* Play Button Overlay */}
-                    {!isPlaying && (
+                    {playingVideoId !== video.id && (
                       <div style={{
                         position: 'absolute',
                         top: '50%',
@@ -229,131 +292,156 @@ function Home() {
                         width: '80px',
                         height: '80px',
                         borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.6)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid rgba(255,255,255,0.3)',
+                        border: '2px solid rgba(255,255,255,0.4)',
+                        display: 'grid',
+                        placeItems: 'center',
+                        background: 'rgba(0,0,0,0.2)',
                       }}>
-                        <span style={{ fontSize: '32px', marginLeft: '4px' }}>▶</span>
+                        <div style={{
+                          width: 0,
+                          height: 0,
+                          borderLeft: '18px solid white',
+                          borderTop: '12px solid transparent',
+                          borderBottom: '12px solid transparent',
+                          marginLeft: '6px',
+                        }} />
                       </div>
                     )}
-                  </>
-                ) : (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    color: 'var(--muted)',
-                  }}>
-                    No video selected
                   </div>
-                )}
-              </div>
 
-              {/* Video Info Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {currentVideo && (
-                  <>
-                    {/* Creator Info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontWeight: 700, fontSize: '15px' }}>
-                        @{currentVideo.User?.email?.split('@')[0] || 'creator_name'}
-                      </span>
-                      <span style={{ color: 'var(--muted)', fontSize: '14px' }}>•</span>
-                      <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
-                        {formatCount(currentVideo.views || 10000)} views
-                      </span>
+                  {/* Video Info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {/* Creator Row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ fontWeight: 800, fontSize: '16px' }}>
+                        @{getCreatorName(video)}
+                      </div>
+                      <div style={{ color: 'var(--muted)' }}>•</div>
+                      <div style={{ color: 'var(--muted)' }}>
+                        {formatCount(video.views || 10000)} views
+                      </div>
                     </div>
 
                     {/* Caption */}
-                    <p style={{ 
-                      margin: 0, 
-                      color: 'var(--muted)', 
-                      fontSize: '14px',
-                      lineHeight: 1.6,
-                    }}>
-                      {currentVideo.description || 'Wireframe caption for video #1. Desktop feed card with player + metadata.'}
-                    </p>
+                    <div style={{ color: 'var(--muted)', lineHeight: 1.4 }}>
+                      {video.description || `Wireframe caption for video #${index + 1}. Desktop feed card with player + metadata.`}
+                    </div>
 
-                    {/* Hashtags */}
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#hashtag</span>
-                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#trend</span>
-                      <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>#music</span>
+                    {/* Tags */}
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <span style={{ fontSize: '13px', color: '#c6c9d2' }}>#hashtag</span>
+                      <span style={{ fontSize: '13px', color: '#c6c9d2' }}>#trend</span>
+                      <span style={{ fontSize: '13px', color: '#c6c9d2' }}>#music</span>
                     </div>
 
                     {/* Stats */}
-                    <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: 'var(--muted)' }}>
-                      <span>❤️ {formatCount(currentVideo.Likes?.length || 1000)}</span>
-                      <span>💬 {currentVideo.Comments?.length || 100}</span>
+                    <div style={{ display: 'flex', gap: '14px', color: 'var(--muted)', fontSize: '13px', marginTop: '2px' }}>
+                      <div>
+                        <span style={{ marginRight: '4px' }}>❤️</span>
+                        <span>{formatCount(video.Likes?.length || 1000)}</span>
+                      </div>
+                      <div>
+                        <span style={{ marginRight: '4px' }}>💬</span>
+                        <span>{video.Comments?.length || 100}</span>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleLike(); }} 
-                        className="btn"
-                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+                      <button
+                        onClick={() => handleLike(video)}
+                        className="action-btn"
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--line)',
+                          background: '#1a1d26',
+                          cursor: 'pointer',
+                          fontWeight: 650,
+                          color: 'var(--text)',
+                          borderColor: likedVideos[video.id] ? 'rgba(255,255,255,0.22)' : 'var(--line)',
+                        }}
                       >
-                        ❤️ Like
+                        {likedVideos[video.id] ? '💖 Liked' : '❤️ Like'}
                       </button>
-                      <Link 
-                        to={`/watch/${currentVideo.id}`} 
-                        className="btn" 
-                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                      <Link
+                        to={`/watch/${video.id}`}
+                        className="action-btn"
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--line)',
+                          background: '#1a1d26',
+                          cursor: 'pointer',
+                          fontWeight: 650,
+                          color: 'var(--text)',
+                          textDecoration: 'none',
+                        }}
                       >
                         💬 Comment
                       </Link>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleShare(); }} 
-                        className="btn"
-                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                      <button
+                        onClick={() => handleShare(video)}
+                        className="action-btn"
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--line)',
+                          background: '#1a1d26',
+                          cursor: 'pointer',
+                          fontWeight: 650,
+                          color: 'var(--text)',
+                        }}
                       >
-                        📤 Share
+                        🔄 Share
                       </button>
-                      <button 
-                        className="btn"
-                        style={{ fontSize: '13px', padding: '10px 16px' }}
+                      <button
+                        onClick={() => handleFollow(video.userId)}
+                        className="action-btn"
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--line)',
+                          background: '#1a1d26',
+                          cursor: 'pointer',
+                          fontWeight: 650,
+                          color: 'var(--text)',
+                        }}
                       >
-                        ➕ Follow
+                        {followedUsers[video.userId] ? 'Following' : '➕ Follow'}
                       </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                        className="btn primary"
-                        style={{ fontSize: '13px', padding: '10px 16px' }}
-                        disabled={currentVideoIndex >= filteredVideos.length - 1}
+                      <button
+                        onClick={() => scrollToNext(index)}
+                        className="action-btn small"
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '10px',
+                          border: '1px solid var(--line)',
+                          background: '#1a1d26',
+                          cursor: 'pointer',
+                          fontWeight: 650,
+                          color: 'var(--text)',
+                          fontSize: '13px',
+                        }}
                       >
-                        Next ▶️
+                        Next ▶
                       </button>
                     </div>
+                  </div>
+                </article>
+              ))}
 
-                    {/* Navigation hint */}
-                    <div style={{ 
-                      marginTop: '16px', 
-                      fontSize: '12px', 
-                      color: 'var(--muted)',
-                    }}>
-                      Video {currentVideoIndex + 1} of {filteredVideos.length}
-                      {currentVideoIndex > 0 && (
-                        <button 
-                          onClick={handlePrevious}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--brand2)',
-                            cursor: 'pointer',
-                            marginLeft: '10px',
-                            fontSize: '12px',
-                          }}
-                        >
-                          ◀️ Previous
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
+              {/* Load More Status */}
+              <div
+                ref={loadMoreRef}
+                style={{
+                  textAlign: 'center',
+                  fontSize: '13px',
+                  padding: '14px 0',
+                  color: 'var(--muted)',
+                }}
+              >
+                {loading ? 'Loading more...' : 'Scroll to load more'}
               </div>
             </div>
           )}
@@ -361,8 +449,15 @@ function Home() {
 
         <RightPanel 
           videos={filteredVideos} 
-          currentVideoIndex={currentVideoIndex}
-          onPlayVideo={(index) => setCurrentVideoIndex(index)}
+          onPlayVideo={(index) => {
+            const video = filteredVideos[index];
+            if (video) {
+              const card = document.getElementById(`video-card-${video.id}`);
+              if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }}
         />
       </div>
 
