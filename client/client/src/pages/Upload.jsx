@@ -14,7 +14,7 @@ function Upload() {
 
   const user = JSON.parse(localStorage.getItem('user'));
 
-  const handleUpload = async (e) => {
+ const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) {
       showToast('Please select a video file');
@@ -22,10 +22,14 @@ function Upload() {
     }
 
     const formData = new FormData();
-    formData.append('title', title);
+    
+    // IMPORTANTE: El orden importa para que Multer procese el nombre correctamente
+    formData.append('title', title); // Agregar el título PRIMERO
     formData.append('description', description);
     formData.append('userId', user ? user.id : 1);
-    formData.append('videoFile', file);
+    
+    // El archivo se agrega al FINAL
+    formData.append('videoFile', file); 
 
     setLoading(true);
 

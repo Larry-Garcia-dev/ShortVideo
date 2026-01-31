@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes); // Ahora sí funcionará porque videoRoutes ya existe
 app.use('/api/campaigns', campaignRoutes); // <--- USAR RUTA
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Ruta base
 app.get('/', (req, res) => {
     res.send('API de ShortVideo funcionando 🚀');
