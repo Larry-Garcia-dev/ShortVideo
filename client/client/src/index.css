@@ -945,3 +945,295 @@ input[type="range"] {
   display: flex;
   gap: 12px;
 }
+
+/* ===================== */
+/* RIGHT PANEL STYLES    */
+/* ===================== */
+
+.right-panel {
+  width: 280px;
+  border-left: 1px solid var(--line);
+  padding: 16px;
+  overflow-y: auto;
+  height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+  background: rgba(7, 10, 18, 0.3);
+}
+
+.rp-section {
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.rp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.rp-section-title {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+
+.rp-loading,
+.rp-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+/* Creator List */
+.rp-creator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-creator-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rp-creator-item:last-child {
+  border-bottom: none;
+}
+
+.rp-creator-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 11px;
+  background: rgba(124, 92, 255, 0.15);
+  border: 1px solid rgba(124, 92, 255, 0.22);
+  color: var(--brand);
+  flex-shrink: 0;
+}
+
+.rp-creator-item:nth-child(1) .rp-creator-rank {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 165, 0, 0.15));
+  border-color: rgba(255, 215, 0, 0.35);
+  color: #FFD700;
+}
+
+.rp-creator-item:nth-child(2) .rp-creator-rank {
+  background: rgba(192, 192, 192, 0.15);
+  border-color: rgba(192, 192, 192, 0.25);
+  color: #C0C0C0;
+}
+
+.rp-creator-item:nth-child(3) .rp-creator-rank {
+  background: rgba(205, 127, 50, 0.15);
+  border-color: rgba(205, 127, 50, 0.25);
+  color: #CD7F32;
+}
+
+.rp-creator-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.30), rgba(25, 211, 255, 0.20));
+  border: 1px solid rgba(124, 92, 255, 0.25);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.rp-creator-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-creator-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rp-creator-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rp-creator-stats-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.rp-stat-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* Follow Button */
+.rp-follow-btn {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 92, 255, 0.30);
+  background: rgba(124, 92, 255, 0.12);
+  color: var(--brand);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rp-follow-btn:hover {
+  background: rgba(124, 92, 255, 0.22);
+  border-color: rgba(124, 92, 255, 0.45);
+}
+
+.rp-follow-btn.following {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.rp-follow-btn.following:hover {
+  border-color: rgba(255, 77, 109, 0.30);
+  background: rgba(255, 77, 109, 0.08);
+  color: var(--bad);
+}
+
+/* Hashtag Items */
+.rp-hashtag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rp-hashtag-item:last-child {
+  border-bottom: none;
+}
+
+.rp-hashtag-tag {
+  color: var(--brand2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rp-hashtag-count {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Queue List */
+.rp-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rp-queue-item:last-child {
+  border-bottom: none;
+}
+
+.rp-queue-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.30);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.rp-queue-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rp-queue-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rp-queue-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rp-queue-views {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rp-play-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.rp-play-btn:hover {
+  background: var(--panel2);
+  border-color: rgba(234, 240, 255, 0.20);
+  color: var(--text);
+}
+
+/* Footer */
+.rp-footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 4px;
+}
