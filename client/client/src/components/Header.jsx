@@ -8,7 +8,7 @@ function Header({ onSearch }) {
   // Leer usuario y preferencia de idioma guardada
   const user = JSON.parse(localStorage.getItem('user'));
   const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
-  
+
   const [currentLang, setCurrentLang] = useState(storedLang);
   const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ function Header({ onSearch }) {
     const newLang = e.target.value;
     setCurrentLang(newLang);
     localStorage.setItem('appLanguage', newLang);
-    
+
     // Si hay usuario, actualizar su preferencia en BD
     if (user) {
       try {
@@ -53,7 +53,7 @@ function Header({ onSearch }) {
       }
     }
     // Recargar para aplicar cambios en toda la app (método simple)
-    window.location.reload(); 
+    window.location.reload();
   };
 
   return (
@@ -75,23 +75,23 @@ function Header({ onSearch }) {
         gap: '14px',
       }}>
         {/* Brand */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 850 }}>
-          <div style={{
-            width: '34px',
-            height: '34px',
-            borderRadius: '12px',
-            background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%), linear-gradient(135deg, rgba(124,92,255,1), rgba(25,211,255,.8))',
-            border: '1px solid rgba(255,255,255,.18)',
-            boxShadow: '0 18px 45px rgba(124,92,255,.18)',
-          }} aria-hidden="true"></div>
-          <span style={{ fontSize: '16px' }}>{t.common.appName}</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{
+              height: '40px', /* Ajusta este tamaño si lo ves muy grande o chico */
+              width: 'auto',
+              objectFit: 'contain'
+            }} 
+          />
         </Link>
 
         {/* Search */}
         <div className="header-search-wrapper">
           <span className="header-search-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </span>
           <input
@@ -105,33 +105,33 @@ function Header({ onSearch }) {
 
         {/* Actions & Language */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          
+
           {/* Language Globe Selector */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: '4px' }}>
-            <span style={{ fontSize: '16px', marginRight: '4px' }} title="Change Language">🌐</span> 
-            <select 
+            <span style={{ fontSize: '16px', marginRight: '4px' }} title="Change Language">🌐</span>
+            <select
               value={currentLang}
               onChange={handleLanguageChange}
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: 'var(--muted)', 
+                color: 'var(--muted)',
                 fontSize: '13px',
                 cursor: 'pointer',
                 outline: 'none',
                 fontWeight: 600
               }}
             >
-              <option value="en" style={{background: 'var(--bg)'}}>EN</option>
-              <option value="es" style={{background: 'var(--bg)'}}>ES</option>
-              <option value="zh" style={{background: 'var(--bg)'}}>ZH</option>
+              <option value="en" style={{ background: 'var(--bg)' }}>EN</option>
+              <option value="es" style={{ background: 'var(--bg)' }}>ES</option>
+              <option value="zh" style={{ background: 'var(--bg)' }}>ZH</option>
             </select>
           </div>
 
           {user ? (
             <>
-              <Link 
-                to="/upload" 
+              <Link
+                to="/upload"
                 className="iconBtn"
                 title={t.header.upload}
                 style={{
@@ -145,7 +145,7 @@ function Header({ onSearch }) {
               >
                 ➕
               </Link>
-              <div 
+              <div
                 style={{
                   width: '36px',
                   height: '36px',
@@ -165,9 +165,9 @@ function Header({ onSearch }) {
               </div>
             </>
           ) : (
-            <Link 
-              to="/login" 
-              className="btn primary" 
+            <Link
+              to="/login"
+              className="btn primary"
               style={{ padding: '8px 16px', fontSize: '13px' }}
             >
               {t.header.login}
