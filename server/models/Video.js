@@ -10,24 +10,40 @@ const Video = sequelize.define('Video', {
         type: DataTypes.TEXT,
         allowNull: true
     },
-    videoUrl: { // Ruta donde se guarda el archivo
+    videoUrl: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    thumbnailUrl: { // Imagen de portada
+    thumbnailUrl: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    duration: { // Duración en segundos o minutos (para validar < 10 min)
+    category: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: 'General'
+    },
+    tags: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        get() {
+            const raw = this.getDataValue('tags');
+            return raw ? JSON.parse(raw) : [];
+        },
+        set(value) {
+            this.setDataValue('tags', JSON.stringify(value));
+        }
+    },
+    duration: {
         type: DataTypes.FLOAT, 
         allowNull: false
     },
-    views: { // Contador de visitas en vivo
+    views: {
         type: DataTypes.INTEGER,
         defaultValue: 0
     }
 }, {
-    timestamps: true // Crea automatically Upload Date (createdAt)
+    timestamps: true
 });
 
 module.exports = Video;
