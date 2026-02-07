@@ -6,9 +6,17 @@ import Header from '../components/Header';
 function CampaignList() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Obtenemos usuario para verificar rol
+  const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/campaigns')
+    // URL dinámica según entorno
+    const API_URL = import.meta.env.MODE === 'production' 
+        ? 'http://47.87.37.35:5000/api/campaigns'
+        : 'http://localhost:5000/api/campaigns';
+
+    axios.get(API_URL)
       .then(res => setCampaigns(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -16,9 +24,7 @@ function CampaignList() {
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+      month: 'short', day: 'numeric', year: 'numeric' 
     });
   };
 
@@ -27,7 +33,7 @@ function CampaignList() {
       <Header />
       
       <main className="wrap" style={{ maxWidth: '1180px', margin: '0 auto', padding: '18px' }}>
-        {/* Hero Announcement */}
+        {/* Header con Botón Admin */}
         <section style={{
           position: 'relative',
           padding: '24px',
@@ -41,18 +47,37 @@ function CampaignList() {
           boxShadow: 'var(--shadow)',
           marginBottom: '24px',
         }}>
-          <span className="pill">Active Challenges</span>
-          <h1 style={{ 
-            margin: '12px 0 8px', 
-            fontSize: 'clamp(22px, 2.4vw, 32px)',
-            letterSpacing: '-0.3px',
-          }}>
-            Video Challenges & Campaigns
-          </h1>
-          <p style={{ margin: 0, color: 'var(--muted)', maxWidth: '80ch', lineHeight: 1.6 }}>
-            Participate in challenges to rank your videos on the leaderboard. 
-            Videos are ranked by total likes - the more likes, the higher you climb!
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+            <div>
+                <span className="pill">Active Challenges</span>
+                <h1 style={{ 
+                    margin: '12px 0 8px', 
+                    fontSize: 'clamp(22px, 2.4vw, 32px)',
+                    letterSpacing: '-0.3px',
+                }}>
+                    Video Challenges & Campaigns
+                </h1>
+                <p style={{ margin: 0, color: 'var(--muted)', maxWidth: '80ch', lineHeight: 1.6 }}>
+                    Participate in challenges to rank your videos on the leaderboard.
+                </p>
+            </div>
+
+            {/* BOTÓN SOLO PARA ADMINS */}
+            {user && user.role === 'admin' && (
+                <Link 
+                    to="/create-campaign" 
+                    className="btn primary"
+                    style={{ 
+                        background: 'white', 
+                        color: 'black', 
+                        fontWeight: 800,
+                        boxShadow: '0 4px 15px rgba(255,255,255,0.2)' 
+                    }}
+                >
+                    + New Campaign
+                </Link>
+            )}
+          </div>
           
           <div style={{
             display: 'grid',
@@ -74,19 +99,6 @@ function CampaignList() {
 
         {/* Campaign Grid */}
         <section>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            marginBottom: '16px',
-          }}>
-            <h2 style={{ margin: 0, fontSize: '18px' }}>Active Campaigns</h2>
-            <span className="pill">
-              <span className="dot"></span>
-              Live
-            </span>
-          </div>
-
           {loading ? (
             <div className="panel" style={{ padding: '40px', textAlign: 'center' }}>
               <span className="muted">Loading campaigns...</span>
@@ -115,36 +127,17 @@ function CampaignList() {
                     </span>
                   </div>
                   
-                  <h3 style={{ 
-                    margin: '0 0 8px', 
-                    fontSize: '18px', 
-                    fontWeight: 800,
-                    letterSpacing: '-0.2px',
-                  }}>
+                  <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800 }}>
                     {camp.name}
                   </h3>
                   
-                  <p style={{ 
-                    margin: '0 0 16px', 
-                    color: 'var(--muted)', 
-                    fontSize: '13px',
-                    lineHeight: 1.5,
-                  }}>
+                  <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: '13px', lineHeight: 1.5 }}>
                     {camp.description}
                   </p>
                   
-                  <div style={{ 
-                    padding: '12px', 
-                    background: 'rgba(0,0,0,0.2)', 
-                    borderRadius: '12px',
-                    marginBottom: '16px',
-                  }}>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                      Ends on
-                    </div>
-                    <div style={{ fontWeight: 700 }}>
-                      {formatDate(camp.endDate)}
-                    </div>
+                  <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>Ends on</div>
+                    <div style={{ fontWeight: 700 }}>{formatDate(camp.endDate)}</div>
                   </div>
                   
                   <Link to={`/campaign/${camp.id}`} className="btn primary" style={{ width: '100%' }}>
@@ -155,16 +148,6 @@ function CampaignList() {
             </div>
           )}
         </section>
-
-        {/* Footer */}
-        <footer style={{ 
-          padding: '32px 0 16px', 
-          color: 'var(--muted)', 
-          fontSize: '12px', 
-          textAlign: 'center' 
-        }}>
-          © {new Date().getFullYear()} ShortVideo — Campaign page
-        </footer>
       </main>
     </div>
   );
