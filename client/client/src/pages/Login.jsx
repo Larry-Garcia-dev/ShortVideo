@@ -32,20 +32,20 @@ function Login() {
         password
       });
 
-      const userData = response.data.user;
+      // CORRECCIÓN: Extraemos user Y token
+      const { user: userData, token } = response.data; 
       
-      // Si el usuario tiene un idioma guardado en la BD, lo respetamos
+      // Lógica de idioma (sin cambios)
       if (userData.language && userData.language !== currentLang) {
         localStorage.setItem('appLanguage', userData.language);
-        // Opcional: setCurrentLang(userData.language) si quisieras actualizar la UI antes de redirigir
-      } else {
-        // Si no, o es igual, nos aseguramos que la BD sepa el idioma actual (opcional, pero buena práctica)
-        // en este caso asumimos que el register ya lo guardó o el usuario lo cambiará después.
       }
 
+      // IMPORTANTE: Guardar el token por separado para que CreateCampaign lo encuentre
+      localStorage.setItem('token', token); 
       localStorage.setItem('user', JSON.stringify(userData));
+      
       navigate('/');
-      window.location.reload(); // Recargar para aplicar idioma globalmente en App
+      window.location.reload(); 
     } catch (err) {
       if (err.response && err.response.status === 403) {
         setError(t.errors.locked);
