@@ -2,7 +2,6 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const User = sequelize.define('User', {
-    // Requerimiento: User Name es el email 
     email: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -11,27 +10,39 @@ const User = sequelize.define('User', {
             isEmail: true
         }
     },
-    // Requerimiento: Password encriptada 
     password: {
         type: DataTypes.STRING,
         allowNull: false
     },
-    // Requerimiento: User Status (Active/Disabled) 
     status: {
         type: DataTypes.ENUM('Active', 'Disabled', 'Locked'),
         defaultValue: 'Active'
     },
-    // Campos necesarios para cumplir la Función 2.2 (Bloqueo tras 3 intentos) 
+    // Req 2.2: Bloqueo de cuenta
     failedLoginAttempts: {
         type: DataTypes.INTEGER,
         defaultValue: 0
     },
     lockUntil: {
-        type: DataTypes.DATE, // Fecha hasta la cual está bloqueado
+        type: DataTypes.DATE,
         allowNull: true
+    },
+    // Req 2.3: Recuperación de contraseña
+    resetPasswordToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    resetPasswordExpire: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    // Req 7: Preferencia de idioma
+    language: {
+        type: DataTypes.ENUM('en', 'es', 'zh'), // Inglés, Español, Chino
+        defaultValue: 'en'
     }
 }, {
-    timestamps: true // Crea automáticamente createdAt y updatedAt
+    timestamps: true
 });
 
 module.exports = User;

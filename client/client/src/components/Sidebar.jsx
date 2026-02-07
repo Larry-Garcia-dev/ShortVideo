@@ -1,7 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
+import { translations } from '../utils/translations';
 
 function Sidebar() {
   const location = useLocation();
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
   
   const isActive = (path) => location.pathname === path;
   
@@ -38,34 +41,34 @@ function Sidebar() {
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
         <Link to="/" style={navItemStyle(isActive('/'))}>
           <span>🏠</span>
-          <span>Home</span>
+          <span>{t.sidebar?.home || 'Home'}</span>
         </Link>
         <Link to="/trending" style={navItemStyle(isActive('/trending'))}>
           <span>🔥</span>
-          <span>Trending</span>
+          <span>{t.sidebar?.trending || 'Trending'}</span>
         </Link>
         <Link to="/following" style={navItemStyle(isActive('/following'))}>
           <span>👥</span>
-          <span>Following</span>
+          <span>{t.sidebar?.following || 'Following'}</span>
         </Link>
         <Link to="/sounds" style={navItemStyle(isActive('/sounds'))}>
           <span>🎵</span>
-          <span>Sounds</span>
+          <span>{t.sidebar?.sounds || 'Sounds'}</span>
         </Link>
         <Link to="/favorites" style={navItemStyle(isActive('/favorites'))}>
           <span>⭐</span>
-          <span>Favorites</span>
+          <span>{t.sidebar?.favorites || 'Favorites'}</span>
         </Link>
         
         <div style={{ borderTop: '1px solid var(--line)', margin: '12px 0' }}></div>
         
         <Link to="/campaigns" style={navItemStyle(isActive('/campaigns'))}>
           <span>🏆</span>
-          <span>Campaigns</span>
+          <span>{t.sidebar?.campaigns || 'Campaigns'}</span>
         </Link>
         <Link to="/upload" style={navItemStyle(isActive('/upload'))}>
           <span>📤</span>
-          <span>Upload</span>
+          <span>{t.sidebar?.upload || 'Upload'}</span>
         </Link>
       </nav>
       
@@ -79,7 +82,8 @@ function Sidebar() {
         borderRadius: '12px',
         border: '1px solid var(--line)',
       }}>
-        <strong>Tip:</strong> <span style={{ color: 'var(--brand2)' }}>Scroll</span> the feed. Click the player area to toggle pause (wireframe).
+        <strong>{t.sidebar?.tipLabel || 'Tip:'}</strong>{' '}
+        <span style={{ color: 'var(--brand2)' }}>{t.sidebar?.tipText || 'Click on a video card to watch it.'}</span>
       </div>
     </aside>
   );

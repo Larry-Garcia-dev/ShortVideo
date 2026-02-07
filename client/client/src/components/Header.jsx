@@ -1,10 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { translations } from '../utils/translations'; // Importar diccionario
 
 function Header({ onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
+  // Leer usuario y preferencia de idioma guardada
   const user = JSON.parse(localStorage.getItem('user'));
+  const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
+  
+  const [currentLang, setCurrentLang] = useState(storedLang);
   const navigate = useNavigate();
+
+  // Obtener textos según el idioma actual
+  const t = translations[currentLang] || translations.en;
+
+  useEffect(() => {
+    // Sincronizar idioma si cambia externamente (opcional)
+    localStorage.setItem('appLanguage', currentLang);
+  }, [currentLang]);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -17,6 +31,29 @@ function Header({ onSearch }) {
     if (onSearch) {
       onSearch(e.target.value);
     }
+  };
+
+  const handleLanguageChange = async (e) => {
+    const newLang = e.target.value;
+    setCurrentLang(newLang);
+    localStorage.setItem('appLanguage', newLang);
+    
+    // Si hay usuario, actualizar su preferencia en BD
+    if (user) {
+      try {
+        await axios.put('http://localhost:5000/api/users/language', {
+          userId: user.id,
+          language: newLang
+        });
+        // Actualizar usuario en storage
+        user.language = newLang;
+        localStorage.setItem('user', JSON.stringify(user));
+      } catch (err) {
+        console.error("Error updating language preference", err);
+      }
+    }
+    // Recargar para aplicar cambios en toda la app (método simple)
+    window.location.reload(); 
   };
 
   return (
@@ -47,34 +84,56 @@ function Header({ onSearch }) {
             border: '1px solid rgba(255,255,255,.18)',
             boxShadow: '0 18px 45px rgba(124,92,255,.18)',
           }} aria-hidden="true"></div>
-          <span style={{ fontSize: '16px' }}>ShortVideo</span>
+          <span style={{ fontSize: '16px' }}>{t.common.appName}</span>
         </Link>
 
         {/* Search */}
-        <div style={{ flex: 1, maxWidth: '520px' }}>
+        <div className="header-search-wrapper">
+          <span className="header-search-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
           <input
             type="text"
-            className="input"
-            placeholder="🔍 Search videos, creators, hashtags"
+            className="header-search-input"
+            placeholder={t.header.searchPlaceholder}
             value={searchQuery}
             onChange={handleSearchChange}
-            style={{
-              width: '100%',
-              borderRadius: '20px',
-              padding: '10px 18px',
-              background: 'rgba(255,255,255,0.06)',
-            }}
           />
         </div>
 
-        {/* Actions */}
+        {/* Actions & Language */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          
+          {/* Language Globe Selector */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: '4px' }}>
+            <span style={{ fontSize: '16px', marginRight: '4px' }} title="Change Language">🌐</span> 
+            <select 
+              value={currentLang}
+              onChange={handleLanguageChange}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--muted)', 
+                fontSize: '13px',
+                cursor: 'pointer',
+                outline: 'none',
+                fontWeight: 600
+              }}
+            >
+              <option value="en" style={{background: 'var(--bg)'}}>EN</option>
+              <option value="es" style={{background: 'var(--bg)'}}>ES</option>
+              <option value="zh" style={{background: 'var(--bg)'}}>ZH</option>
+            </select>
+          </div>
+
           {user ? (
             <>
               <Link 
                 to="/upload" 
                 className="iconBtn"
-                title="Upload"
+                title={t.header.upload}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -86,20 +145,6 @@ function Header({ onSearch }) {
               >
                 ➕
               </Link>
-              <button 
-                className="iconBtn"
-                title="Notifications"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                🔔
-              </button>
               <div 
                 style={{
                   width: '36px',
@@ -120,39 +165,13 @@ function Header({ onSearch }) {
               </div>
             </>
           ) : (
-            <>
-              <button 
-                className="iconBtn"
-                title="Notifications"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                🔔
-              </button>
-              <Link 
-                to="/login" 
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: 'var(--panel)',
-                  border: '1px solid var(--line)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                }}
-              >
-                👤
-              </Link>
-            </>
+            <Link 
+              to="/login" 
+              className="btn primary" 
+              style={{ padding: '8px 16px', fontSize: '13px' }}
+            >
+              {t.header.login}
+            </Link>
           )}
         </div>
       </div>

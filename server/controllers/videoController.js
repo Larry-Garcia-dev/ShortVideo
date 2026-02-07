@@ -8,26 +8,40 @@ const fs = require('fs');
 // pero asegúrate de NO borrar uploadVideo.
 
 exports.uploadVideo = async (req, res) => {
-    // ... (Tu código de uploadVideo que ya funciona) ...
-    // COPIA AQUÍ TU LÓGICA DE UPLOAD QUE YA TIENES
     try {
-        if (!req.file) return res.status(400).json({ message: 'No video' });
-        const videoPath = req.file.path;
+        const videoFile = req.files?.videoFile?.[0];
+        const thumbnailFile = req.files?.thumbnail?.[0];
+
+        if (!videoFile) return res.status(400).json({ message: 'No video file provided' });
+        
+        const videoPath = videoFile.path;
         const duration = await getVideoDurationInSeconds(videoPath, ffprobe.path);
         
         if (duration > 600) {
             fs.unlinkSync(videoPath);
-            return res.status(400).json({ message: 'Video excede 10 min.' });
+            if (thumbnailFile) fs.unlinkSync(thumbnailFile.path);
+            return res.status(400).json({ message: 'Video exceeds 10 minutes limit.' });
+        }
+
+        // Parse tags from comma-separated string
+        let tags = [];
+        if (req.body.tags) {
+            try {
+                tags = typeof req.body.tags === 'string' ? req.body.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+            } catch { tags = []; }
         }
 
         const newVideo = await Video.create({
             title: req.body.title,
             description: req.body.description,
             videoUrl: videoPath,
+            thumbnailUrl: thumbnailFile ? thumbnailFile.path : null,
+            category: req.body.category || 'General',
+            tags: tags,
             duration: duration,
             userId: req.body.userId
         });
-        res.status(201).json({ message: 'Subido', video: newVideo });
+        res.status(201).json({ message: 'Video uploaded successfully', video: newVideo });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

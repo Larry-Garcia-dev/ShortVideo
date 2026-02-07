@@ -1,45 +1,48 @@
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./config/db');
-const path = require('path'); // Importante para la carpeta uploads
+const path = require('path');
 require('dotenv').config();
 
-// --- 1. IMPORTAR MODELOS ---
-const { User, Video, Comment, Like, Campaign } = require('./models');
+// Modelos
+const { User, Video, Comment, Like, Campaign, Follow } = require('./models');
 
-// --- 2. IMPORTAR RUTAS (Aquí faltaba la de videos) ---
+// Rutas
 const authRoutes = require('./routes/authRoutes');
-const videoRoutes = require('./routes/videoRoutes'); // <--- ¡ESTA ES LA QUE FALTABA!
-const campaignRoutes = require('./routes/campaignRoutes'); // <--- IMPORTAR
+const videoRoutes = require('./routes/videoRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
+const userRoutes = require('./routes/userRoutes'); // Nueva ruta
+
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Para parsear form-data si es necesario
 
-// Hacer pública la carpeta uploads para ver los videos desde el navegador
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// --- 3. USAR RUTAS ---
+// Endpoints
 app.use('/api/auth', authRoutes);
-app.use('/api/videos', videoRoutes); // Ahora sí funcionará porque videoRoutes ya existe
-app.use('/api/campaigns', campaignRoutes); // <--- USAR RUTA
+app.use('/api/videos', videoRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/users', userRoutes); // Endpoint de usuarios
+
+// Static Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-// Ruta base
+
 app.get('/', (req, res) => {
-    res.send('API de ShortVideo funcionando 🚀');
+    res.send('API ShortVideo v1.0.0 Online');
 });
 
-// Arrancar servidor
+// Server Start
 const PORT = process.env.PORT || 5000;
 
-sequelize.sync({ force: false })
+sequelize.sync({ alter: true }) // 'alter: true' actualiza las tablas sin borrar datos
     .then(() => {
-        console.log('Tablas sincronizadas con MySQL');
+        console.log('✅ Base de datos sincronizada');
         app.listen(PORT, () => {
-            console.log(`Servidor corriendo en el puerto ${PORT}`);
+            console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
         });
     })
     .catch(error => {
-        console.error('Error al conectar con la BD:', error);
+        console.error('❌ Error conexión BD:', error);
     });

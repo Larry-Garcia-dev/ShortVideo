@@ -1,26 +1,78 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { translations } from '../utils/translations';
 
-function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
+const API = 'http://localhost:5000/api';
+
+function formatCount(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
+function RightPanel({ videos = [], currentVideoIndex = 0 }) {
+  const [topCreators, setTopCreators] = useState([]);
   const [topVideos, setTopVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingCreators, setLoadingCreators] = useState(true);
+  const [loadingVideos, setLoadingVideos] = useState(true);
 
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+  // Fetch top creators
+  const fetchCreators = useCallback(() => {
+    const params = user ? `?userId=${user.id}` : '';
+    axios.get(`${API}/users/top-creators${params}`)
+      .then(res => setTopCreators(res.data))
+      .catch(() => setTopCreators([]))
+      .finally(() => setLoadingCreators(false));
+  }, [user?.id]);
+
+  // Fetch top videos
   useEffect(() => {
-    axios.get('http://localhost:5000/api/videos')
+    axios.get(`${API}/videos`)
       .then(res => {
         const sorted = res.data.sort((a, b) => b.views - a.views).slice(0, 5);
         setTopVideos(sorted);
       })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+      .catch(() => setTopVideos([]))
+      .finally(() => setLoadingVideos(false));
   }, []);
 
-  const trendingCreators = [
-    { name: '@creator_one', followers: '10.2K' },
-    { name: '@creator_two', followers: '8.5K' },
-    { name: '@creator_three', followers: '6.1K' },
-  ];
+  useEffect(() => {
+    fetchCreators();
+  }, [fetchCreators]);
+
+  // Toggle follow
+  const handleToggleFollow = async (creatorId) => {
+    if (!user) {
+      alert(t.home?.signInToFollow || 'Sign in to follow creators');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API}/users/toggle-follow`, {
+        followerId: user.id,
+        followingId: creatorId
+      });
+
+      // Update local state
+      setTopCreators(prev => prev.map(c => {
+        if (c.id === creatorId) {
+          return {
+            ...c,
+            isFollowing: res.data.isFollowing,
+            followers: res.data.followers
+          };
+        }
+        return c;
+      }));
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
 
   const trendingHashtags = [
     { tag: '#daily', count: '2.3M' },
@@ -28,112 +80,104 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
     { tag: '#tech', count: '945K' },
   ];
 
-  // Get next videos for queue
-  const upNextVideos = videos.slice(currentVideoIndex + 1, currentVideoIndex + 4);
-
   return (
-    <aside style={{
-      width: '280px',
-      borderLeft: '1px solid var(--line)',
-      padding: '16px',
-      overflowY: 'auto',
-      height: 'calc(100vh - 60px)',
-      position: 'sticky',
-      top: '60px',
-      background: 'rgba(7, 10, 18, 0.3)',
-    }}>
-      {/* Trending Creators */}
-      <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Trending Creators</div>
-        {trendingCreators.map((creator, i) => (
-          <div key={i} style={{
-            padding: '10px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: i < trendingCreators.length - 1 ? '1px solid var(--line)' : 'none',
-          }}>
-            <span style={{ color: 'var(--muted)', fontSize: '14px' }}>{creator.name}</span>
-            <button className="miniBtn" style={{ 
-              background: 'var(--panel)',
-              border: '1px solid var(--line)',
-              color: 'var(--text)',
-              padding: '5px 12px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}>
-              Follow
-            </button>
+    <aside className="right-panel">
+      {/* Trending Creators - Real data */}
+      <div className="panel rp-section">
+        <div className="rp-section-header">
+          <span className="rp-section-title">{t.rightPanel?.trendingCreators || 'Trending Creators'}</span>
+        </div>
+
+        {loadingCreators ? (
+          <div className="rp-loading">{t.common?.loading || 'Loading...'}</div>
+        ) : topCreators.length === 0 ? (
+          <div className="rp-empty">{t.rightPanel?.noCreators || 'No creators yet'}</div>
+        ) : (
+          <div className="rp-creator-list">
+            {topCreators.map((creator, i) => (
+              <div key={creator.id} className="rp-creator-item">
+                <div className="rp-creator-rank">{i + 1}</div>
+                <div className="rp-creator-avatar">
+                  {creator.username?.charAt(1)?.toUpperCase() || '?'}
+                </div>
+                <div className="rp-creator-info">
+                  <div className="rp-creator-name">{creator.username}</div>
+                  <div className="rp-creator-stats">
+                    <span>{formatCount(creator.followers)} {t.rightPanel?.followersLabel || 'followers'}</span>
+                    <span className="rp-stat-dot" />
+                    <span>{formatCount(creator.totalViews)} {t.home?.views || 'views'}</span>
+                  </div>
+                  <div className="rp-creator-stats-secondary">
+                    <span>{formatCount(creator.totalLikes)} {t.rightPanel?.likesLabel || 'likes'}</span>
+                    <span className="rp-stat-dot" />
+                    <span>{creator.videoCount} {t.rightPanel?.videosLabel || 'videos'}</span>
+                  </div>
+                </div>
+                <button
+                  className={`rp-follow-btn ${creator.isFollowing ? 'following' : ''}`}
+                  onClick={() => handleToggleFollow(creator.id)}
+                >
+                  {creator.isFollowing
+                    ? (t.home?.following_btn || 'Following')
+                    : (t.home?.follow || 'Follow')
+                  }
+                </button>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {/* Trending Hashtags */}
-      <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Trending Hashtags</div>
+      <div className="panel rp-section">
+        <div className="rp-section-header">
+          <span className="rp-section-title">{t.rightPanel?.trendingHashtags || 'Trending Hashtags'}</span>
+        </div>
         {trendingHashtags.map((item, i) => (
-          <div key={i} style={{
-            padding: '10px 0',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: i < trendingHashtags.length - 1 ? '1px solid var(--line)' : 'none',
-          }}>
-            <span style={{ color: 'var(--brand2)', fontSize: '14px' }}>{item.tag}</span>
-            <button className="miniBtn" style={{ 
-              background: 'var(--panel)',
-              border: '1px solid var(--line)',
-              color: 'var(--text)',
-              padding: '5px 12px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '12px',
-            }}>
-              Open
-            </button>
+          <div key={i} className="rp-hashtag-item">
+            <span className="rp-hashtag-tag">{item.tag}</span>
+            <span className="rp-hashtag-count">{item.count} posts</span>
           </div>
         ))}
       </div>
 
       {/* Up Next Queue */}
-      <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Up Next (Queue)</div>
-        {loading ? (
-          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Loading...</div>
+      <div className="panel rp-section">
+        <div className="rp-section-header">
+          <span className="rp-section-title">{t.rightPanel?.upNext || 'Up Next'}</span>
+        </div>
+        {loadingVideos ? (
+          <div className="rp-loading">{t.common?.loading || 'Loading...'}</div>
         ) : topVideos.length === 0 ? (
-          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>No videos in queue</div>
+          <div className="rp-empty">{t.rightPanel?.noQueue || 'No videos in queue'}</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="rp-queue-list">
             {topVideos.slice(0, 3).map((video, index) => (
-              <div 
-                key={video.id} 
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '8px 0',
-                  borderBottom: index < 2 ? '1px solid var(--line)' : 'none',
-                }}
-              >
-                <span style={{ color: 'var(--muted)', fontSize: '14px' }}>
-                  {video.title?.slice(0, 20) || `Video ${String.fromCharCode(65 + index)}`}
-                </span>
-                <Link 
+              <div key={video.id} className="rp-queue-item">
+                <div className="rp-queue-thumb">
+                  {video.thumbnailUrl ? (
+                    <img src={`${API.replace('/api', '')}/${video.thumbnailUrl}`} alt="" />
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                  )}
+                </div>
+                <div className="rp-queue-info">
+                  <div className="rp-queue-title">
+                    {video.title?.slice(0, 28) || `Video ${String.fromCharCode(65 + index)}`}
+                  </div>
+                  <div className="rp-queue-views">
+                    {formatCount(video.views)} {t.home?.views || 'views'}
+                  </div>
+                </div>
+                <Link
                   to={`/watch/${video.id}`}
-                  className="miniBtn"
-                  style={{ 
-                    background: 'var(--panel)',
-                    border: '1px solid var(--line)',
-                    color: 'var(--text)',
-                    padding: '5px 12px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    textDecoration: 'none',
-                  }}
+                  className="rp-play-btn"
                 >
-                  Play
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
                 </Link>
               </div>
             ))}
@@ -142,13 +186,8 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
       </div>
 
       {/* Footer */}
-      <div style={{ 
-        marginTop: '20px', 
-        fontSize: '12px', 
-        color: 'var(--muted)',
-        padding: '0 4px',
-      }}>
-        © 2026 ShortVideo App
+      <div className="rp-footer">
+        &copy; 2026 ShortVideo App
         <br/>
         <span style={{ opacity: 0.7 }}>Terms & Privacy</span>
       </div>
