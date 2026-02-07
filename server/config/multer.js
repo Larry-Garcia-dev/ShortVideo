@@ -1,4 +1,3 @@
-// Archivo: server/config/multer.js
 const multer = require('multer');
 const path = require('path');
 
@@ -7,36 +6,37 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        // Obtenemos el título del body (si llega antes que el archivo) 
-        // o usamos el nombre original limpio
+        // Sanitización del nombre de archivo
         const baseName = req.body.title 
             ? req.body.title 
-            : file.originalname.split('.')[0];
+            : path.parse(file.originalname).name;
 
-        // 1. Convertir a minúsculas
-        // 2. Reemplazar espacios y caracteres no deseados por guiones
-        // 3. Recortar a 20 caracteres para que sea corto
         const cleanName = baseName
             .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^a-z0-9-]/g, '')
-            .substring(0, 20);
+            .replace(/[^a-z0-9]/g, '-') // Solo letras y números
+            .replace(/-+/g, '-') // Eliminar guiones repetidos
+            .substring(0, 30);
 
         const ext = path.extname(file.originalname);
-        
-        // Formato final: video-1738291-mi-titulo.mp4
-        cb(null, `v-${Date.now()}-${cleanName}${ext}`);
+        // Timestamp único + nombre limpio
+        cb(null, `vid-${Date.now()}-${cleanName}${ext}`);
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('video/')) {
+    // Validar tipo MIME estricto
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Formato no soportado'), false);
+        cb(new Error('Formato no soportado. Solo MP4, MOV, AVI, WEBM.'), false);
     }
 };
 
-const upload = multer({ storage: storage, fileFilter: fileFilter });
+const upload = multer({ 
+    storage: storage, 
+    fileFilter: fileFilter,
+    limits: { fileSize: 500 * 1024 * 1024 } // Límite opcional de 500MB
+});
 
 module.exports = upload;
