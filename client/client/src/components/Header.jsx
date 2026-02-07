@@ -88,19 +88,18 @@ function Header({ onSearch }) {
         </Link>
 
         {/* Search */}
-        <div style={{ flex: 1, maxWidth: '520px' }}>
+        <div className="header-search-wrapper">
+          <span className="header-search-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
           <input
             type="text"
-            className="input"
+            className="header-search-input"
             placeholder={t.header.searchPlaceholder}
             value={searchQuery}
             onChange={handleSearchChange}
-            style={{
-              width: '100%',
-              borderRadius: '20px',
-              padding: '10px 18px',
-              background: 'rgba(255,255,255,0.06)',
-            }}
           />
         </div>
 

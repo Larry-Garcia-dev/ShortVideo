@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { translations } from '../utils/translations';
 
 function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
   const [topVideos, setTopVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
 
   useEffect(() => {
     axios.get('http://localhost:5000/api/videos')
@@ -44,7 +47,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
     }}>
       {/* Trending Creators */}
       <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Trending Creators</div>
+        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>{t.rightPanel?.trendingCreators || 'Trending Creators'}</div>
         {trendingCreators.map((creator, i) => (
           <div key={i} style={{
             padding: '10px 0',
@@ -63,7 +66,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
               cursor: 'pointer',
               fontSize: '12px',
             }}>
-              Follow
+              {t.home?.follow || 'Follow'}
             </button>
           </div>
         ))}
@@ -71,7 +74,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
 
       {/* Trending Hashtags */}
       <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Trending Hashtags</div>
+        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>{t.rightPanel?.trendingHashtags || 'Trending Hashtags'}</div>
         {trendingHashtags.map((item, i) => (
           <div key={i} style={{
             padding: '10px 0',
@@ -90,7 +93,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
               cursor: 'pointer',
               fontSize: '12px',
             }}>
-              Open
+              {t.rightPanel?.open || 'Open'}
             </button>
           </div>
         ))}
@@ -98,11 +101,11 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
 
       {/* Up Next Queue */}
       <div className="panel" style={{ padding: '14px', marginBottom: '16px' }}>
-        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>Up Next (Queue)</div>
+        <div style={{ fontWeight: 800, marginBottom: '12px', fontSize: '14px' }}>{t.rightPanel?.upNext || 'Up Next'}</div>
         {loading ? (
-          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>Loading...</div>
+          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>{t.common?.loading || 'Loading...'}</div>
         ) : topVideos.length === 0 ? (
-          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>No videos in queue</div>
+          <div style={{ color: 'var(--muted)', fontSize: '13px' }}>{t.rightPanel?.noQueue || 'No videos in queue'}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {topVideos.slice(0, 3).map((video, index) => (
@@ -133,7 +136,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0, onPlayVideo }) {
                     textDecoration: 'none',
                   }}
                 >
-                  Play
+                  {t.rightPanel?.play || 'Play'}
                 </Link>
               </div>
             ))}
