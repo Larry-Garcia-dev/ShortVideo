@@ -1,42 +1,59 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// Ensure directories exist
+['uploads', 'uploads/thumbnails'].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        if (file.fieldname === 'thumbnail') {
+            cb(null, 'uploads/thumbnails/');
+        } else {
+            cb(null, 'uploads/');
+        }
     },
     filename: (req, file, cb) => {
-        // Sanitización del nombre de archivo
         const baseName = req.body.title 
             ? req.body.title 
             : path.parse(file.originalname).name;
 
         const cleanName = baseName
             .toLowerCase()
-            .replace(/[^a-z0-9]/g, '-') // Solo letras y números
-            .replace(/-+/g, '-') // Eliminar guiones repetidos
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
             .substring(0, 30);
 
         const ext = path.extname(file.originalname);
-        // Timestamp único + nombre limpio
-        cb(null, `vid-${Date.now()}-${cleanName}${ext}`);
+        const prefix = file.fieldname === 'thumbnail' ? 'thumb' : 'vid';
+        cb(null, `${prefix}-${Date.now()}-${cleanName}${ext}`);
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    // Validar tipo MIME estricto
-    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
+    if (file.fieldname === 'thumbnail') {
+        const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (allowedImages.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Thumbnail: solo JPG, PNG, WEBP, GIF.'), false);
+        }
     } else {
-        cb(new Error('Formato no soportado. Solo MP4, MOV, AVI, WEBM.'), false);
+        const allowedVideos = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
+        if (allowedVideos.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Video: solo MP4, MOV, AVI, WEBM.'), false);
+        }
     }
 };
 
 const upload = multer({ 
     storage: storage, 
     fileFilter: fileFilter,
-    limits: { fileSize: 500 * 1024 * 1024 } // Límite opcional de 500MB
+    limits: { fileSize: 500 * 1024 * 1024 }
 });
 
 module.exports = upload;

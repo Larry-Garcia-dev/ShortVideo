@@ -3,7 +3,10 @@ const router = express.Router();
 const videoController = require('../controllers/videoController');
 const upload = require('../config/multer');
 
-router.post('/upload', upload.single('videoFile'), videoController.uploadVideo);
+router.post('/upload', upload.fields([
+    { name: 'videoFile', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 }
+]), videoController.uploadVideo);
 router.get('/', videoController.getAllVideos);
 
 // NUEVAS RUTAS

@@ -5,7 +5,7 @@ const path = require('path');
 require('dotenv').config();
 
 // Modelos
-const { User, Video, Comment, Like, Campaign } = require('./models');
+const { User, Video, Comment, Like, Campaign, Follow } = require('./models');
 
 // Rutas
 const authRoutes = require('./routes/authRoutes');
