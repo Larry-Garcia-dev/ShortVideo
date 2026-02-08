@@ -10,9 +10,22 @@ const User = sequelize.define('User', {
             isEmail: true
         }
     },
+    // password: {
+    //     type: DataTypes.STRING,
+    //     allowNull: false
+    // },
     password: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true // CAMBIO: Permitir nulo para usuarios de Google
+    },
+    googleId: { // NUEVO: Para identificar usuarios de Google
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true
+    },
+    avatar: { // Opcional: Para guardar la foto de Google
+        type: DataTypes.STRING,
+        allowNull: true
     },
     role: {
         type: DataTypes.ENUM('user', 'admin'),
