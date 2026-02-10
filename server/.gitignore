@@ -35,3 +35,4 @@ dist-ssr
 uploads/
 # ¡Pero NO ignorar el archivo .gitkeep!
 !server/uploads/.gitkeep
+client/client/.env
