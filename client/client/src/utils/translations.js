@@ -551,7 +551,7 @@ export const translations = {
       searchPlaceholder: '搜索视频，创作者...',
       upload: '上传',
       login: '登录',
-      logout: '登出',
+      logout: '退出',
     },
     home: {
       title: '探索视频',
@@ -582,7 +582,7 @@ export const translations = {
     },
     login: {
       title: '欢迎回来 👋',
-      subtitle: '登录以继续使用 ShortVideo',
+      subtitle: '登录以继续使用SceneX',
       emailLabel: '📧 电子邮件',
       emailPlaceholder: 'you@example.com',
       passwordLabel: '🔒 密码',

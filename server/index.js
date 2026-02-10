@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
     res.send('API ShortVideo v1.0.0 Online');
 });
 
-// Server Start
+// Server Start hola mundo
 const PORT = process.env.PORT || 5000;
 
 sequelize.sync({ alter: true }) // 'alter: true' actualiza las tablas sin borrar datos

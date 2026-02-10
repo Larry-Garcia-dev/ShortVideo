@@ -59,9 +59,37 @@ function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    alert('Google login coming soon! 🚀');
-  };
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        // Enviar el access token al backend
+        const res = await axios.post('http://localhost:5000/api/auth/google', {
+          accessToken: tokenResponse.access_token
+        });
+
+        // Guardar sesión (Igual que en tu login normal)
+        const { user: userData, token } = res.data;
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        if (userData.language) {
+            localStorage.setItem('appLanguage', userData.language);
+        }
+
+        navigate('/');
+        window.location.reload();
+      } catch (err) {
+        console.error(err);
+        setError('Error iniciando sesión con Google');
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Fallo la conexión con Google');
+      setLoading(false);
+    }
+  });
 
   return (
     <div style={{
@@ -128,18 +156,16 @@ function Login() {
           {/* Google Button */}
           <button
             type="button"
-            onClick={handleGoogleLogin}
+            onClick={() => handleGoogleLogin()} // Vinculamos la función aquí
+            disabled={loading}
             style={{
-              width: '100%', padding: '12px', marginBottom: '16px', border: '1px solid var(--line)',
-              borderRadius: '12px', background: 'var(--panel)', color: 'var(--text)',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: '10px', fontSize: '14px', fontWeight: 600, transition: 'all 0.15s ease',
+              /* ... tus estilos actuales ... */
+              opacity: loading ? 0.7 : 1
             }}
-            onMouseEnter={(e) => e.target.style.background = 'var(--panel2)'}
-            onMouseLeave={(e) => e.target.style.background = 'var(--panel)'}
+            // ...
           >
-            <span style={{ fontSize: '16px' }}>G</span> {/* Icono simple si no carga SVG */}
-            {t.login.googleLogin}
+            <span style={{ fontSize: '16px' }}>G</span> 
+            {loading ? 'Connecting...' : t.login.googleLogin}
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', gap: '12px' }}>

@@ -175,3 +175,69 @@ exports.resetPassword = async (req, res) => {
         res.status(500).json({ message: 'Error al resetear contraseña' });
     }
 };
+
+const axios = require('axios'); // Asegúrate de importarlo arriba
+
+// ... (tus funciones register, login, etc.)
+
+exports.googleLogin = async (req, res) => {
+    try {
+        const { accessToken } = req.body; // Recibimos el token del front
+
+        // 1. Validar el token con Google
+        const googleResponse = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        const { email, sub: googleId, picture, locale } = googleResponse.data;
+
+        // 2. Buscar si el usuario ya existe
+        let user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            // 3. Si no existe, lo creamos
+            user = await User.create({
+                email,
+                googleId,
+                avatar: picture,
+                language: locale === 'zh' ? 'zh' : (locale === 'es' ? 'es' : 'en'), // Adaptamos el idioma
+                role: 'user',
+                status: 'Active',
+                password: null // Sin contraseña
+            });
+        } else {
+            // Si existe pero no tenía googleId, lo actualizamos
+            if (!user.googleId) {
+                await user.update({ googleId, avatar: picture });
+            }
+            
+            // Verificar bloqueo (tu lógica existente)
+            if (user.status === 'Locked') {
+                return res.status(403).json({ message: 'Cuenta bloqueada.' });
+            }
+        }
+
+        // 4. Generar tu propio JWT (Igual que en tu login normal)
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET || 'secret_key',
+            { expiresIn: '24h' }
+        );
+
+        res.status(200).json({
+            message: 'Google login exitoso',
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                language: user.language,
+                avatar: user.avatar
+            }
+        });
+
+    } catch (error) {
+        console.error("Google Auth Error:", error.response?.data || error.message);
+        res.status(401).json({ message: 'Token de Google inválido o expirado' });
+    }
+};
