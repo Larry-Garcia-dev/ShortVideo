@@ -65,7 +65,13 @@ function Login() {
       setLoading(true);
       try {
         // Enviar el access token al backend
-        const res = await axios.post('http://localhost:5000/api/auth/google', {
+        // DETECTAR ENTORNO: Si es producción usa tu dominio, si no, localhost
+        const API_URL = import.meta.env.MODE === 'production' 
+            ? 'http://47.87.37.35.nip.io/api/auth/google' 
+            : 'http://localhost:5000/api/auth/google';
+
+        // Enviar el access token al backend CORRECTO
+        const res = await axios.post(API_URL, {
           accessToken: tokenResponse.access_token
         });
 
