@@ -44,9 +44,11 @@ exports.getTopCreators = async (req, res) => {
                     attributes: [],
                 }
             ],
-            group: ['User.id'],
-            having: Sequelize.literal('COUNT("Videos"."id") > 0'),
-            order: [[Sequelize.literal('"totalViews"'), 'DESC']],
+           group: ['User.id'],
+            // CORRECCIÓN AQUÍ: Cambiar " por ` (backticks)
+            having: Sequelize.literal('COUNT(`Videos`.`id`) > 0'), 
+            // CORRECCIÓN AQUÍ: Cambiar "totalViews" por `totalViews` o simplemente totalViews
+            order: [[Sequelize.literal('totalViews'), 'DESC']], 
             limit: 10,
             subQuery: false,
         });
