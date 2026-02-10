@@ -101,38 +101,44 @@ function Login() {
       padding: '20px',
       position: 'relative'
     }}>
-      {/* Selector de Idioma Flotante */}
-      <div style={{ position: 'absolute', top: '20px', right: '20px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-        <span style={{ fontSize: '18px' }}>🌐</span>
-        <select 
-          value={currentLang}
-          onChange={(e) => setCurrentLang(e.target.value)}
-          style={{
-            background: 'var(--panel)',
-            color: 'var(--text)',
-            border: '1px solid var(--line)',
-            borderRadius: '8px',
-            padding: '6px 10px',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="en">English</option>
-          <option value="es">Español</option>
-          <option value="zh">中文</option>
-        </select>
-      </div>
-
       <div style={{ width: '100%', maxWidth: '400px' }}>
-        {/* Logo */}
-        <div style={{ 
-          display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px', justifyContent: 'center'
+        {/* Logo + Language selector row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '32px',
         }}>
-          <div style={{
-            width: '40px', height: '40px', borderRadius: '14px',
-            background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%), linear-gradient(135deg, rgba(124,92,255,1), rgba(25,211,255,.8))',
-            border: '1px solid rgba(255,255,255,.18)', boxShadow: '0 18px 45px rgba(124,92,255,.18)',
-          }} aria-hidden="true"></div>
-          <span style={{ fontSize: '24px', fontWeight: 850, letterSpacing: '-0.3px' }}>{t.common.appName}</span>
+          {/* Brand Logo */}
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <img
+              src="/logo.png"
+              alt={t.common.appName}
+              style={{ height: '44px', width: 'auto', objectFit: 'contain' }}
+            />
+          </Link>
+
+          {/* Language Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+            <span style={{ fontSize: '16px' }}>🌐</span>
+            <select
+              value={currentLang}
+              onChange={(e) => setCurrentLang(e.target.value)}
+              style={{
+                background: 'var(--panel)',
+                color: 'var(--text)',
+                border: '1px solid var(--line)',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: '13px',
+              }}
+            >
+              <option value="en">English</option>
+              <option value="es">Espanol</option>
+              <option value="zh">中文</option>
+            </select>
+          </div>
         </div>
 
         {/* Login Card */}
