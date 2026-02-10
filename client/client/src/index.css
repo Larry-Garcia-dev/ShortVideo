@@ -1244,7 +1244,7 @@ input[type="range"] {
 
 .app-layout {
   display: grid;
-  grid-template-columns: 220px 1fr 320px;
+  grid-template-columns: 220px 1fr 280px;
   height: calc(100vh - 60px);
 }
 
