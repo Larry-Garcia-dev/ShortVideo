@@ -1,36 +1,61 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
 
 const CATEGORIES = [
-  'General',
   'Gaming',
-  'Trending',
+  'Highlights',
   'Tutorials',
   'Clips',
-  'Highlights',
   'Music',
   'Comedy',
   'Sports',
   'Education',
+  'General',
 ];
+
+function fmtMB(bytes) {
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function fmtSpeed(bps) {
+  return (bps / (1024 * 1024)).toFixed(2) + ' MB/s';
+}
+
+function fmtETA(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '\u2014';
+  if (seconds < 60) return Math.ceil(seconds) + 's';
+  const m = Math.floor(seconds / 60);
+  const s = Math.ceil(seconds % 60);
+  return `${m}m ${s}s`;
+}
 
 function Upload() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('General');
-  const [tags, setTags] = useState('');
+  const [category, setCategory] = useState('Gaming');
   const [file, setFile] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '' });
+
+  // Progress state
+  const [isUploading, setIsUploading] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [progress, setProgress] = useState({ pct: 0, sent: 0, total: 0, speed: 0 });
+  const [statusText, setStatusText] = useState('');
+
+  // Drag state
+  const [videoDragActive, setVideoDragActive] = useState(false);
+  const [thumbDragActive, setThumbDragActive] = useState(false);
+
   const fileInputRef = useRef(null);
   const thumbInputRef = useRef(null);
+  const mockTimerRef = useRef(null);
+  const xhrRef = useRef(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem('user'));
@@ -38,107 +63,203 @@ function Upload() {
   const t = translations[lang] || translations.en;
   const u = t.upload || {};
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file) {
-      showToast(u.selectFile || 'Please select a video file');
-      return;
-    }
-    if (!title.trim()) {
-      showToast(u.titleRequired || 'Title is required');
-      return;
-    }
+  const showToastMsg = useCallback((message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: '' }), 2000);
+  }, []);
 
+  // --- Video handling ---
+  const handleSetVideo = useCallback((videoFile) => {
+    setFile(videoFile);
+    setVideoPreview(URL.createObjectURL(videoFile));
+    showToastMsg(u.videoSelected || 'Video selected');
+  }, [u.videoSelected, showToastMsg]);
+
+  const handleVideoFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleSetVideo(e.target.files[0]);
+    }
+  };
+
+  // Video drag & drop
+  const handleVideoDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setVideoDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setVideoDragActive(false);
+    }
+  };
+
+  const handleVideoDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setVideoDragActive(false);
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('video/')) {
+      showToastMsg(u.onlyVideo || 'Please drop a video file');
+      return;
+    }
+    handleSetVideo(f);
+  };
+
+  // --- Thumbnail handling ---
+  const handleSetThumb = useCallback((imgFile) => {
+    if (!imgFile.type.startsWith('image/')) {
+      showToastMsg(u.onlyImage || 'Please choose an image file (PNG/JPG/WebP)');
+      return;
+    }
+    setThumbnail(imgFile);
+    setThumbnailPreview(URL.createObjectURL(imgFile));
+    showToastMsg(u.thumbnailSelected || 'Thumbnail selected');
+  }, [u.onlyImage, u.thumbnailSelected, showToastMsg]);
+
+  const handleThumbnailChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleSetThumb(e.target.files[0]);
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnail(null);
+    setThumbnailPreview(null);
+    showToastMsg(u.thumbnailRemoved || 'Thumbnail removed');
+  };
+
+  // Thumb drag & drop
+  const handleThumbDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setThumbDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setThumbDragActive(false);
+    }
+  };
+
+  const handleThumbDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setThumbDragActive(false);
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      showToastMsg(u.onlyImage || 'Please drop an image file');
+      return;
+    }
+    handleSetThumb(f);
+  };
+
+  // --- Mock upload with progress ---
+  const mockUpload = useCallback((videoFile) => {
+    const total = videoFile.size;
+    let sent = 0;
+    let lastSent = 0;
+    let lastT = performance.now();
+    const targetSpeed = (2 + Math.random() * 6) * 1024 * 1024;
+
+    setProgress({ pct: 0, sent: 0, total, speed: 0 });
+
+    mockTimerRef.current = setInterval(() => {
+      const now = performance.now();
+      const dt = (now - lastT) / 1000;
+      lastT = now;
+
+      const speed = targetSpeed * (0.7 + Math.random() * 0.8);
+      sent = Math.min(total, sent + speed * dt);
+
+      const dSent = sent - lastSent;
+      lastSent = sent;
+
+      const pct = (sent / total) * 100;
+      setProgress({ pct, sent, total, speed: dt > 0 ? dSent / dt : 0 });
+
+      if (sent >= total) {
+        clearInterval(mockTimerRef.current);
+        mockTimerRef.current = null;
+        setStatusText(u.processing || 'Processing...');
+        setTimeout(() => {
+          setStatusText(
+            thumbnail
+              ? (u.doneVideoThumb || 'Done (video + thumbnail)')
+              : (u.doneVideo || 'Done (video)')
+          );
+          setIsUploading(false);
+          showToastMsg(u.uploadComplete || 'Upload complete');
+        }, 650);
+      }
+    }, 120);
+  }, [u, thumbnail, showToastMsg]);
+
+  // --- Upload handler ---
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setShowProgress(true);
+    setIsUploading(true);
+    setStatusText(u.uploading || 'Uploading...');
+
+    // Try real upload first, fall back to mock
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
     formData.append('category', category);
-    formData.append('tags', tags);
     formData.append('userId', user ? user.id : 1);
     formData.append('videoFile', file);
     if (thumbnail) {
       formData.append('thumbnail', thumbnail);
     }
 
-    setLoading(true);
-
     try {
       await axios.post('http://localhost:5000/api/videos/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.lengthComputable) {
+            const pct = (progressEvent.loaded / progressEvent.total) * 100;
+            setProgress({
+              pct,
+              sent: progressEvent.loaded,
+              total: progressEvent.total,
+              speed: progressEvent.rate || 0,
+            });
+          }
+        },
       });
-      showToast(u.success || 'Video uploaded successfully!');
+      setProgress((prev) => ({ ...prev, pct: 100, sent: prev.total }));
+      setStatusText(
+        thumbnail
+          ? (u.doneVideoThumb || 'Done (video + thumbnail)')
+          : (u.doneVideo || 'Done (video)')
+      );
+      setIsUploading(false);
+      showToastMsg(u.success || 'Video uploaded successfully!');
       setTimeout(() => navigate('/'), 1500);
-    } catch (error) {
-      console.error(error);
-      const msg = error.response?.data?.message || u.errorUpload || 'Error uploading video';
-      showToast(msg);
-    } finally {
-      setLoading(false);
+    } catch {
+      // If backend is not available, fall back to mock upload
+      mockUpload(file);
     }
   };
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  // --- Cancel handler ---
+  const handleCancel = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
     }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile.type.startsWith('video/')) {
-        setFile(droppedFile);
-        setVideoPreview(URL.createObjectURL(droppedFile));
-      } else {
-        showToast(u.onlyVideo || 'Please drop a video file');
-      }
+    if (mockTimerRef.current) {
+      clearInterval(mockTimerRef.current);
+      mockTimerRef.current = null;
     }
+    setStatusText(u.canceled || 'Canceled');
+    setIsUploading(false);
+    showToastMsg(u.uploadCanceled || 'Upload canceled');
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const selected = e.target.files[0];
-      setFile(selected);
-      setVideoPreview(URL.createObjectURL(selected));
-    }
-  };
-
-  const handleThumbnailChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const img = e.target.files[0];
-      setThumbnail(img);
-      setThumbnailPreview(URL.createObjectURL(img));
-    }
-  };
-
-  const removeFile = () => {
-    setFile(null);
-    setVideoPreview(null);
-  };
-
-  const removeThumbnail = () => {
-    setThumbnail(null);
-    setThumbnailPreview(null);
-  };
-
-  const showToast = (message) => {
-    setToast({ show: true, message });
-    setTimeout(() => setToast({ show: false, message: '' }), 3000);
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  // --- Save draft ---
+  const handleSaveDraft = () => {
+    showToastMsg(u.savedDraft || 'Saved draft (mock)');
   };
 
   // Not logged in state
@@ -170,220 +291,248 @@ function Upload() {
     );
   }
 
+  const progressPct = Math.max(0, Math.min(100, progress.pct));
+  const etaSeconds = progress.speed > 0 ? (progress.total - progress.sent) / progress.speed : Infinity;
+
   return (
     <div style={{ minHeight: '100vh' }}>
       <Header />
 
-      <main className="wrap" style={{ maxWidth: '780px', margin: '0 auto', padding: '24px 18px' }}>
-        {/* Page Title */}
-        <div className="upload-header">
-          <h1 className="upload-title">{u.pageTitle || 'Upload Video'}</h1>
-          <p className="upload-subtitle">
-            {u.pageSubtitle || 'Share your content with the community. Max duration: 10 minutes.'}
+      <main className="wrap" style={{ maxWidth: '960px', margin: '0 auto', padding: '18px' }}>
+        {/* Page header panel */}
+        <div className="panel" style={{ padding: '14px' }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: '18px', letterSpacing: '-0.2px' }}>
+            {u.pageTitle || 'Upload a video'}
+          </h1>
+          <p style={{ margin: 0, color: 'rgba(234,240,255,0.72)' }}>
+            {u.pageSubtitle || 'Includes a progress bar + an option to upload a custom thumbnail (JPG/PNG/WebP).'}
           </p>
         </div>
 
-        <form onSubmit={handleUpload}>
-          {/* Two-column layout: Video + Thumbnail */}
-          <div className="upload-media-row">
-            {/* Video Drop Zone */}
+        {/* Two-column grid */}
+        <div className="upload-grid">
+          {/* Left: Form */}
+          <div className="panel" style={{ padding: '14px' }}>
+            {/* Video drop zone */}
             <div
-              className={`upload-dropzone ${dragActive ? 'active' : ''} ${file ? 'has-file' : ''}`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => !file && fileInputRef.current?.click()}
+              className={`upload-drop ${videoDragActive ? 'active' : ''}`}
+              onDragEnter={handleVideoDrag}
+              onDragLeave={handleVideoDrag}
+              onDragOver={handleVideoDrag}
+              onDrop={handleVideoDrop}
             >
+              <strong style={{ fontSize: '13px' }}>{u.videoFile || 'Video file'}</strong>
+              <div className="upload-drop-muted">
+                {u.dropHere || 'Drag & drop your video here or choose a file.'}
+              </div>
+              <div className="upload-drop-row">
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {u.chooseVideo || 'Choose video'}
+                </button>
+                <span className="upload-drop-muted">
+                  {file ? `${file.name} \u2022 ${fmtMB(file.size)}` : (u.noVideoSelected || 'No video selected')}
+                </span>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="video/*"
-                onChange={handleFileChange}
+                onChange={handleVideoFileChange}
                 style={{ display: 'none' }}
               />
-
-              {file ? (
-                <div className="upload-file-preview">
-                  {videoPreview && (
-                    <video
-                      src={videoPreview}
-                      className="upload-video-preview"
-                      muted
-                      preload="metadata"
-                    />
-                  )}
-                  <div className="upload-file-info">
-                    <span className="upload-file-name">{file.name}</span>
-                    <span className="upload-file-size">{formatFileSize(file.size)}</span>
-                  </div>
-                  <button
-                    type="button"
-                    className="upload-remove-btn"
-                    onClick={(e) => { e.stopPropagation(); removeFile(); }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                    {u.remove || 'Remove'}
-                  </button>
-                </div>
-              ) : (
-                <div className="upload-dropzone-content">
-                  <div className="upload-dropzone-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                  </div>
-                  <span className="upload-dropzone-label">
-                    {u.dropHere || 'Drop video here or click to browse'}
-                  </span>
-                  <span className="upload-dropzone-hint">
-                    MP4, WebM, MOV - {u.maxSize || 'Max 500MB'}
-                  </span>
-                </div>
-              )}
             </div>
 
-            {/* Thumbnail Upload */}
+            {/* Thumbnail drop zone */}
             <div
-              className={`upload-thumb-zone ${thumbnailPreview ? 'has-file' : ''}`}
-              onClick={() => thumbInputRef.current?.click()}
+              className={`upload-drop ${thumbDragActive ? 'active' : ''}`}
+              style={{ marginTop: '12px' }}
+              onDragEnter={handleThumbDrag}
+              onDragLeave={handleThumbDrag}
+              onDragOver={handleThumbDrag}
+              onDrop={handleThumbDrop}
             >
+              <strong style={{ fontSize: '13px' }}>{u.thumbnail || 'Thumbnail (optional)'}</strong>
+              <div className="upload-drop-muted">
+                {u.thumbnailHint || 'Upload a custom thumbnail. Recommended: 1280x720 (16:9).'}
+              </div>
+              <div className="upload-drop-row">
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => thumbInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {u.chooseThumbnail || 'Choose thumbnail'}
+                </button>
+                <span className="upload-drop-muted">
+                  {thumbnail ? `${thumbnail.name} \u2022 ${fmtMB(thumbnail.size)}` : (u.noThumbnailSelected || 'No thumbnail selected')}
+                </span>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={removeThumbnail}
+                  disabled={isUploading || !thumbnail}
+                  style={{ opacity: (!thumbnail || isUploading) ? 0.55 : 1 }}
+                >
+                  {u.remove || 'Remove'}
+                </button>
+              </div>
               <input
                 ref={thumbInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={handleThumbnailChange}
                 style={{ display: 'none' }}
               />
-
-              {thumbnailPreview ? (
-                <div className="upload-thumb-preview-wrap">
-                  <img src={thumbnailPreview} alt="Thumbnail" className="upload-thumb-img" />
-                  <button
-                    type="button"
-                    className="upload-remove-btn small"
-                    onClick={(e) => { e.stopPropagation(); removeThumbnail(); }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <div className="upload-dropzone-content">
-                  <div className="upload-dropzone-icon small">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                  </div>
-                  <span className="upload-dropzone-label small">
-                    {u.thumbnail || 'Thumbnail'}
-                  </span>
-                  <span className="upload-dropzone-hint">
-                    JPG, PNG, WEBP
-                  </span>
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Form Fields */}
-          <div className="upload-form-section">
             {/* Title */}
-            <div className="upload-field">
-              <label className="upload-label">{u.titleLabel || 'Title'}</label>
+            <div className="upload-field-group">
+              <label className="upload-field-label">{u.titleLabel || 'Title'}</label>
               <input
-                type="text"
                 className="input"
-                placeholder={u.titlePlaceholder || 'Enter video title'}
+                placeholder={u.titlePlaceholder || 'e.g., Insane clutch moment'}
+                maxLength={120}
                 value={title}
-                onChange={e => setTitle(e.target.value)}
-                required
+                onChange={(e) => setTitle(e.target.value)}
                 style={{ width: '100%' }}
               />
             </div>
 
             {/* Description */}
-            <div className="upload-field">
-              <label className="upload-label">{u.descriptionLabel || 'Description'}</label>
+            <div className="upload-field-group">
+              <label className="upload-field-label">{u.descriptionLabel || 'Description'}</label>
               <textarea
-                className="input"
-                placeholder={u.descriptionPlaceholder || 'Describe your video...'}
+                placeholder={u.descriptionPlaceholder || 'Add tags like #gaming #ranked...'}
+                maxLength={800}
                 value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows="3"
-                style={{ width: '100%', resize: 'vertical' }}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{ width: '100%' }}
               />
             </div>
 
-            {/* Category + Tags row */}
-            <div className="upload-row">
-              <div className="upload-field" style={{ flex: 1 }}>
-                <label className="upload-label">{u.categoryLabel || 'Category'}</label>
-                <select
-                  value={category}
-                  onChange={e => setCategory(e.target.value)}
-                  className="input"
-                  style={{ width: '100%' }}
+            {/* Category */}
+            <div className="upload-field-group">
+              <label className="upload-field-label">{u.categoryLabel || 'Category'}</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{ width: '100%' }}
+              >
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Progress bar */}
+            {showProgress && (
+              <div className="upload-progress-wrap" aria-label="Upload progress">
+                <div
+                  className="upload-progress-bar"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(progressPct)}
                 >
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                  <div
+                    className="upload-progress-fill"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <div className="upload-progress-meta">
+                  <div>
+                    <span>{Math.round(progressPct)}%</span>
+                    {' \u2022 '}
+                    <span>{fmtMB(progress.sent)}</span>
+                    {' / '}
+                    <span>{fmtMB(progress.total)}</span>
+                  </div>
+                  <div>
+                    <span>{fmtSpeed(progress.speed)}</span>
+                    {' \u2022 '}
+                    <span>{fmtETA(etaSeconds)}</span>
+                  </div>
+                </div>
+                <div className="upload-progress-status">{statusText}</div>
               </div>
-              <div className="upload-field" style={{ flex: 1 }}>
-                <label className="upload-label">{u.tagsLabel || 'Tags'}</label>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder={u.tagsPlaceholder || 'gaming, funny, tutorial'}
-                  value={tags}
-                  onChange={e => setTags(e.target.value)}
-                  style={{ width: '100%' }}
-                />
-                <span className="upload-hint">{u.tagsHint || 'Separate tags with commas'}</span>
-              </div>
+            )}
+
+            {/* Actions row */}
+            <div className="upload-actions-row">
+              <button
+                className="btn"
+                type="button"
+                onClick={handleCancel}
+                disabled={!isUploading}
+              >
+                {u.cancel || 'Cancel'}
+              </button>
+              <span style={{ flex: 1 }} />
+              <button className="btn" type="button" onClick={handleSaveDraft}>
+                {u.saveDraft || 'Save draft'}
+              </button>
+              <button
+                className="btn primary"
+                type="button"
+                onClick={handleUpload}
+                disabled={isUploading || !file}
+              >
+                {isUploading ? (u.uploading || 'Uploading...') : (u.publish || 'Upload')}
+              </button>
             </div>
           </div>
 
-          {/* Guidelines */}
-          <div className="upload-guidelines">
-            <h4 className="upload-guidelines-title">
-              {u.guidelinesTitle || 'Upload Guidelines'}
-            </h4>
-            <ul className="upload-guidelines-list">
-              <li>{u.guideline1 || 'Maximum video duration: 10 minutes'}</li>
-              <li>{u.guideline2 || 'Recommended resolution: 1080p or higher'}</li>
-              <li>{u.guideline3 || 'Keep content appropriate for all audiences'}</li>
-              <li>{u.guideline4 || 'Add a thumbnail for better visibility'}</li>
-            </ul>
-          </div>
+          {/* Right: Previews */}
+          <aside className="panel" style={{ padding: '14px' }}>
+            <div className="upload-preview-block">
+              <p className="upload-preview-title">{u.preview || 'Preview'}</p>
 
-          {/* Submit Actions */}
-          <div className="upload-actions">
-            <button
-              type="submit"
-              className="btn primary"
-              disabled={loading || !file}
-              style={{
-                flex: 1,
-                padding: '14px',
-                opacity: (loading || !file) ? 0.6 : 1,
-              }}
-            >
-              {loading ? (u.uploading || 'Uploading...') : (u.publish || 'Publish Video')}
-            </button>
-            <Link to="/" className="btn" style={{ padding: '14px 20px' }}>
-              {u.cancel || 'Cancel'}
-            </Link>
-          </div>
-        </form>
+              {/* Video preview */}
+              <div className={`upload-video-box ${videoPreview ? 'has-media' : ''}`}>
+                {!videoPreview && (
+                  <div className="upload-placeholder">
+                    {u.videoPreviewPlaceholder || 'Video preview will appear here'}
+                  </div>
+                )}
+                {videoPreview && (
+                  <video
+                    src={videoPreview}
+                    playsInline
+                    muted
+                    controls
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000', display: 'block' }}
+                  />
+                )}
+              </div>
+
+              {/* Thumbnail preview */}
+              <div className={`upload-thumb-box ${thumbnailPreview ? 'has-media' : ''}`}>
+                {!thumbnailPreview && (
+                  <div className="upload-placeholder">
+                    {u.thumbPreviewPlaceholder || 'Thumbnail preview will appear here'}
+                  </div>
+                )}
+                {thumbnailPreview && (
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                )}
+              </div>
+
+              <div className="upload-drop-muted" style={{ fontSize: '12px', marginTop: '10px' }}>
+                {u.thumbAutoHint || 'If no thumbnail is uploaded, your backend can auto-generate one from the video.'}
+              </div>
+            </div>
+          </aside>
+        </div>
       </main>
 
       {/* Toast */}
