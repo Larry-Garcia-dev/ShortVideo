@@ -81,7 +81,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
   ];
 
   return (
-    <aside className="right-panel">
+    <aside className="right-panel" role="complementary">
       {/* Trending Creators - Real data */}
       <div className="panel rp-section">
         <div className="rp-section-header">
@@ -136,7 +136,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
         {trendingHashtags.map((item, i) => (
           <div key={i} className="rp-hashtag-item">
             <span className="rp-hashtag-tag">{item.tag}</span>
-            <span className="rp-hashtag-count">{item.count} posts</span>
+            <span className="rp-hashtag-count">{item.count} {t.rightPanel?.posts || 'posts'}</span>
           </div>
         ))}
       </div>
