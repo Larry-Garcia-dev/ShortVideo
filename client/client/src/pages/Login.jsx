@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { translations } from '../utils/translations';
 
 function Login() {
@@ -156,13 +157,26 @@ function Login() {
           {/* Google Button */}
           <button
             type="button"
-            onClick={() => handleGoogleLogin()} // Vinculamos la función aquí
+            onClick={handleGoogleLogin}
             disabled={loading}
+            className="btn"
             style={{
-              /* ... tus estilos actuales ... */
-              opacity: loading ? 0.7 : 1
+              width: '100%',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              opacity: loading ? 0.7 : 1,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid var(--line)',
+              borderRadius: '14px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600,
+              color: 'var(--text)',
+              transition: 'all 0.15s ease',
             }}
-            // ...
           >
             <span style={{ fontSize: '16px' }}>G</span> 
             {loading ? 'Connecting...' : t.login.googleLogin}
