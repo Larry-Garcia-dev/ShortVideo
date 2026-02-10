@@ -64,18 +64,18 @@ function Login() {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        // Enviar el access token al backend
-        // DETECTAR ENTORNO: Si es producción usa tu dominio, si no, localhost
+        // 1. DETECCIÓN INTELIGENTE DE URL 🧠
+        // Si estamos en el servidor (producción), usa nip.io. Si no, usa localhost.
         const API_URL = import.meta.env.MODE === 'production' 
-            ? 'http://47.87.37.35.nip.io/api/auth/google' 
+            ? 'http://47.87.37.35.nip.io:5000/api/auth/google' 
             : 'http://localhost:5000/api/auth/google';
 
-        // Enviar el access token al backend CORRECTO
+        // 2. Enviar el token al backend correcto
         const res = await axios.post(API_URL, {
           accessToken: tokenResponse.access_token
         });
 
-        // Guardar sesión (Igual que en tu login normal)
+        // 3. Guardar sesión (Esto queda igual)
         const { user: userData, token } = res.data;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
