@@ -13,6 +13,7 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '' });
   const [likedVideos, setLikedVideos] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem('user'));
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
@@ -116,14 +117,18 @@ function Home() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header onSearch={handleSearch} />
+      <Header onSearch={handleSearch} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '220px 1fr 320px',
-        height: 'calc(100vh - 60px)',
-      }}>
-        <Sidebar />
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="app-layout">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         {/* Main Content - Grid */}
         <main style={{ padding: '18px', overflowY: 'auto' }}>

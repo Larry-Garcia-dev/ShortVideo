@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { translations } from '../utils/translations';
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
@@ -25,48 +25,37 @@ function Sidebar() {
   });
 
   return (
-    <aside style={{
-      width: '200px',
-      borderRight: '1px solid var(--line)',
-      padding: '16px',
-      display: 'flex',
-      flexDirection: 'column',
-      height: 'calc(100vh - 60px)',
-      position: 'sticky',
-      top: '60px',
-      background: 'rgba(7, 10, 18, 0.5)',
-      backdropFilter: 'blur(12px)',
-    }}>
+    <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       {/* Navigation */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-        <Link to="/" style={navItemStyle(isActive('/'))}>
+        <Link to="/" style={navItemStyle(isActive('/'))} onClick={onClose}>
           <span>🏠</span>
           <span>{t.sidebar?.home || 'Home'}</span>
         </Link>
-        <Link to="/trending" style={navItemStyle(isActive('/trending'))}>
+        <Link to="/trending" style={navItemStyle(isActive('/trending'))} onClick={onClose}>
           <span>🔥</span>
           <span>{t.sidebar?.trending || 'Trending'}</span>
         </Link>
-        <Link to="/following" style={navItemStyle(isActive('/following'))}>
+        <Link to="/following" style={navItemStyle(isActive('/following'))} onClick={onClose}>
           <span>👥</span>
           <span>{t.sidebar?.following || 'Following'}</span>
         </Link>
-        <Link to="/sounds" style={navItemStyle(isActive('/sounds'))}>
+        <Link to="/sounds" style={navItemStyle(isActive('/sounds'))} onClick={onClose}>
           <span>🎵</span>
           <span>{t.sidebar?.sounds || 'Sounds'}</span>
         </Link>
-        <Link to="/favorites" style={navItemStyle(isActive('/favorites'))}>
+        <Link to="/favorites" style={navItemStyle(isActive('/favorites'))} onClick={onClose}>
           <span>⭐</span>
           <span>{t.sidebar?.favorites || 'Favorites'}</span>
         </Link>
         
         <div style={{ borderTop: '1px solid var(--line)', margin: '12px 0' }}></div>
         
-        <Link to="/campaigns" style={navItemStyle(isActive('/campaigns'))}>
+        <Link to="/campaigns" style={navItemStyle(isActive('/campaigns'))} onClick={onClose}>
           <span>🏆</span>
           <span>{t.sidebar?.campaigns || 'Campaigns'}</span>
         </Link>
-        <Link to="/upload" style={navItemStyle(isActive('/upload'))}>
+        <Link to="/upload" style={navItemStyle(isActive('/upload'))} onClick={onClose}>
           <span>📤</span>
           <span>{t.sidebar?.upload || 'Upload'}</span>
         </Link>

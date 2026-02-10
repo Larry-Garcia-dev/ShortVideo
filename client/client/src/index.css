@@ -1237,3 +1237,412 @@ input[type="range"] {
   color: var(--muted);
   padding: 0 4px;
 }
+
+/* ===================== */
+/* APP LAYOUT            */
+/* ===================== */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  height: calc(100vh - 60px);
+}
+
+/* ===================== */
+/* HEADER RESPONSIVE     */
+/* ===================== */
+
+.header-inner {
+  height: 100%;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.header-lang-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+}
+
+.header-hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.header-hamburger:hover {
+  background: var(--panel2);
+}
+
+/* ===================== */
+/* SIDEBAR RESPONSIVE    */
+/* ===================== */
+
+.sidebar {
+  width: 220px;
+  border-right: 1px solid var(--line);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  position: sticky;
+  top: 60px;
+  background: rgba(7, 10, 18, 0.5);
+  backdrop-filter: blur(12px);
+  overflow-y: auto;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* ===================== */
+/* VIDEO PLAYER LAYOUT   */
+/* ===================== */
+
+.video-player-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr;
+  gap: 14px;
+  align-items: start;
+}
+
+/* ===================== */
+/* CAMPAIGN DETAIL GRID  */
+/* ===================== */
+
+.campaign-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.campaign-controls-bar {
+  margin-top: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.campaign-controls-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campaign-controls-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campaign-search-input {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  min-width: 200px;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.campaign-search-input:focus {
+  border-color: rgba(124,92,255,0.5);
+  background: rgba(255,255,255,0.08);
+}
+
+/* ===================== */
+/* CREATE CAMPAIGN GRID  */
+/* ===================== */
+
+.create-campaign-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ===================== */
+/* RESPONSIVE BREAKPOINTS */
+/* ===================== */
+
+/* Tablet: hide right panel, adjust sidebar */
+@media (max-width: 1100px) {
+  .app-layout {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .right-panel {
+    display: none;
+  }
+}
+
+/* Small tablet / large phone: sidebar becomes overlay */
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .header-hamburger {
+    display: flex;
+  }
+
+  .header-search-wrapper {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-search-input {
+    font-size: 13px;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 260px;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    background: rgba(7, 10, 18, 0.97);
+    border-right: 1px solid var(--line);
+    padding-top: 24px;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+
+  .right-panel {
+    display: none;
+  }
+
+  /* Video Player */
+  .video-player-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Campaign Detail */
+  .campaign-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-search-input {
+    min-width: 100%;
+  }
+
+  /* Home grid */
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Campaign list */
+  .campaign-list-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .header-inner {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .header-brand img {
+    height: 32px;
+  }
+
+  .header-search-wrapper {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-lang-selector span:first-child {
+    display: none;
+  }
+
+  .home-hero {
+    padding: 14px;
+  }
+
+  .home-hero-title {
+    font-size: 17px;
+  }
+
+  .home-chip {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .home-card-thumb {
+    height: 160px;
+  }
+
+  /* Upload */
+  .upload-media-row {
+    flex-direction: column;
+  }
+
+  .upload-row {
+    flex-direction: column;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+  }
+
+  .upload-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Video Player controls */
+  .controls .row {
+    gap: 6px;
+  }
+
+  .iconBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  /* Create campaign dates */
+  .create-campaign-dates {
+    grid-template-columns: 1fr;
+  }
+
+  /* Campaign detail controls */
+  .campaign-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .campaign-controls-left,
+  .campaign-controls-right {
+    flex-direction: column;
+  }
+
+  .campaign-controls-left select,
+  .campaign-controls-right .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Leaderboard row */
+  .campaign-grid .row {
+    grid-template-columns: 44px 1fr auto;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  /* KPI boxes */
+  .kpi {
+    min-width: 100px;
+    padding: 10px;
+  }
+
+  .kpi b {
+    font-size: 14px;
+  }
+
+  /* Video player: hide shortcuts text, volume slider */
+  .video-shortcuts-row {
+    display: none;
+  }
+
+  .video-control-label {
+    display: none;
+  }
+
+  .video-vol-slider {
+    display: none;
+  }
+
+  /* Announce grid stack */
+  .announceGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kpis {
+    justify-content: flex-start !important;
+  }
+
+  /* RightPanel footer */
+  .rp-footer {
+    text-align: center;
+  }
+
+  /* Toast */
+  .toast {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    text-align: center;
+  }
+
+  /* Panel padding */
+  .panel {
+    border-radius: var(--r18);
+  }
+
+  .wrap {
+    padding: 12px;
+  }
+}

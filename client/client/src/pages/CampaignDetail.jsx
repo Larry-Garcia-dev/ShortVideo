@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
+import { translations } from '../utils/translations';
 
 function CampaignDetail() {
   const { id } = useParams();
@@ -19,6 +20,9 @@ function CampaignDetail() {
   const previewVideoRef = useRef(null);
 
   const user = JSON.parse(localStorage.getItem('user'));
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  const cd = t.campaignDetail || {};
 
   useEffect(() => {
     loadCampaignData();
@@ -27,7 +31,8 @@ function CampaignDetail() {
   }, [id]);
 
   const updateTimestamp = () => {
-    setLastUpdated(new Date().toLocaleString());
+    const locale = lang === 'es' ? 'es-ES' : lang === 'zh' ? 'zh-CN' : 'en-US';
+    setLastUpdated(new Date().toLocaleString(locale));
   };
 
   const loadCampaignData = () => {
@@ -54,7 +59,7 @@ function CampaignDetail() {
 
   const handleJoin = async () => {
     if (!selectedVideoId) {
-      showToast('Select a video to join');
+      showToast(cd.selectToJoin || 'Select a video to join');
       return;
     }
 
@@ -62,44 +67,44 @@ function CampaignDetail() {
       await axios.post(`http://localhost:5000/api/campaigns/${id}/join`, {
         videoId: selectedVideoId
       });
-      showToast('Successfully joined the campaign!');
+      showToast(cd.joinedSuccess || 'Successfully joined the campaign!');
       loadCampaignData();
       setSelectedVideoId('');
     } catch (error) {
-      showToast(error.response?.data?.message || 'Error joining campaign');
+      showToast(error.response?.data?.message || (cd.errorJoining || 'Error joining campaign'));
     }
   };
 
   const handleLike = async (videoId, e) => {
     if (e) e.stopPropagation();
     if (!user) {
-      showToast('Sign in to like videos');
+      showToast(cd.signInToLike || 'Sign in to like videos');
       return;
     }
     try {
       await axios.post(`http://localhost:5000/api/videos/${videoId}/like`, { userId: user.id });
       loadCampaignData();
-      showToast('Liked! ❤️');
+      showToast(cd.likedLabel || 'Liked!');
     } catch (error) {
-      showToast(error.response?.data?.message || 'Already liked');
+      showToast(error.response?.data?.message || (cd.alreadyLiked || 'Already liked'));
     }
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    showToast('Campaign link copied!');
+    showToast(cd.campaignLinkCopied || 'Campaign link copied!');
   };
 
   const handleCopyVideoLink = () => {
     if (previewVideo) {
       navigator.clipboard.writeText(`${window.location.origin}/watch/${previewVideo.id}`);
-      showToast('Video link copied!');
+      showToast(cd.videoLinkCopied || 'Video link copied!');
     }
   };
 
   const handleReset = () => {
     loadCampaignData();
-    showToast('Data refreshed');
+    showToast(cd.dataRefreshed || 'Data refreshed');
   };
 
   const toggleMute = () => {
@@ -107,7 +112,7 @@ function CampaignDetail() {
     if (previewVideoRef.current) {
       previewVideoRef.current.muted = !globalMuted;
     }
-    showToast(globalMuted ? 'Sound on' : 'Muted');
+    showToast(globalMuted ? (cd.sound || 'Sound on') : (cd.mute || 'Muted'));
   };
 
   const showToast = (message) => {
@@ -131,7 +136,6 @@ function CampaignDetail() {
     
     let videos = [...campaign.Videos];
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       videos = videos.filter(v =>
@@ -141,12 +145,10 @@ function CampaignDetail() {
       );
     }
 
-    // Category filter
     if (categoryFilter !== 'all') {
       videos = videos.filter(v => v.category === categoryFilter);
     }
 
-    // Sort
     switch (sortBy) {
       case 'likes_desc':
         videos.sort((a, b) => (b.Likes?.length || 0) - (a.Likes?.length || 0));
@@ -179,7 +181,7 @@ function CampaignDetail() {
           height: 'calc(100vh - 64px)',
           color: 'var(--muted)',
         }}>
-          Loading campaign...
+          {cd.loadingCampaign || 'Loading campaign...'}
         </div>
       </div>
     );
@@ -196,7 +198,7 @@ function CampaignDetail() {
           height: 'calc(100vh - 64px)',
           color: 'var(--muted)',
         }}>
-          Campaign not found
+          {cd.notFound || 'Campaign not found'}
         </div>
       </div>
     );
@@ -229,19 +231,19 @@ function CampaignDetail() {
               background: 'var(--good)',
               boxShadow: '0 0 0 5px rgba(70,230,165,0.15)',
             }}></span>
-            Campaign live
+            {cd.campaignLive || 'Campaign live'}
           </span>
           
           <h1 style={{
             margin: '8px 0 6px',
-            fontSize: 'clamp(20px, 2.4vw, 28px)',
+            fontSize: 'clamp(18px, 2.4vw, 28px)',
             letterSpacing: '-0.3px',
           }}>
             {campaign.name}
           </h1>
           
           <p style={{ margin: 0, color: 'rgba(234,240,255,0.78)', maxWidth: '88ch' }}>
-            {campaign.description || 'Like your favorite clips to push them up the leaderboard. The top ranked videos (by likes) win featured placement and prizes. Rankings update instantly.'}
+            {campaign.description || (cd.howItWorksDesc || 'Like your favorite clips to push them up the leaderboard.')}
           </p>
 
           <div className="announceGrid" style={{
@@ -252,8 +254,7 @@ function CampaignDetail() {
             marginTop: '12px',
           }}>
             <div className="hint" style={{ fontSize: '12px', color: 'rgba(234,240,255,0.64)' }}>
-              <b>How it works:</b> click ❤️ on any video in the leaderboard. We rank videos by total likes
-              (ties break by most recent like). Rankings update in real-time.
+              <b>{cd.howItWorks || 'How it works:'}</b> {cd.howItWorksDesc || 'click on any video in the leaderboard. We rank videos by total likes (ties break by most recent like). Rankings update in real-time.'}
             </div>
             <div className="kpis" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <div className="kpi" style={{
@@ -261,30 +262,30 @@ function CampaignDetail() {
                 background: 'rgba(0,0,0,0.18)',
                 borderRadius: '16px',
                 padding: '10px 12px',
-                minWidth: '140px',
+                minWidth: '120px',
               }}>
                 <b style={{ display: 'block', fontSize: '16px' }}>{formatNumber(totalLikes)}</b>
-                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>Total likes (campaign)</span>
+                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>{cd.totalLikes || 'Total likes (campaign)'}</span>
               </div>
               <div className="kpi" style={{
                 border: '1px solid var(--line)',
                 background: 'rgba(0,0,0,0.18)',
                 borderRadius: '16px',
                 padding: '10px 12px',
-                minWidth: '140px',
+                minWidth: '120px',
               }}>
                 <b style={{ display: 'block', fontSize: '16px' }}>{formatNumber(campaign.Videos?.length || 0)}</b>
-                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>Videos in competition</span>
+                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>{cd.videosInCompetition || 'Videos in competition'}</span>
               </div>
               <div className="kpi" style={{
                 border: '1px solid var(--line)',
                 background: 'rgba(0,0,0,0.18)',
                 borderRadius: '16px',
                 padding: '10px 12px',
-                minWidth: '140px',
+                minWidth: '120px',
               }}>
                 <b style={{ display: 'block', fontSize: '16px' }}>{lastUpdated || '—'}</b>
-                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>Last updated</span>
+                <span style={{ display: 'block', fontSize: '12px', color: 'rgba(234,240,255,0.68)' }}>{cd.lastUpdated || 'Last updated'}</span>
               </div>
             </div>
           </div>
@@ -301,7 +302,7 @@ function CampaignDetail() {
               alignItems: 'center',
               flexWrap: 'wrap',
             }}>
-              <span style={{ fontSize: '13px', fontWeight: 600 }}>Join with your video:</span>
+              <span style={{ fontSize: '13px', fontWeight: 600 }}>{cd.joinWithVideo || 'Join with your video:'}</span>
               <select
                 className="select"
                 value={selectedVideoId}
@@ -313,44 +314,29 @@ function CampaignDetail() {
                   borderRadius: '14px',
                   padding: '10px 12px',
                   minWidth: '200px',
+                  flex: '1 1 200px',
                 }}
               >
-                <option value="">-- Select Video --</option>
+                <option value="">{cd.selectVideo || '-- Select Video --'}</option>
                 {myVideos.map(v => (
                   <option key={v.id} value={v.id}>{v.title}</option>
                 ))}
               </select>
               <button onClick={handleJoin} className="btn primary">
-                Join Campaign
+                {cd.joinCampaign || 'Join Campaign'}
               </button>
             </div>
           )}
         </section>
 
         {/* Controls Bar */}
-        <section className="panel bar" style={{
-          marginTop: '14px',
-          padding: '12px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '10px',
-          flexWrap: 'wrap',
-        }}>
-          <div className="barLeft" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <section className="panel campaign-controls-bar">
+          <div className="campaign-controls-left">
             <input
-              className="input"
-              placeholder="Search by title, creator, tag..."
+              className="campaign-search-input"
+              placeholder={cd.searchPlaceholder || 'Search by title, creator, tag...'}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                border: '1px solid var(--line)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'var(--text)',
-                borderRadius: '14px',
-                padding: '10px 12px',
-                minWidth: '240px',
-              }}
             />
             <select
               className="select"
@@ -364,7 +350,7 @@ function CampaignDetail() {
                 padding: '10px 12px',
               }}
             >
-              <option value="all">All categories</option>
+              <option value="all">{cd.allCategories || 'All categories'}</option>
               <option value="Gaming">Gaming</option>
               <option value="Trending">Trending</option>
               <option value="Tutorials">Tutorials</option>
@@ -383,28 +369,22 @@ function CampaignDetail() {
                 padding: '10px 12px',
               }}
             >
-              <option value="likes_desc">Sort: Likes (high → low)</option>
-              <option value="likes_asc">Sort: Likes (low → high)</option>
-              <option value="title_asc">Sort: Title (A → Z)</option>
-              <option value="creator_asc">Sort: Creator (A → Z)</option>
+              <option value="likes_desc">{cd.sortLikesHigh || 'Sort: Likes (high → low)'}</option>
+              <option value="likes_asc">{cd.sortLikesLow || 'Sort: Likes (low → high)'}</option>
+              <option value="title_asc">{cd.sortTitle || 'Sort: Title (A → Z)'}</option>
+              <option value="creator_asc">{cd.sortCreator || 'Sort: Creator (A → Z)'}</option>
             </select>
           </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className="muted" style={{ fontSize: '12px' }}>Click a row to preview</span>
-            <button onClick={toggleMute} className="btn">{globalMuted ? '🔇 Mute' : '🔊 Sound'}</button>
-            <button onClick={handleReset} className="btn" title="Refresh data">🔄 Refresh</button>
-            <button onClick={handleShare} className="btn primary">📤 Share campaign</button>
+          <div className="campaign-controls-right">
+            <span className="muted" style={{ fontSize: '12px' }}>{cd.clickToPreview || 'Click a row to preview'}</span>
+            <button onClick={toggleMute} className="btn">{globalMuted ? `🔇 ${cd.mute || 'Mute'}` : `🔊 ${cd.sound || 'Sound'}`}</button>
+            <button onClick={handleReset} className="btn" title={cd.refresh || 'Refresh'}>🔄 {cd.refresh || 'Refresh'}</button>
+            <button onClick={handleShare} className="btn primary">📤 {cd.shareCampaign || 'Share campaign'}</button>
           </div>
         </section>
 
         {/* Leaderboard + Preview Grid */}
-        <section className="grid" style={{
-          marginTop: '14px',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '14px',
-          alignItems: 'start',
-        }}>
+        <section className="campaign-grid">
           {/* Leaderboard */}
           <section className="panel list" style={{ padding: '12px' }}>
             <div style={{
@@ -413,11 +393,12 @@ function CampaignDetail() {
               justifyContent: 'space-between',
               gap: '10px',
               padding: '4px 6px 12px',
+              flexWrap: 'wrap',
             }}>
               <div>
-                <div style={{ fontWeight: 900, letterSpacing: '-0.2px' }}>Leaderboard</div>
+                <div style={{ fontWeight: 900, letterSpacing: '-0.2px' }}>{cd.leaderboard || 'Leaderboard'}</div>
                 <div className="muted" style={{ fontSize: '12px' }}>
-                  {filteredVideos.length} videos shown • ranked by likes
+                  {filteredVideos.length} {cd.videosShown || 'videos shown'} • {cd.rankedByLikes || 'ranked by likes'}
                 </div>
               </div>
               <span className="pill">
@@ -428,13 +409,13 @@ function CampaignDetail() {
                   background: 'var(--good)',
                   boxShadow: '0 0 0 5px rgba(70,230,165,0.15)',
                 }}></span>
-                Updated live
+                {cd.updatedLive || 'Updated live'}
               </span>
             </div>
 
             {filteredVideos.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--muted)' }}>
-                No videos in this campaign yet.
+                {cd.noVideos || 'No videos in this campaign yet.'}
               </div>
             ) : (
               <div id="rows">
@@ -475,10 +456,11 @@ function CampaignDetail() {
                         border: '1px solid rgba(124,92,255,0.26)',
                         color: 'rgba(234,240,255,0.92)',
                         fontSize: index < 3 ? '18px' : '14px',
+                        flexShrink: 0,
                       }}>
                         {getRankBadge(index)}
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div className="thumb" style={{
                           width: '100%',
                           height: '44px',
@@ -491,7 +473,7 @@ function CampaignDetail() {
                           `,
                           overflow: 'hidden',
                         }}></div>
-                        <p className="title" style={{ margin: '8px 0 0', fontSize: '13px', fontWeight: 900, letterSpacing: '-0.1px' }}>
+                        <p className="title" style={{ margin: '8px 0 0', fontSize: '13px', fontWeight: 900, letterSpacing: '-0.1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {video.title}
                         </p>
                         <div className="meta" style={{ marginTop: '6px', fontSize: '12px', color: 'rgba(234,240,255,0.72)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -511,7 +493,7 @@ function CampaignDetail() {
                           )}
                         </div>
                       </div>
-                      <div className="likes" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', minWidth: '98px' }}>
+                      <div className="likes" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', minWidth: '80px', flexShrink: 0 }}>
                         <span className="likeCount" style={{ fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
                           {formatNumber(video.Likes?.length || 0)} ❤️
                         </span>
@@ -528,7 +510,7 @@ function CampaignDetail() {
                             fontSize: '12px',
                           }}
                         >
-                          {isLikedByMe ? '❤️ Liked' : '🤍 Like'}
+                          {isLikedByMe ? `❤️ ${cd.likedLabel || 'Liked'}` : `🤍 ${cd.likeLabel || 'Like'}`}
                         </button>
                       </div>
                     </div>
@@ -564,15 +546,15 @@ function CampaignDetail() {
                 <div className="pMeta" style={{ padding: '12px 2px 4px' }}>
                   <h2 style={{ margin: '0 0 6px', fontSize: '16px' }}>{previewVideo.title}</h2>
                   <p className="muted" style={{ margin: 0 }}>
-                    By <b>@{previewVideo.User?.email?.split('@')[0] || 'Creator'}</b> • {previewVideo.views || 0} views
+                    {cd.by || 'By'} <b>@{previewVideo.User?.email?.split('@')[0] || 'Creator'}</b> • {previewVideo.views || 0} {cd.views || 'views'}
                   </p>
                   <div className="pActions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '10px 0 0' }}>
-                    <button onClick={() => handleLike(previewVideo.id)} className="btn primary">❤️ Like</button>
-                    <button onClick={handleCopyVideoLink} className="btn">📋 Copy video link</button>
-                    <Link to={`/watch/${previewVideo.id}`} className="btn">▶️ Watch full</Link>
+                    <button onClick={() => handleLike(previewVideo.id)} className="btn primary">❤️ {cd.likeBtn || 'Like'}</button>
+                    <button onClick={handleCopyVideoLink} className="btn">📋 {cd.copyVideoLink || 'Copy video link'}</button>
+                    <Link to={`/watch/${previewVideo.id}`} className="btn">▶️ {cd.watchFull || 'Watch full'}</Link>
                   </div>
                   <div className="muted" style={{ fontSize: '12px', marginTop: '10px' }}>
-                    {formatNumber(previewVideo.Likes?.length || 0)} likes • {previewVideo.description || 'No description'}
+                    {formatNumber(previewVideo.Likes?.length || 0)} {cd.likes || 'likes'} • {previewVideo.description || (cd.noDescriptionPreview || 'No description')}
                   </div>
                 </div>
               </>
@@ -587,8 +569,8 @@ function CampaignDetail() {
                 gap: '12px',
               }}>
                 <span style={{ fontSize: '48px' }}>🎬</span>
-                <h2 style={{ margin: 0, fontSize: '16px' }}>Select a video</h2>
-                <p style={{ margin: 0, fontSize: '13px' }}>Click a leaderboard row to load the preview.</p>
+                <h2 style={{ margin: 0, fontSize: '16px' }}>{cd.selectAVideo || 'Select a video'}</h2>
+                <p style={{ margin: 0, fontSize: '13px' }}>{cd.selectToPreview || 'Click a leaderboard row to load the preview.'}</p>
               </div>
             )}
           </aside>
@@ -601,7 +583,7 @@ function CampaignDetail() {
           fontSize: '12px',
           textAlign: 'center',
         }}>
-          © {new Date().getFullYear()} ShortVideo — Campaign page
+          © {new Date().getFullYear()} ShortVideo — {cd.campaignPage || 'Campaign page'}
         </footer>
       </main>
 

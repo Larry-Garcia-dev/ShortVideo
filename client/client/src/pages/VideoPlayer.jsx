@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
+import { translations } from '../utils/translations';
 
 function VideoPlayer() {
   const { id } = useParams();
@@ -17,11 +18,18 @@ function VideoPlayer() {
   const [volume, setVolume] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [statusLabel, setStatusLabel] = useState('Ready');
+  const [statusLabel, setStatusLabel] = useState('');
   const videoRef = useRef(null);
   const seekRef = useRef(null);
   
   const user = JSON.parse(localStorage.getItem('user'));
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  const vp = t.videoPlayer || {};
+
+  useEffect(() => {
+    setStatusLabel(vp.ready || 'Ready');
+  }, [lang]);
 
   useEffect(() => {
     loadVideo();
@@ -40,7 +48,6 @@ function VideoPlayer() {
         if (e.key.toLowerCase() === 'f') handleFullscreen();
       }
       
-      // Post comment shortcut
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         if (document.activeElement?.id === 'commentInput') {
           handleComment(e);
@@ -68,7 +75,7 @@ function VideoPlayer() {
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => showToast('Autoplay blocked - click play'));
+      videoRef.current.play().catch(() => showToast(vp.autoplayBlocked || 'Autoplay blocked - click play'));
     } else {
       videoRef.current.pause();
     }
@@ -88,7 +95,7 @@ function VideoPlayer() {
     }
     setIsMuted(videoRef.current.muted);
     setVolume(videoRef.current.muted ? 0 : videoRef.current.volume);
-    showToast(videoRef.current.muted ? 'Muted' : 'Sound on');
+    showToast(videoRef.current.muted ? (vp.muted || 'Muted') : (vp.soundOn || 'Sound on'));
   };
 
   const handleVolumeChange = (e) => {
@@ -117,13 +124,13 @@ function VideoPlayer() {
         await document.exitFullscreen();
       }
     } catch (e) {
-      showToast('Fullscreen not available');
+      showToast(vp.fullscreenNA || 'Fullscreen not available');
     }
   };
 
   const handleLike = async () => {
     if (!user) {
-      showToast('Sign in to like videos');
+      showToast(vp.signInToLike || 'Sign in to like videos');
       return;
     }
     try {
@@ -131,26 +138,26 @@ function VideoPlayer() {
         await axios.delete(`http://localhost:5000/api/videos/${id}/like`, { data: { userId: user.id } });
         setLikes(likes - 1);
         setIsLiked(false);
-        showToast('Unliked');
+        showToast(vp.unliked || 'Unliked');
       } else {
         await axios.post(`http://localhost:5000/api/videos/${id}/like`, { userId: user.id });
         setLikes(likes + 1);
         setIsLiked(true);
-        showToast('Liked!');
+        showToast(vp.liked || 'Liked!');
       }
     } catch (error) {
-      showToast(error.response?.data?.message || 'Error');
+      showToast(error.response?.data?.message || t.common?.error || 'Error');
     }
   };
 
   const handleComment = async (e) => {
     e.preventDefault();
     if (!user) {
-      showToast('Sign in to comment');
+      showToast(vp.signInToComment || 'Sign in to comment');
       return;
     }
     if (!commentText.trim()) {
-      showToast('Write a comment first');
+      showToast(vp.writeComment || 'Write a comment first');
       return;
     }
     
@@ -161,10 +168,10 @@ function VideoPlayer() {
       });
       setComments([res.data, ...comments]);
       setCommentText('');
-      showToast('Comment posted');
+      showToast(vp.commentPosted || 'Comment posted');
     } catch (error) {
       console.error(error);
-      showToast('Error posting comment');
+      showToast(vp.errorComment || 'Error posting comment');
     }
   };
 
@@ -174,12 +181,12 @@ function VideoPlayer() {
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
-    showToast(`Speed: ${speed}x`);
+    showToast(`${vp.speed || 'Speed'}: ${speed}x`);
   };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    showToast('Link copied!');
+    showToast(vp.linkCopied || 'Link copied!');
   };
 
   const showToast = (message) => {
@@ -195,8 +202,9 @@ function VideoPlayer() {
   };
 
   const formatDate = (dateStr) => {
+    const locale = lang === 'es' ? 'es-ES' : lang === 'zh' ? 'zh-CN' : 'en-US';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   if (!video) {
@@ -208,7 +216,7 @@ function VideoPlayer() {
         height: '100vh',
         color: 'var(--muted)',
       }}>
-        Loading...
+        {vp.loading || t.common?.loading || 'Loading...'}
       </div>
     );
   }
@@ -218,12 +226,7 @@ function VideoPlayer() {
       <Header />
       
       <div className="wrap" style={{ maxWidth: '1100px', margin: '0 auto', padding: '18px' }}>
-        <div className="grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1.6fr 0.9fr',
-          gap: '14px',
-          alignItems: 'start',
-        }}>
+        <div className="video-player-grid">
           {/* Main Video Section */}
           <section className="panel">
             <div className="videoWrap" style={{ padding: '12px' }}>
@@ -245,15 +248,15 @@ function VideoPlayer() {
                   style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                   onLoadedMetadata={() => {
                     setDuration(videoRef.current?.duration || 0);
-                    setStatusLabel('Loaded');
+                    setStatusLabel(vp.loaded || 'Loaded');
                   }}
                   onTimeUpdate={() => {
                     if (videoRef.current) {
                       setCurrentTime(videoRef.current.currentTime);
                     }
                   }}
-                  onPlay={() => { setIsPlaying(true); setStatusLabel('Playing'); }}
-                  onPause={() => { setIsPlaying(false); setStatusLabel('Paused'); }}
+                  onPlay={() => { setIsPlaying(true); setStatusLabel(vp.playing || 'Playing'); }}
+                  onPause={() => { setIsPlaying(false); setStatusLabel(vp.paused || 'Paused'); }}
                 />
               </div>
 
@@ -304,7 +307,7 @@ function VideoPlayer() {
                   
                   <span style={{ flex: 1 }}></span>
 
-                  <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>Speed</label>
+                  <label className="video-control-label" style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>{vp.speed || 'Speed'}</label>
                   <select 
                     value={playbackSpeed} 
                     onChange={handleSpeedChange}
@@ -326,7 +329,7 @@ function VideoPlayer() {
                     <option value="2">2x</option>
                   </select>
 
-                  <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>Vol</label>
+                  <label className="video-control-label" style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>{vp.vol || 'Vol'}</label>
                   <input
                     type="range"
                     min="0"
@@ -334,6 +337,7 @@ function VideoPlayer() {
                     step="0.01"
                     value={volume}
                     onChange={handleVolumeChange}
+                    className="video-vol-slider"
                     style={{ maxWidth: '100px', accentColor: 'var(--brand2)' }}
                   />
                   
@@ -343,9 +347,9 @@ function VideoPlayer() {
                 </div>
 
                 {/* Shortcuts Row */}
-                <div className="row" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <div className="row video-shortcuts-row" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)' }}>
-                    Shortcuts: Space play/pause | J/K +/-10s | M mute | F fullscreen
+                    {vp.shortcuts || 'Shortcuts: Space play/pause | J/K +/-10s | M mute | F fullscreen'}
                   </span>
                   <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{statusLabel}</span>
                 </div>
@@ -359,11 +363,11 @@ function VideoPlayer() {
               </h1>
               
               <div className="metaLine" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <span className="muted">By <b>@{video.User?.email?.split('@')[0] || 'Creator'}</b></span>
+                <span className="muted">{vp.by || 'By'} <b>@{video.User?.email?.split('@')[0] || 'Creator'}</b></span>
                 <span className="muted">|</span>
-                <span className="muted"><span className="count">{(video.views || 0).toLocaleString()}</span> views</span>
+                <span className="muted"><span className="count">{(video.views || 0).toLocaleString()}</span> {vp.views || 'views'}</span>
                 <span className="muted">|</span>
-                <span className="muted"><span className="count">{comments.length}</span> comments</span>
+                <span className="muted"><span className="count">{comments.length}</span> {vp.comments || 'comments'}</span>
 
                 <span style={{ flex: 1 }}></span>
 
@@ -387,12 +391,12 @@ function VideoPlayer() {
                 >
                   <span>❤️</span>
                   <b><span className="count">{likes.toLocaleString()}</span></b>
-                  <span className="muted">{isLiked ? 'Liked' : 'Like'}</span>
+                  <span className="muted">{isLiked ? (vp.likedBtn || 'Liked') : (vp.like || 'Like')}</span>
                 </button>
               </div>
 
               <p className="muted" style={{ margin: '10px 0 0' }}>
-                {video.description || 'No description provided.'}
+                {video.description || (vp.noDescription || 'No description provided.')}
               </p>
             </div>
           </section>
@@ -407,17 +411,16 @@ function VideoPlayer() {
               padding: '12px',
               marginBottom: '12px',
             }}>
-              <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>Leave a comment</h3>
+              <h3 style={{ margin: '0 0 10px', fontSize: '14px' }}>{vp.leaveComment || 'Leave a comment'}</h3>
               
               {user ? (
                 <form onSubmit={handleComment}>
                   <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>Your name</label>
+                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>{vp.yourName || 'Your name'}</label>
                     <input
                       className="input"
                       value={user.email}
                       disabled
-                      placeholder="e.g., Brian"
                       maxLength={40}
                       style={{
                         border: '1px solid var(--line)',
@@ -431,11 +434,11 @@ function VideoPlayer() {
                   </div>
                   
                   <div className="field" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>Comment</label>
+                    <label style={{ fontSize: '12px', color: 'rgba(234,240,255,0.72)' }}>{vp.comment || 'Comment'}</label>
                     <textarea
                       id="commentInput"
                       className="input"
-                      placeholder="Write something..."
+                      placeholder={vp.writeSomething || 'Write something...'}
                       value={commentText}
                       onChange={(e) => setCommentText(e.target.value)}
                       maxLength={600}
@@ -452,18 +455,18 @@ function VideoPlayer() {
                   </div>
                   
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <button type="submit" className="btn primary">Post</button>
-                    <button type="button" className="btn" onClick={() => setCommentText('')}>Clear</button>
+                    <button type="submit" className="btn primary">{vp.post || 'Post'}</button>
+                    <button type="button" className="btn" onClick={() => setCommentText('')}>{vp.clear || 'Clear'}</button>
                   </div>
                   
                   <div className="muted" style={{ fontSize: '12px', marginTop: '10px' }}>
-                    Tip: Press Ctrl/Cmd + Enter to post.
+                    {vp.tipComment || 'Tip: Press Ctrl/Cmd + Enter to post.'}
                   </div>
                 </form>
               ) : (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <p className="muted" style={{ marginBottom: '12px' }}>Sign in to leave a comment</p>
-                  <Link to="/login" className="btn primary">Sign In</Link>
+                  <p className="muted" style={{ marginBottom: '12px' }}>{vp.signInToLeaveComment || 'Sign in to leave a comment'}</p>
+                  <Link to="/login" className="btn primary">{vp.signIn || 'Sign In'}</Link>
                 </div>
               )}
             </div>
@@ -476,13 +479,13 @@ function VideoPlayer() {
               padding: '12px',
             }}>
               <div className="hrow" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px' }}>Comments</h3>
+                <h3 style={{ margin: 0, fontSize: '14px' }}>{vp.commentsTitle || 'Comments'}</h3>
                 <span className="muted" style={{ fontSize: '12px' }}>{comments.length}</span>
               </div>
               
               {comments.length === 0 ? (
                 <div className="muted" style={{ fontSize: '12px' }}>
-                  No comments yet. Be the first!
+                  {vp.noComments || 'No comments yet. Be the first!'}
                 </div>
               ) : (
                 <div className="commentList" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -498,7 +501,7 @@ function VideoPlayer() {
                           @{c.User?.email?.split('@')[0] || 'User'}
                         </span>
                         <span className="cTime" style={{ fontSize: '12px', color: 'rgba(234,240,255,0.60)', fontVariantNumeric: 'tabular-nums' }}>
-                          {c.createdAt ? formatDate(c.createdAt) : 'Just now'}
+                          {c.createdAt ? formatDate(c.createdAt) : (vp.justNow || 'Just now')}
                         </span>
                       </div>
                       <p className="cText" style={{ 

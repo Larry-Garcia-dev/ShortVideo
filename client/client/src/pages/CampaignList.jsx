@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
+import { translations } from '../utils/translations';
 
 function CampaignList() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Obtenemos usuario para verificar rol
   const user = JSON.parse(localStorage.getItem('user'));
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  const c = t.campaigns || {};
 
   useEffect(() => {
-    // URL dinámica según entorno
     const API_URL = import.meta.env.MODE === 'production' 
         ? 'http://47.87.37.35:5000/api/campaigns'
         : 'http://localhost:5000/api/campaigns';
@@ -23,7 +25,8 @@ function CampaignList() {
   }, []);
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', { 
+    const locale = lang === 'es' ? 'es-ES' : lang === 'zh' ? 'zh-CN' : 'en-US';
+    return new Date(dateStr).toLocaleDateString(locale, { 
       month: 'short', day: 'numeric', year: 'numeric' 
     });
   };
@@ -33,7 +36,7 @@ function CampaignList() {
       <Header />
       
       <main className="wrap" style={{ maxWidth: '1180px', margin: '0 auto', padding: '18px' }}>
-        {/* Header con Botón Admin */}
+        {/* Header with Admin Button */}
         <section style={{
           position: 'relative',
           padding: '24px',
@@ -47,22 +50,21 @@ function CampaignList() {
           boxShadow: 'var(--shadow)',
           marginBottom: '24px',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+          <div className="campaign-list-header-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-                <span className="pill">Active Challenges</span>
+                <span className="pill">{c.activeChallenges || 'Active Challenges'}</span>
                 <h1 style={{ 
                     margin: '12px 0 8px', 
-                    fontSize: 'clamp(22px, 2.4vw, 32px)',
+                    fontSize: 'clamp(20px, 2.4vw, 32px)',
                     letterSpacing: '-0.3px',
                 }}>
-                    Video Challenges & Campaigns
+                    {c.title || 'Video Challenges & Campaigns'}
                 </h1>
                 <p style={{ margin: 0, color: 'var(--muted)', maxWidth: '80ch', lineHeight: 1.6 }}>
-                    Participate in challenges to rank your videos on the leaderboard.
+                    {c.subtitle || 'Participate in challenges to rank your videos on the leaderboard.'}
                 </p>
             </div>
 
-            {/* BOTÓN SOLO PARA ADMINS */}
             {user && user.role === 'admin' && (
                 <Link 
                     to="/create-campaign" 
@@ -74,25 +76,25 @@ function CampaignList() {
                         boxShadow: '0 4px 15px rgba(255,255,255,0.2)' 
                     }}
                 >
-                    + New Campaign
+                    {c.newCampaign || '+ New Campaign'}
                 </Link>
             )}
           </div>
           
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: '12px',
             marginTop: '20px',
             maxWidth: '500px',
           }}>
             <div className="kpi">
               <b>{campaigns.length}</b>
-              <span>Active Campaigns</span>
+              <span>{c.activeCampaigns || 'Active Campaigns'}</span>
             </div>
             <div className="kpi">
-              <b>Real-time</b>
-              <span>Ranking Updates</span>
+              <b>{c.realtime || 'Real-time'}</b>
+              <span>{c.realtimeRanking || 'Ranking Updates'}</span>
             </div>
           </div>
         </section>
@@ -101,29 +103,29 @@ function CampaignList() {
         <section>
           {loading ? (
             <div className="panel" style={{ padding: '40px', textAlign: 'center' }}>
-              <span className="muted">Loading campaigns...</span>
+              <span className="muted">{c.loadingCampaigns || 'Loading campaigns...'}</span>
             </div>
           ) : campaigns.length === 0 ? (
             <div className="panel" style={{ padding: '40px', textAlign: 'center' }}>
-              <span className="muted">No active campaigns at the moment.</span>
+              <span className="muted">{c.noCampaigns || 'No active campaigns at the moment.'}</span>
             </div>
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
               gap: '16px',
             }}>
               {campaigns.map(camp => (
                 <article key={camp.id} className="panel" style={{ padding: '20px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <span className="pill">Challenge</span>
+                    <span className="pill">{c.challenge || 'Challenge'}</span>
                     <span className="pill" style={{ 
                       background: 'rgba(70, 230, 165, 0.1)', 
                       borderColor: 'rgba(70, 230, 165, 0.2)',
                       color: 'var(--good)',
                     }}>
                       <span className="dot"></span>
-                      Active
+                      {c.active || 'Active'}
                     </span>
                   </div>
                   
@@ -136,12 +138,12 @@ function CampaignList() {
                   </p>
                   
                   <div style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>Ends on</div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>{c.endsOn || 'Ends on'}</div>
                     <div style={{ fontWeight: 700 }}>{formatDate(camp.endDate)}</div>
                   </div>
                   
                   <Link to={`/campaign/${camp.id}`} className="btn primary" style={{ width: '100%' }}>
-                    View Leaderboard
+                    {c.viewLeaderboard || 'View Leaderboard'}
                   </Link>
                 </article>
               ))}

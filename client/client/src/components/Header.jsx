@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations'; // Importar diccionario
 
-function Header({ onSearch }) {
+function Header({ onSearch, onToggleSidebar }) {
   const [searchQuery, setSearchQuery] = useState('');
   // Leer usuario y preferencia de idioma guardada
   const user = JSON.parse(localStorage.getItem('user'));
@@ -66,21 +66,29 @@ function Header({ onSearch }) {
       borderBottom: '1px solid var(--line)',
       height: '60px',
     }}>
-      <div style={{
-        height: '100%',
-        padding: '0 18px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '14px',
-      }}>
+      <div className="header-inner">
+        {/* Hamburger for mobile */}
+        {onToggleSidebar && (
+          <button
+            className="header-hamburger"
+            onClick={onToggleSidebar}
+            aria-label="Toggle menu"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        )}
+
         {/* Brand */}
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Link to="/" className="header-brand">
           <img 
             src="/logo.png" 
             alt="Logo" 
             style={{
-              height: '40px', /* Ajusta este tamaño si lo ves muy grande o chico */
+              height: '40px',
               width: 'auto',
               objectFit: 'contain'
             }} 
@@ -104,10 +112,10 @@ function Header({ onSearch }) {
         </div>
 
         {/* Actions & Language */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="header-actions">
 
           {/* Language Globe Selector */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: '4px' }}>
+          <div className="header-lang-selector">
             <span style={{ fontSize: '16px', marginRight: '4px' }} title="Change Language">🌐</span>
             <select
               value={currentLang}
