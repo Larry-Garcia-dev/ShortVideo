@@ -1,22 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { translations } from '../utils/translations'; // Importar diccionario
+import { translations } from '../utils/translations';
 
 function Header({ onSearch, onToggleSidebar }) {
   const [searchQuery, setSearchQuery] = useState('');
-  // Leer usuario y preferencia de idioma guardada
   const user = JSON.parse(localStorage.getItem('user'));
   const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
 
   const [currentLang, setCurrentLang] = useState(storedLang);
   const navigate = useNavigate();
 
-  // Obtener textos según el idioma actual
   const t = translations[currentLang] || translations.en;
 
   useEffect(() => {
-    // Sincronizar idioma si cambia externamente (opcional)
     localStorage.setItem('appLanguage', currentLang);
   }, [currentLang]);
 
@@ -38,21 +35,18 @@ function Header({ onSearch, onToggleSidebar }) {
     setCurrentLang(newLang);
     localStorage.setItem('appLanguage', newLang);
 
-    // Si hay usuario, actualizar su preferencia en BD
     if (user) {
       try {
         await axios.put('http://localhost:5000/api/users/language', {
           userId: user.id,
           language: newLang
         });
-        // Actualizar usuario en storage
         user.language = newLang;
         localStorage.setItem('user', JSON.stringify(user));
       } catch (err) {
         console.error("Error updating language preference", err);
       }
     }
-    // Recargar para aplicar cambios en toda la app (método simple)
     window.location.reload();
   };
 
@@ -84,14 +78,14 @@ function Header({ onSearch, onToggleSidebar }) {
 
         {/* Brand */}
         <Link to="/" className="header-brand">
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
+          <img
+            src="/logo.png"
+            alt="Logo"
             style={{
               height: '40px',
               width: 'auto',
               objectFit: 'contain'
-            }} 
+            }}
           />
         </Link>
 
@@ -116,7 +110,11 @@ function Header({ onSearch, onToggleSidebar }) {
 
           {/* Language Globe Selector */}
           <div className="header-lang-selector">
-            <span style={{ fontSize: '16px', marginRight: '4px' }} title="Change Language">🌐</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px', color: 'var(--muted)', flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
             <select
               value={currentLang}
               onChange={handleLanguageChange}
@@ -151,7 +149,10 @@ function Header({ onSearch, onToggleSidebar }) {
                   justifyContent: 'center',
                 }}
               >
-                ➕
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
               </Link>
               <div
                 style={{
@@ -164,12 +165,14 @@ function Header({ onSearch, onToggleSidebar }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px',
                 }}
                 title={user.email}
                 onClick={handleLogout}
               >
-                👤
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
               </div>
             </>
           ) : (

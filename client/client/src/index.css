@@ -1229,6 +1229,73 @@ input[type="range"] {
   align-items: start;
 }
 
+/* ── Video Player Controls ── */
+.vp-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  border: 1px solid rgba(234,240,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.vp-seek {
+  width: 100%;
+  accent-color: var(--brand2);
+}
+
+.vp-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vp-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.vp-time {
+  font-variant-numeric: tabular-nums;
+  color: rgba(234,240,255,0.78);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.vp-label {
+  font-size: 12px;
+  color: rgba(234,240,255,0.60);
+}
+
+.vp-select {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.vp-vol-slider {
+  max-width: 100px;
+  accent-color: var(--brand2);
+}
+
+.vp-shortcuts-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: rgba(234,240,255,0.60);
+}
+
 /* ===================== */
 /* CAMPAIGN DETAIL GRID  */
 /* ===================== */
@@ -1305,6 +1372,17 @@ input[type="range"] {
 
   .right-panel {
     display: none;
+  }
+}
+
+/* Tablet video controls: hide speed label and volume on small tablets */
+@media (max-width: 900px) {
+  .vp-label {
+    display: none;
+  }
+
+  .vp-vol-slider {
+    max-width: 70px;
   }
 }
 
@@ -1429,9 +1507,31 @@ input[type="range"] {
     height: 160px;
   }
 
-  /* Video Player controls */
-  .controls .row {
+  /* Video Player controls - responsive */
+  .vp-controls-row {
     gap: 6px;
+  }
+
+  .vp-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .vp-shortcuts-row {
+    display: none;
+  }
+
+  .vp-label {
+    display: none;
+  }
+
+  .vp-vol-slider {
+    display: none;
+  }
+
+  .vp-select {
+    padding: 6px 8px;
   }
 
   .iconBtn {
@@ -1477,19 +1577,6 @@ input[type="range"] {
 
   .kpi b {
     font-size: 14px;
-  }
-
-  /* Video player: hide shortcuts text, volume slider */
-  .video-shortcuts-row {
-    display: none;
-  }
-
-  .video-control-label {
-    display: none;
-  }
-
-  .video-vol-slider {
-    display: none;
   }
 
   /* Announce grid stack */
