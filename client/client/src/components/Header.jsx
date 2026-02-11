@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
 
 function Header({ onSearch, onToggleSidebar }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [langOpen, setLangOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem('user'));
   const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
 
   const [currentLang, setCurrentLang] = useState(storedLang);
   const navigate = useNavigate();
+  const langRef = useRef(null);
 
   const t = translations[currentLang] || translations.en;
 
@@ -30,8 +32,9 @@ function Header({ onSearch, onToggleSidebar }) {
     }
   };
 
-  const handleLanguageChange = async (e) => {
-    const newLang = e.target.value;
+  const handleLanguageSelect = async (newLang) => {
+    setLangOpen(false);
+    if (newLang === currentLang) return;
     setCurrentLang(newLang);
     localStorage.setItem('appLanguage', newLang);
 
@@ -49,6 +52,17 @@ function Header({ onSearch, onToggleSidebar }) {
     }
     window.location.reload();
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header style={{
@@ -108,30 +122,44 @@ function Header({ onSearch, onToggleSidebar }) {
         {/* Actions & Language */}
         <div className="header-actions">
 
-          {/* Language Globe Selector */}
-          <div className="header-lang-selector">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px', color: 'var(--muted)', flexShrink: 0 }}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <select
-              value={currentLang}
-              onChange={handleLanguageChange}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--muted)',
-                fontSize: '13px',
-                cursor: 'pointer',
-                outline: 'none',
-                fontWeight: 600
-              }}
+          {/* Language Globe Button + Dropdown */}
+          <div className="header-lang-wrapper" ref={langRef}>
+            <button
+              className="iconBtn header-lang-btn"
+              onClick={() => setLangOpen((prev) => !prev)}
+              aria-label="Change language"
+              title="Change language"
             >
-              <option value="en" style={{ background: 'var(--bg)' }}>EN</option>
-              <option value="es" style={{ background: 'var(--bg)' }}>ES</option>
-              <option value="zh" style={{ background: 'var(--bg)' }}>ZH</option>
-            </select>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+            </button>
+
+            {langOpen && (
+              <div className="header-lang-dropdown">
+                {[
+                  { code: 'en', label: 'English', flag: 'EN' },
+                  { code: 'es', label: 'Espanol', flag: 'ES' },
+                  { code: 'zh', label: '中文', flag: 'ZH' },
+                ].map((lang) => (
+                  <button
+                    key={lang.code}
+                    className={`header-lang-option${currentLang === lang.code ? ' active' : ''}`}
+                    onClick={() => handleLanguageSelect(lang.code)}
+                  >
+                    <span className="header-lang-flag">{lang.flag}</span>
+                    <span className="header-lang-label">{lang.label}</span>
+                    {currentLang === lang.code && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand2)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {user ? (
