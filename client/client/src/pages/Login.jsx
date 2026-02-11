@@ -85,7 +85,10 @@ function Login() {
         }
 
         navigate('/');
-        window.location.reload();
+        // Esperamos un poquito para que React termine de procesar antes de recargar
+        setTimeout(() => {
+             window.location.reload();
+        }, 100);
       } catch (err) {
         console.error(err);
         setError('Error iniciando sesión con Google');
