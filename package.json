@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "cd client/client && npx vite --host",
+    "build": "cd client/client && npx vite build",
+    "start": "cd client/client && npx vite preview",
     "lint": "eslint ."
   },
   "dependencies": {

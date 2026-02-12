@@ -1170,11 +1170,92 @@ input[type="range"] {
   flex-shrink: 0;
 }
 
-.header-lang-selector {
+/* Language globe button + dropdown */
+.header-lang-wrapper {
   position: relative;
+}
+
+.header-lang-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.header-lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r14);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.50);
+  padding: 6px;
+  z-index: 100;
+  animation: langDropIn 0.15s ease;
+}
+
+@keyframes langDropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header-lang-option {
   display: flex;
   align-items: center;
-  margin-right: 4px;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s ease;
+}
+
+.header-lang-option:hover {
+  background: var(--panel2);
+}
+
+.header-lang-option.active {
+  background: rgba(124, 92, 255, 0.10);
+}
+
+.header-lang-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.header-lang-option.active .header-lang-flag {
+  background: rgba(124, 92, 255, 0.18);
+  border-color: rgba(124, 92, 255, 0.30);
+  color: var(--brand2);
+}
+
+.header-lang-label {
+  flex: 1;
+  text-align: left;
 }
 
 .header-hamburger {
@@ -1227,6 +1308,73 @@ input[type="range"] {
   grid-template-columns: 1.6fr 0.9fr;
   gap: 14px;
   align-items: start;
+}
+
+/* ── Video Player Controls ── */
+.vp-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  border: 1px solid rgba(234,240,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.vp-seek {
+  width: 100%;
+  accent-color: var(--brand2);
+}
+
+.vp-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vp-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.vp-time {
+  font-variant-numeric: tabular-nums;
+  color: rgba(234,240,255,0.78);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.vp-label {
+  font-size: 12px;
+  color: rgba(234,240,255,0.60);
+}
+
+.vp-select {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.vp-vol-slider {
+  max-width: 100px;
+  accent-color: var(--brand2);
+}
+
+.vp-shortcuts-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: rgba(234,240,255,0.60);
 }
 
 /* ===================== */
@@ -1305,6 +1453,17 @@ input[type="range"] {
 
   .right-panel {
     display: none;
+  }
+}
+
+/* Tablet video controls: hide speed label and volume on small tablets */
+@media (max-width: 900px) {
+  .vp-label {
+    display: none;
+  }
+
+  .vp-vol-slider {
+    max-width: 70px;
   }
 }
 
@@ -1408,9 +1567,7 @@ input[type="range"] {
     gap: 6px;
   }
 
-  .header-lang-selector span:first-child {
-    display: none;
-  }
+
 
   .home-hero {
     padding: 14px;
@@ -1429,9 +1586,31 @@ input[type="range"] {
     height: 160px;
   }
 
-  /* Video Player controls */
-  .controls .row {
+  /* Video Player controls - responsive */
+  .vp-controls-row {
     gap: 6px;
+  }
+
+  .vp-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .vp-shortcuts-row {
+    display: none;
+  }
+
+  .vp-label {
+    display: none;
+  }
+
+  .vp-vol-slider {
+    display: none;
+  }
+
+  .vp-select {
+    padding: 6px 8px;
   }
 
   .iconBtn {
@@ -1477,19 +1656,6 @@ input[type="range"] {
 
   .kpi b {
     font-size: 14px;
-  }
-
-  /* Video player: hide shortcuts text, volume slider */
-  .video-shortcuts-row {
-    display: none;
-  }
-
-  .video-control-label {
-    display: none;
-  }
-
-  .video-vol-slider {
-    display: none;
   }
 
   /* Announce grid stack */
