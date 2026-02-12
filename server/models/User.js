@@ -5,25 +5,21 @@ const User = sequelize.define('User', {
     email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
         validate: {
             isEmail: true
         }
+        // QUITAR "unique: true" DE AQUÍ
     },
-    // password: {
-    //     type: DataTypes.STRING,
-    //     allowNull: false
-    // },
     password: {
         type: DataTypes.STRING,
-        allowNull: true // CAMBIO: Permitir nulo para usuarios de Google
+        allowNull: true
     },
-    googleId: { // NUEVO: Para identificar usuarios de Google
+    googleId: {
         type: DataTypes.STRING,
-        allowNull: true,
-        unique: true
+        allowNull: true
+        // QUITAR "unique: true" DE AQUÍ
     },
-    avatar: { // Opcional: Para guardar la foto de Google
+    avatar: {
         type: DataTypes.STRING,
         allowNull: true
     },
@@ -35,7 +31,6 @@ const User = sequelize.define('User', {
         type: DataTypes.ENUM('Active', 'Disabled', 'Locked'),
         defaultValue: 'Active'
     },
-    // Req 2.2: Bloqueo de cuenta
     failedLoginAttempts: {
         type: DataTypes.INTEGER,
         defaultValue: 0
@@ -44,7 +39,6 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
-    // Req 2.3: Recuperación de contraseña
     resetPasswordToken: {
         type: DataTypes.STRING,
         allowNull: true
@@ -53,13 +47,25 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
-    // Req 7: Preferencia de idioma
     language: {
-        type: DataTypes.ENUM('en', 'es', 'zh'), // Inglés, Español, Chino
+        type: DataTypes.ENUM('en', 'es', 'zh'),
         defaultValue: 'en'
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    // AGREGAR ESTO AL FINAL:
+    indexes: [
+        {
+            unique: true,
+            fields: ['email'],
+            name: 'users_email_unique' // Nombre fijo para evitar duplicados
+        },
+        {
+            unique: true,
+            fields: ['googleId'],
+            name: 'users_googleId_unique' // Nombre fijo
+        }
+    ]
 });
 
 module.exports = User;

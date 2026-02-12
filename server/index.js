@@ -36,9 +36,16 @@ app.get('/', (req, res) => {
 // Server Start hola mundo
 const PORT = process.env.PORT || 5000;
 
-sequelize.sync({ alter: true }) // 'alter: true' actualiza las tablas sin borrar datos
+// Lógica de seguridad para la base de datos
+const isProduction = process.env.NODE_ENV === 'production';
+
+const syncOptions = isProduction
+    ? { alter: false }  // EN PRODUCCIÓN: No tocar la estructura automáticamente (seguridad)
+    : { alter: true };  // EN DESARROLLO: Intentar actualizar cambios
+
+sequelize.sync(syncOptions)
     .then(() => {
-        console.log('✅ Base de datos sincronizada');
+        console.log(`✅ Base de datos sincronizada (Modo: ${isProduction ? 'Producción' : 'Desarrollo'})`);
         app.listen(PORT, () => {
             console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
         });
