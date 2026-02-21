@@ -4,6 +4,7 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
+import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
 
 /* ── Announcements data ── */
@@ -24,6 +25,7 @@ function Home() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [likedVideos, setLikedVideos] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shareModal, setShareModal] = useState({ open: false, url: '', title: '' });
 
   // Collapsible state -- both closed by default
   const [announceOpen, setAnnounceOpen] = useState(false);
@@ -135,8 +137,7 @@ function Home() {
     e.preventDefault();
     e.stopPropagation();
     const url = `${window.location.origin}/watch/${video.id}`;
-    navigator.clipboard.writeText(url);
-    showToast(t.home.linkCopied);
+    setShareModal({ open: true, url, title: video.title || '' });
   };
 
   const handleLike = async (e, video) => {
@@ -418,6 +419,14 @@ function Home() {
           }}
         />
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareModal.open}
+        onClose={() => setShareModal({ open: false, url: '', title: '' })}
+        url={shareModal.url}
+        title={shareModal.title}
+      />
 
       {/* Toast */}
       <div className={`toast ${toast.show ? 'show' : ''}`}>
