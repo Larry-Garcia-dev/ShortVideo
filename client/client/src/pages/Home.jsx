@@ -95,6 +95,17 @@ function Home() {
         const sorted = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setVideos(sorted);
         setFilteredVideos(sorted);
+
+        // Initialize liked state from existing likes for the current user
+        if (user) {
+          const liked = {};
+          sorted.forEach(v => {
+            if (v.Likes && v.Likes.some(l => l.userId === user.id)) {
+              liked[v.id] = true;
+            }
+          });
+          setLikedVideos(liked);
+        }
       })
       .catch(error => console.error(error))
       .finally(() => setLoading(false));
@@ -136,21 +147,16 @@ function Home() {
       return;
     }
     try {
-      const res = await axios.post(`http://localhost:5000/api/videos/${video.id}/like`, { userId: user.id });
-      const wasLiked = likedVideos[video.id];
-      setLikedVideos(prev => ({ ...prev, [video.id]: !wasLiked }));
+      const res = await axios.post(`http://localhost:5000/api/videos/${video.id}/toggle-like`, { userId: user.id });
+      const nowLiked = res.data?.liked ?? !likedVideos[video.id];
+      setLikedVideos(prev => ({ ...prev, [video.id]: nowLiked }));
 
-      // Update the like count in real-time in the videos array
+      // Update the like count in real-time
       const updateList = (list) => list.map(v => {
         if (v.id === video.id) {
           const currentCount = v.Likes?.length || 0;
-          const newCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
-          // If backend returns the new count, use it
-          const serverCount = res.data?.likeCount ?? res.data?.likes ?? newCount;
-          return {
-            ...v,
-            Likes: Array(serverCount).fill({})
-          };
+          const newCount = nowLiked ? currentCount + 1 : Math.max(0, currentCount - 1);
+          return { ...v, Likes: Array(newCount).fill({}) };
         }
         return v;
       });
@@ -158,9 +164,9 @@ function Home() {
       setVideos(prev => updateList(prev));
       setFilteredVideos(prev => updateList(prev));
 
-      showToast(wasLiked ? t.home.likeRemoved : t.home.liked);
+      showToast(nowLiked ? t.home.liked : t.home.likeRemoved);
     } catch (error) {
-      showToast(error.response?.data?.message || t.home.alreadyLiked);
+      showToast(error.response?.data?.message || t.home.errorLike || 'Error');
     }
   };
 
