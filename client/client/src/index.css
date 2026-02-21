@@ -459,6 +459,33 @@ input[type="range"] {
   border-color: rgba(70,230,165,0.28);
 }
 
+/* Maintenance variant: amber/yellow glow */
+.home-announce.maintenance {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(245,190,60,0.20), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(255,140,40,0.16), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(245,190,60,0.30);
+}
+
+/* Feature variant: cyan/blue glow (default but with slightly different tone) */
+.home-announce.feature {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(25,211,255,0.20), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(100,160,255,0.18), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(25,211,255,0.25);
+}
+
+/* Improvement variant: purple glow */
+.home-announce.improvement {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(160,120,255,0.18), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(100,180,255,0.14), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(160,120,255,0.25);
+}
+
 .home-announce-header {
   display: flex;
   align-items: center;
@@ -522,6 +549,24 @@ input[type="range"] {
   background: rgba(70,230,165,0.14);
   border: 1px solid rgba(70,230,165,0.30);
   color: rgba(70,230,165,0.95);
+}
+
+.home-announce-tag.maintenance {
+  background: rgba(245,190,60,0.14);
+  border: 1px solid rgba(245,190,60,0.32);
+  color: rgba(245,200,80,0.95);
+}
+
+.home-announce-tag.feature {
+  background: rgba(25,211,255,0.14);
+  border: 1px solid rgba(25,211,255,0.30);
+  color: rgba(25,211,255,0.95);
+}
+
+.home-announce-tag.improvement {
+  background: rgba(160,120,255,0.14);
+  border: 1px solid rgba(160,120,255,0.30);
+  color: rgba(170,140,255,0.95);
 }
 
 .home-announce-body {
@@ -626,6 +671,18 @@ input[type="range"] {
   background: rgba(70,230,165,0.80);
 }
 
+.home-announce-dot.active.maintenance {
+  background: rgba(245,190,60,0.85);
+}
+
+.home-announce-dot.active.feature {
+  background: rgba(25,211,255,0.80);
+}
+
+.home-announce-dot.active.improvement {
+  background: rgba(160,120,255,0.80);
+}
+
 .home-announce-progress {
   height: 4px;
   background: rgba(234,240,255,0.10);
@@ -647,6 +704,18 @@ input[type="range"] {
 
 .home-announce-progress-fill.popular {
   background: linear-gradient(90deg, rgba(70,230,165,0.75), rgba(25,211,255,0.80));
+}
+
+.home-announce-progress-fill.maintenance {
+  background: linear-gradient(90deg, rgba(245,190,60,0.80), rgba(255,140,40,0.85));
+}
+
+.home-announce-progress-fill.feature {
+  background: linear-gradient(90deg, rgba(25,211,255,0.75), rgba(100,160,255,0.85));
+}
+
+.home-announce-progress-fill.improvement {
+  background: linear-gradient(90deg, rgba(160,120,255,0.75), rgba(100,180,255,0.85));
 }
 
 /* ── Hero Section (Explore Videos) ── */

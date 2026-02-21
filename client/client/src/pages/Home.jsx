@@ -23,7 +23,7 @@ function Home() {
   // Announcements: open by default, user can close
   const [announceOpen, setAnnounceOpen] = useState(true);
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [campaignAnnouncements, setCampaignAnnouncements] = useState([]);
+  const [allAnnouncements, setAllAnnouncements] = useState([]);
 
   // Announcement rotation
   const [annIdx, setAnnIdx] = useState(0);
@@ -34,6 +34,7 @@ function Home() {
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
   const ann = t.campaignAnnounce || {};
+  const sysAnn = t.systemAnnounce || {};
 
   const categories = [
     { key: 'all', label: t.home.all },
@@ -53,8 +54,21 @@ function Home() {
     applyFilters();
   }, [activeCategory, videos]);
 
-  /* ── Load campaigns and build announcements ── */
+  /* ── Build system (static) announcements ── */
+  const buildSystemAnnouncements = () => {
+    return [
+      { _sys: true, type: 'feature',     sysKey: 'customThumbnails' },
+      { _sys: true, type: 'improvement', sysKey: 'cdnPerformance' },
+      { _sys: true, type: 'maintenance', sysKey: 'maintenance' },
+      { _sys: true, type: 'feature',     sysKey: 'creatorRewards' },
+      { _sys: true, type: 'feature',     sysKey: 'sharePlatforms' },
+    ];
+  };
+
+  /* ── Load campaigns and merge with system announcements ── */
   const loadCampaignAnnouncements = () => {
+    const systemItems = buildSystemAnnouncements();
+
     axios.get('http://localhost:5000/api/campaigns')
       .then(res => {
         const now = new Date();
@@ -63,14 +77,12 @@ function Home() {
           return c.status === 'Active' && end >= now;
         });
 
-        if (!active.length) return;
-
-        const items = [];
+        const campaignItems = [];
         const sorted = [...active].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Most recent campaign
         if (sorted[0]) {
-          items.push({ ...sorted[0], type: 'new' });
+          campaignItems.push({ ...sorted[0], type: 'new', _sys: false });
         }
 
         // Ending soon (within ENDING_SOON_DAYS)
@@ -81,38 +93,42 @@ function Home() {
           })
           .sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
         ending.forEach(c => {
-          if (!items.find(i => i.id === c.id)) {
-            items.push({ ...c, type: 'ending' });
+          if (!campaignItems.find(i => i.id === c.id)) {
+            campaignItems.push({ ...c, type: 'ending', _sys: false });
           } else {
-            // Mark existing entry as also ending
-            const idx = items.findIndex(i => i.id === c.id);
-            if (idx !== -1) items[idx].type = 'ending';
+            const idx = campaignItems.findIndex(i => i.id === c.id);
+            if (idx !== -1) campaignItems[idx].type = 'ending';
           }
         });
 
-        // Popular: campaigns with Videos array (most videos joined)
-        // We don't have video count from the list endpoint, so just pick oldest active as "popular" if we have 2+
+        // Popular: oldest active campaign
         if (sorted.length >= 2) {
-          const popular = sorted[sorted.length - 1]; // oldest active = has been around longest = likely most popular
-          if (!items.find(i => i.id === popular.id)) {
-            items.push({ ...popular, type: 'popular' });
+          const popular = sorted[sorted.length - 1];
+          if (!campaignItems.find(i => i.id === popular.id)) {
+            campaignItems.push({ ...popular, type: 'popular', _sys: false });
           }
         }
 
-        // Add remaining campaigns as 'new' type
+        // Remaining campaigns
         active.forEach(c => {
-          if (!items.find(i => i.id === c.id)) {
-            items.push({ ...c, type: 'new' });
+          if (!campaignItems.find(i => i.id === c.id)) {
+            campaignItems.push({ ...c, type: 'new', _sys: false });
           }
         });
 
-        setCampaignAnnouncements(items);
+        // Interleave: campaigns first (ending first), then system announcements
+        const endingFirst = campaignItems.filter(c => c.type === 'ending');
+        const rest = campaignItems.filter(c => c.type !== 'ending');
+        setAllAnnouncements([...endingFirst, ...rest, ...systemItems]);
       })
-      .catch(err => console.error('Error loading campaign announcements:', err));
+      .catch(() => {
+        // If campaigns fail, still show system announcements
+        setAllAnnouncements(systemItems);
+      });
   };
 
   /* ── Announcement rotation ── */
-  const totalAnn = campaignAnnouncements.length;
+  const totalAnn = allAnnouncements.length;
 
   const startProgress = useCallback(() => {
     if (!progressRef.current || totalAnn === 0) return;
@@ -292,7 +308,7 @@ function Home() {
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-                {ann.title || 'Campaigns'}
+                {sysAnn.announcements || 'Announcements'}
                 <span className="home-toggle-badge">{totalAnn}</span>
               </button>
             )}
@@ -312,32 +328,60 @@ function Home() {
             </button>
           </div>
 
-          {/* Campaign announcements -- open by default, closable */}
+          {/* Announcements carousel -- campaigns + system -- open by default, closable */}
           {announceOpen && totalAnn > 0 && (() => {
-            const camp = campaignAnnouncements[annIdx];
-            if (!camp) return null;
-            const daysLeft = getDaysLeft(camp.endDate);
-            const typeClass = camp.type === 'ending' ? 'ending-soon' : camp.type === 'popular' ? 'popular' : '';
-            const tagLabel = camp.type === 'ending'
-              ? (ann.tagEnding || 'Ending soon')
-              : camp.type === 'popular'
-                ? (ann.tagPopular || 'Top campaign')
-                : (ann.tagNew || 'New campaign');
-            const tagClass = camp.type === 'ending' ? 'ending' : camp.type === 'popular' ? 'popular' : 'new';
+            const item = allAnnouncements[annIdx];
+            if (!item) return null;
+
+            const isSys = item._sys;
+
+            /* -- Determine visual type class + tag -- */
+            let typeClass = '';
+            let tagLabel = '';
+            let tagClass = '';
+            let tagIcon = null;
+
+            const iconPlus = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>;
+            const iconClock = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+            const iconStar = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+            const iconWrench = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
+            const iconZap = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+
+            if (isSys) {
+              if (item.type === 'maintenance') {
+                typeClass = 'maintenance';
+                tagLabel = sysAnn.tagMaintenance || 'Maintenance';
+                tagClass = 'maintenance';
+                tagIcon = iconWrench;
+              } else if (item.type === 'improvement') {
+                typeClass = 'improvement';
+                tagLabel = sysAnn.tagImprovement || 'Improvement';
+                tagClass = 'improvement';
+                tagIcon = iconZap;
+              } else {
+                typeClass = 'feature';
+                tagLabel = sysAnn.tagFeature || 'New feature';
+                tagClass = 'feature';
+                tagIcon = iconPlus;
+              }
+            } else {
+              if (item.type === 'ending') {
+                typeClass = 'ending-soon'; tagClass = 'ending'; tagIcon = iconClock;
+                tagLabel = ann.tagEnding || 'Ending soon';
+              } else if (item.type === 'popular') {
+                typeClass = 'popular'; tagClass = 'popular'; tagIcon = iconStar;
+                tagLabel = ann.tagPopular || 'Top campaign';
+              } else {
+                typeClass = ''; tagClass = 'new'; tagIcon = iconPlus;
+                tagLabel = ann.tagNew || 'New campaign';
+              }
+            }
 
             return (
               <section className={`home-announce ${typeClass}`}>
                 <div className="home-announce-header">
                   <span className={`home-announce-tag ${tagClass}`}>
-                    {camp.type === 'ending' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    )}
-                    {camp.type === 'popular' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    )}
-                    {camp.type === 'new' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                    )}
+                    {tagIcon}
                     {tagLabel}
                   </span>
                   <button className="home-announce-close" onClick={() => setAnnounceOpen(false)} aria-label="Close">
@@ -346,33 +390,42 @@ function Home() {
                 </div>
 
                 <div className="home-announce-body">
-                  <p className="home-announce-name">{camp.name}</p>
-                  {camp.description && (
-                    <p className="home-announce-desc">{camp.description}</p>
+                  {isSys ? (
+                    /* ── System announcement ── */
+                    <>
+                      <p className="home-announce-name">{sysAnn[item.sysKey] || item.sysKey}</p>
+                      <p className="home-announce-desc">{sysAnn[`${item.sysKey}_desc`] || ''}</p>
+                    </>
+                  ) : (
+                    /* ── Campaign announcement ── */
+                    <>
+                      <p className="home-announce-name">{item.name}</p>
+                      {item.description && <p className="home-announce-desc">{item.description}</p>}
+
+                      <div className="home-announce-dates">
+                        <span>{ann.starts || 'Starts'}: <strong>{formatDate(item.startDate)}</strong></span>
+                        <span>{'|'}</span>
+                        <span>{ann.ends || 'Ends'}: <strong>{formatDate(item.endDate)}</strong></span>
+                        {item.type === 'ending' && (() => {
+                          const dl = getDaysLeft(item.endDate);
+                          return (
+                            <span className="ending-warn">
+                              {dl <= 0 ? (ann.endsToday || 'Ends today!')
+                                : dl === 1 ? (ann.endsTomorrow || 'Ends tomorrow!')
+                                : `${dl} ${ann.daysLeft || 'days left'}`}
+                            </span>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="home-announce-cta">
+                        <Link to={`/campaign/${item.id}`}>
+                          {ann.viewCampaign || 'View campaign'}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </Link>
+                      </div>
+                    </>
                   )}
-
-                  <div className="home-announce-dates">
-                    <span>{ann.starts || 'Starts'}: <strong>{formatDate(camp.startDate)}</strong></span>
-                    <span>{'|'}</span>
-                    <span>{ann.ends || 'Ends'}: <strong>{formatDate(camp.endDate)}</strong></span>
-                    {camp.type === 'ending' && (
-                      <span className="ending-warn">
-                        {daysLeft <= 0
-                          ? (ann.endsToday || 'Ends today!')
-                          : daysLeft === 1
-                            ? (ann.endsTomorrow || 'Ends tomorrow!')
-                            : `${daysLeft} ${ann.daysLeft || 'days left'}`
-                        }
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="home-announce-cta">
-                    <Link to={`/campaign/${camp.id}`}>
-                      {ann.viewCampaign || 'View campaign'}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </Link>
-                  </div>
 
                   <div className="home-announce-controls">
                     <div style={{ display: 'flex', gap: '8px' }}>
@@ -384,19 +437,29 @@ function Home() {
                       </button>
                     </div>
                     <div className="home-announce-dots">
-                      {campaignAnnouncements.map((c, i) => (
-                        <button
-                          key={c.id + '-' + i}
-                          className={`home-announce-dot ${i === annIdx ? `active ${c.type === 'ending' ? 'ending' : c.type === 'popular' ? 'popular' : ''}` : ''}`}
-                          onClick={() => setAnn(i)}
-                          aria-label={`Campaign ${i + 1}`}
-                        />
-                      ))}
+                      {allAnnouncements.map((a, i) => {
+                        let dotActive = '';
+                        if (i === annIdx) {
+                          if (a._sys) {
+                            dotActive = a.type === 'maintenance' ? 'active maintenance' : a.type === 'improvement' ? 'active improvement' : 'active feature';
+                          } else {
+                            dotActive = a.type === 'ending' ? 'active ending' : a.type === 'popular' ? 'active popular' : 'active';
+                          }
+                        }
+                        return (
+                          <button
+                            key={(a.id || a.sysKey) + '-' + i}
+                            className={`home-announce-dot ${dotActive}`}
+                            onClick={() => setAnn(i)}
+                            aria-label={`Announcement ${i + 1}`}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
 
                   <div className="home-announce-progress">
-                    <div className={`home-announce-progress-fill ${camp.type === 'ending' ? 'ending' : camp.type === 'popular' ? 'popular' : ''}`} ref={progressRef} />
+                    <div className={`home-announce-progress-fill ${isSys ? item.type : (item.type === 'ending' ? 'ending' : item.type === 'popular' ? 'popular' : '')}`} ref={progressRef} />
                   </div>
                 </div>
               </section>
