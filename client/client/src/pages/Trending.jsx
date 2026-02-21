@@ -96,9 +96,14 @@ function Trending() {
   };
 
   return (
-    <div className="page-container">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
-      <div className="main-layout">
+
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <div className="app-layout">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         <main style={{ padding: '18px', overflowY: 'auto' }}>
