@@ -7,15 +7,8 @@ import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
 
-/* ── Announcements data ── */
-const ANNOUNCEMENTS = [
-  { key: 'challenge', meta: 'event' },
-  { key: 'thumbnails', meta: 'feature' },
-  { key: 'cdn', meta: 'improvement' },
-  { key: 'rewards', meta: 'weekly' },
-  { key: 'maintenance', meta: 'notice' },
-];
 const ROTATE_MS = 6000;
+const ENDING_SOON_DAYS = 3; // campaigns ending within 3 days get special color
 
 function Home() {
   const [videos, setVideos] = useState([]);
@@ -27,9 +20,10 @@ function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareModal, setShareModal] = useState({ open: false, url: '', title: '' });
 
-  // Collapsible state -- both closed by default
-  const [announceOpen, setAnnounceOpen] = useState(false);
+  // Announcements: open by default, user can close
+  const [announceOpen, setAnnounceOpen] = useState(true);
   const [exploreOpen, setExploreOpen] = useState(false);
+  const [campaignAnnouncements, setCampaignAnnouncements] = useState([]);
 
   // Announcement rotation
   const [annIdx, setAnnIdx] = useState(0);
@@ -39,7 +33,7 @@ function Home() {
   const user = JSON.parse(localStorage.getItem('user'));
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
-  const ann = t.announcements || {};
+  const ann = t.campaignAnnounce || {};
 
   const categories = [
     { key: 'all', label: t.home.all },
@@ -52,15 +46,76 @@ function Home() {
 
   useEffect(() => {
     loadVideos();
+    loadCampaignAnnouncements();
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [activeCategory, videos]);
 
+  /* ── Load campaigns and build announcements ── */
+  const loadCampaignAnnouncements = () => {
+    axios.get('http://localhost:5000/api/campaigns')
+      .then(res => {
+        const now = new Date();
+        const active = (res.data || []).filter(c => {
+          const end = new Date(c.endDate);
+          return c.status === 'Active' && end >= now;
+        });
+
+        if (!active.length) return;
+
+        const items = [];
+        const sorted = [...active].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Most recent campaign
+        if (sorted[0]) {
+          items.push({ ...sorted[0], type: 'new' });
+        }
+
+        // Ending soon (within ENDING_SOON_DAYS)
+        const ending = active
+          .filter(c => {
+            const daysLeft = (new Date(c.endDate) - now) / (1000 * 60 * 60 * 24);
+            return daysLeft <= ENDING_SOON_DAYS && daysLeft >= 0;
+          })
+          .sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+        ending.forEach(c => {
+          if (!items.find(i => i.id === c.id)) {
+            items.push({ ...c, type: 'ending' });
+          } else {
+            // Mark existing entry as also ending
+            const idx = items.findIndex(i => i.id === c.id);
+            if (idx !== -1) items[idx].type = 'ending';
+          }
+        });
+
+        // Popular: campaigns with Videos array (most videos joined)
+        // We don't have video count from the list endpoint, so just pick oldest active as "popular" if we have 2+
+        if (sorted.length >= 2) {
+          const popular = sorted[sorted.length - 1]; // oldest active = has been around longest = likely most popular
+          if (!items.find(i => i.id === popular.id)) {
+            items.push({ ...popular, type: 'popular' });
+          }
+        }
+
+        // Add remaining campaigns as 'new' type
+        active.forEach(c => {
+          if (!items.find(i => i.id === c.id)) {
+            items.push({ ...c, type: 'new' });
+          }
+        });
+
+        setCampaignAnnouncements(items);
+      })
+      .catch(err => console.error('Error loading campaign announcements:', err));
+  };
+
   /* ── Announcement rotation ── */
+  const totalAnn = campaignAnnouncements.length;
+
   const startProgress = useCallback(() => {
-    if (!progressRef.current) return;
+    if (!progressRef.current || totalAnn === 0) return;
     progressRef.current.style.transition = 'none';
     progressRef.current.style.width = '0%';
     requestAnimationFrame(() => {
@@ -68,26 +123,39 @@ function Home() {
       progressRef.current.style.transition = `width ${ROTATE_MS}ms linear`;
       progressRef.current.style.width = '100%';
     });
-  }, []);
+  }, [totalAnn]);
 
   useEffect(() => {
-    if (!announceOpen) { clearInterval(timerRef.current); return; }
+    if (!announceOpen || totalAnn === 0) { clearInterval(timerRef.current); return; }
     startProgress();
     timerRef.current = setInterval(() => {
-      setAnnIdx(prev => (prev + 1) % ANNOUNCEMENTS.length);
+      setAnnIdx(prev => (prev + 1) % totalAnn);
       startProgress();
     }, ROTATE_MS);
     return () => clearInterval(timerRef.current);
-  }, [announceOpen, startProgress]);
+  }, [announceOpen, startProgress, totalAnn]);
 
   const setAnn = (i) => {
-    setAnnIdx((i + ANNOUNCEMENTS.length) % ANNOUNCEMENTS.length);
+    if (totalAnn === 0) return;
+    setAnnIdx(((i % totalAnn) + totalAnn) % totalAnn);
     clearInterval(timerRef.current);
     startProgress();
     timerRef.current = setInterval(() => {
-      setAnnIdx(prev => (prev + 1) % ANNOUNCEMENTS.length);
+      setAnnIdx(prev => (prev + 1) % totalAnn);
       startProgress();
     }, ROTATE_MS);
+  };
+
+  const getDaysLeft = (endDate) => {
+    const ms = new Date(endDate) - new Date();
+    const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
+    return days;
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString(lang === 'es' ? 'es-ES' : lang === 'zh' ? 'zh-CN' : 'en-US', {
+      month: 'short', day: 'numeric', year: 'numeric'
+    });
   };
 
   const loadVideos = () => {
@@ -213,23 +281,21 @@ function Home() {
         {/* Main Content - Grid */}
         <main style={{ padding: '18px', overflowY: 'auto' }}>
 
-          {/* Toggle buttons row -- both collapsed by default */}
+          {/* Toggle row: Explore Videos + re-open announcements if closed */}
           <div className="home-toggle-row">
-            {/* Announcements toggle */}
-            <button
-              className={`home-toggle-btn ${announceOpen ? 'open' : ''}`}
-              onClick={() => setAnnounceOpen(prev => !prev)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              {ann.title || 'Announcements'}
-              <span className="home-toggle-badge">{ANNOUNCEMENTS.length}</span>
-              <svg className={`home-toggle-chevron ${announceOpen ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
+            {!announceOpen && totalAnn > 0 && (
+              <button
+                className="home-toggle-btn"
+                onClick={() => setAnnounceOpen(true)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                {ann.title || 'Campaigns'}
+                <span className="home-toggle-badge">{totalAnn}</span>
+              </button>
+            )}
 
             {/* Explore Videos toggle */}
             <button
@@ -246,44 +312,96 @@ function Home() {
             </button>
           </div>
 
-          {/* Announcements section (collapsible) */}
-          {announceOpen && (
-            <section className="home-announce">
-              <div className="home-announce-body">
-                <p className="home-announce-text">
-                  {ann[ANNOUNCEMENTS[annIdx].key] || ANNOUNCEMENTS[annIdx].key}
-                </p>
-                <p className="home-announce-meta">
-                  {ann[`meta_${ANNOUNCEMENTS[annIdx].meta}`] || ANNOUNCEMENTS[annIdx].meta}
-                </p>
+          {/* Campaign announcements -- open by default, closable */}
+          {announceOpen && totalAnn > 0 && (() => {
+            const camp = campaignAnnouncements[annIdx];
+            if (!camp) return null;
+            const daysLeft = getDaysLeft(camp.endDate);
+            const typeClass = camp.type === 'ending' ? 'ending-soon' : camp.type === 'popular' ? 'popular' : '';
+            const tagLabel = camp.type === 'ending'
+              ? (ann.tagEnding || 'Ending soon')
+              : camp.type === 'popular'
+                ? (ann.tagPopular || 'Top campaign')
+                : (ann.tagNew || 'New campaign');
+            const tagClass = camp.type === 'ending' ? 'ending' : camp.type === 'popular' ? 'popular' : 'new';
 
-                <div className="home-announce-controls">
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="iconBtn" onClick={() => setAnn(annIdx - 1)} aria-label="Previous">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <button className="iconBtn" onClick={() => setAnn(annIdx + 1)} aria-label="Next">
+            return (
+              <section className={`home-announce ${typeClass}`}>
+                <div className="home-announce-header">
+                  <span className={`home-announce-tag ${tagClass}`}>
+                    {camp.type === 'ending' && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    )}
+                    {camp.type === 'popular' && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    )}
+                    {camp.type === 'new' && (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    )}
+                    {tagLabel}
+                  </span>
+                  <button className="home-announce-close" onClick={() => setAnnounceOpen(false)} aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+
+                <div className="home-announce-body">
+                  <p className="home-announce-name">{camp.name}</p>
+                  {camp.description && (
+                    <p className="home-announce-desc">{camp.description}</p>
+                  )}
+
+                  <div className="home-announce-dates">
+                    <span>{ann.starts || 'Starts'}: <strong>{formatDate(camp.startDate)}</strong></span>
+                    <span>{'|'}</span>
+                    <span>{ann.ends || 'Ends'}: <strong>{formatDate(camp.endDate)}</strong></span>
+                    {camp.type === 'ending' && (
+                      <span className="ending-warn">
+                        {daysLeft <= 0
+                          ? (ann.endsToday || 'Ends today!')
+                          : daysLeft === 1
+                            ? (ann.endsTomorrow || 'Ends tomorrow!')
+                            : `${daysLeft} ${ann.daysLeft || 'days left'}`
+                        }
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="home-announce-cta">
+                    <Link to={`/campaign/${camp.id}`}>
+                      {ann.viewCampaign || 'View campaign'}
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
+                    </Link>
                   </div>
-                  <div className="home-announce-dots">
-                    {ANNOUNCEMENTS.map((_, i) => (
-                      <button
-                        key={i}
-                        className={`home-announce-dot ${i === annIdx ? 'active' : ''}`}
-                        onClick={() => setAnn(i)}
-                        aria-label={`Announcement ${i + 1}`}
-                      />
-                    ))}
-                  </div>
-                </div>
 
-                <div className="home-announce-progress">
-                  <div className="home-announce-progress-fill" ref={progressRef} />
+                  <div className="home-announce-controls">
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button className="iconBtn" onClick={() => setAnn(annIdx - 1)} aria-label="Previous">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      </button>
+                      <button className="iconBtn" onClick={() => setAnn(annIdx + 1)} aria-label="Next">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                    </div>
+                    <div className="home-announce-dots">
+                      {campaignAnnouncements.map((c, i) => (
+                        <button
+                          key={c.id + '-' + i}
+                          className={`home-announce-dot ${i === annIdx ? `active ${c.type === 'ending' ? 'ending' : c.type === 'popular' ? 'popular' : ''}` : ''}`}
+                          onClick={() => setAnn(i)}
+                          aria-label={`Campaign ${i + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="home-announce-progress">
+                    <div className={`home-announce-progress-fill ${camp.type === 'ending' ? 'ending' : camp.type === 'popular' ? 'popular' : ''}`} ref={progressRef} />
+                  </div>
                 </div>
-              </div>
-            </section>
-          )}
+              </section>
+            );
+          })()}
 
           {/* Explore Videos section (collapsible) */}
           {exploreOpen && (
