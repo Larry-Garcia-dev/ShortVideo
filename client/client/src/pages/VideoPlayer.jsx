@@ -4,6 +4,7 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
+import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
 
 /* ── SVG icon helpers ──────────────────────────────── */
@@ -48,6 +49,7 @@ function VideoPlayer() {
   const [duration, setDuration] = useState(0);
   const [statusLabel, setStatusLabel] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const videoRef = useRef(null);
   const seekRef = useRef(null);
 
@@ -212,9 +214,8 @@ function VideoPlayer() {
     showToast(`${vp.speed || 'Speed'}: ${speed}x`);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    showToast(vp.linkCopied || 'Link copied!');
+  const handleOpenShare = () => {
+    setShareOpen(true);
   };
 
   const showToast = (message) => {
@@ -385,8 +386,8 @@ function VideoPlayer() {
 
                     <span style={{ flex: 1 }} />
 
-                    <button onClick={handleCopyLink} className="btn" style={{ padding: '8px 12px', fontSize: '12px' }} title="Copy link">
-                      <ShareIcon /> <span>{vp.copyLink || 'Copy Link'}</span>
+                    <button onClick={handleOpenShare} className="btn" style={{ padding: '8px 12px', fontSize: '12px' }} title={vp.shareVideo || 'Share'}>
+                      <ShareIcon /> <span>{vp.shareVideo || 'Share'}</span>
                     </button>
 
                     <button
@@ -531,6 +532,14 @@ function VideoPlayer() {
 
         <RightPanel videos={allVideos} />
       </div>
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={window.location.href}
+        title={video?.title || ''}
+      />
 
       {/* Toast */}
       <div className={`toast ${toast.show ? 'show' : ''}`}>

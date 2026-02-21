@@ -8,6 +8,15 @@ router.post('/upload', upload.fields([
     { name: 'thumbnail', maxCount: 1 }
 ]), videoController.uploadVideo);
 router.get('/', videoController.getAllVideos);
+router.get('/top', videoController.getTopVideos);
+router.get('/trending', videoController.getTrendingVideos);
+router.get('/trending-hashtags', videoController.getTrendingHashtags);
+
+// Update video (title, description, thumbnail)
+router.put('/:id', upload.fields([{ name: 'thumbnail', maxCount: 1 }]), videoController.updateVideo);
+
+// Delete video
+router.delete('/:id', videoController.deleteVideo);
 
 // NUEVAS RUTAS
 router.get('/:id', videoController.getVideoById);           // Ver video individual

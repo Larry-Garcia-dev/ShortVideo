@@ -32,7 +32,7 @@ function ForgotPassword() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
       <div className="panel" style={{ width: '100%', maxWidth: '400px', padding: '28px' }}>
-        <h2 style={{ marginBottom: '16px' }}>{fp.title || 'Reset Password'} 🔒</h2>
+        <h2 style={{ marginBottom: '16px', fontWeight: 800 }}>{fp.title || 'Reset Password'}</h2>
         <p className="muted" style={{ marginBottom: '20px', fontSize: '14px' }}>
           {fp.subtitle || 'Enter your email to receive a password reset link.'}
         </p>
