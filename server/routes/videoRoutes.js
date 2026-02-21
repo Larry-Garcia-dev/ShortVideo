@@ -8,6 +8,8 @@ router.post('/upload', upload.fields([
     { name: 'thumbnail', maxCount: 1 }
 ]), videoController.uploadVideo);
 router.get('/', videoController.getAllVideos);
+router.get('/top', videoController.getTopVideos);
+router.get('/trending-hashtags', videoController.getTrendingHashtags);
 
 // NUEVAS RUTAS
 router.get('/:id', videoController.getVideoById);           // Ver video individual

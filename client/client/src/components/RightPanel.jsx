@@ -31,50 +31,55 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
       .finally(() => setLoadingCreators(false));
   }, [user?.id]);
 
-  // Fetch top 10 videos + extract real hashtags from descriptions
+  // Fetch top 10 videos from dedicated endpoint
   useEffect(() => {
-    axios.get(`${API}/videos`)
-      .then(res => {
-        const allVideos = res.data;
-
-        // Top 10 by views
-        const sorted = [...allVideos].sort((a, b) => b.views - a.views).slice(0, 10);
-        setTopVideos(sorted);
-
-        // Extract real hashtags from all video descriptions
-        const hashtagMap = {};
-        allVideos.forEach(video => {
-          const desc = video.description || '';
-          const tags = desc.match(/#\w+/g) || [];
-          tags.forEach(tag => {
-            const lower = tag.toLowerCase();
-            if (!hashtagMap[lower]) {
-              hashtagMap[lower] = { tag: lower, count: 0 };
-            }
-            hashtagMap[lower].count += 1;
-          });
-          // Also count tags/category as hashtags
-          if (video.tags) {
-            const tagList = video.tags.split(',').map(t => t.trim()).filter(Boolean);
-            tagList.forEach(tagStr => {
-              const ht = `#${tagStr.toLowerCase().replace(/^#/, '')}`;
-              if (!hashtagMap[ht]) {
-                hashtagMap[ht] = { tag: ht, count: 0 };
-              }
-              hashtagMap[ht].count += 1;
-            });
-          }
-        });
-        const sortedTags = Object.values(hashtagMap)
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 8);
-        setTrendingHashtags(sortedTags);
-      })
+    axios.get(`${API}/videos/top`)
+      .then(res => setTopVideos(res.data || []))
       .catch(() => {
-        setTopVideos([]);
-        setTrendingHashtags([]);
+        // Fallback: fetch all and sort client-side
+        axios.get(`${API}/videos`)
+          .then(r => {
+            const sorted = [...r.data].sort((a, b) => {
+              const aScore = (a.views || 0) + (a.Likes?.length || 0) * 3;
+              const bScore = (b.views || 0) + (b.Likes?.length || 0) * 3;
+              return bScore - aScore;
+            }).slice(0, 10);
+            setTopVideos(sorted);
+          })
+          .catch(() => setTopVideos([]));
       })
       .finally(() => setLoadingVideos(false));
+
+    // Fetch trending hashtags from dedicated endpoint
+    axios.get(`${API}/videos/trending-hashtags`)
+      .then(res => setTrendingHashtags(res.data || []))
+      .catch(() => {
+        // Fallback: extract client-side from all videos
+        axios.get(`${API}/videos`)
+          .then(r => {
+            const hashtagMap = {};
+            r.data.forEach(video => {
+              const desc = video.description || '';
+              const matches = desc.match(/#[\w]+/g) || [];
+              matches.forEach(tag => {
+                const lower = tag.toLowerCase();
+                if (!hashtagMap[lower]) hashtagMap[lower] = { tag: lower, count: 0, weight: 0 };
+                hashtagMap[lower].count += 1;
+                hashtagMap[lower].weight += (video.views || 0);
+              });
+              const tagList = Array.isArray(video.tags) ? video.tags : (video.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+              tagList.forEach(tagStr => {
+                const ht = `#${tagStr.toLowerCase().replace(/^#/, '')}`;
+                if (!hashtagMap[ht]) hashtagMap[ht] = { tag: ht, count: 0, weight: 0 };
+                hashtagMap[ht].count += 1;
+                hashtagMap[ht].weight += (video.views || 0);
+              });
+            });
+            const sorted = Object.values(hashtagMap).sort((a, b) => b.weight - a.weight).slice(0, 10);
+            setTrendingHashtags(sorted);
+          })
+          .catch(() => setTrendingHashtags([]));
+      });
   }, []);
 
   useEffect(() => {
@@ -140,9 +145,9 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
                     {video.title?.slice(0, 30) || `Video ${index + 1}`}
                   </div>
                   <div className="rp-queue-views">
-                    {formatCount(video.views)} {t.home?.views || 'views'}
+                    {formatCount(video.views || 0)} {t.home?.views || 'views'}
                     <span className="rp-stat-dot" />
-                    {formatCount(video.Likes?.length || 0)} {t.rightPanel?.likesLabel || 'likes'}
+                    {formatCount(video.likeCount ?? video.Likes?.length ?? 0)} {t.rightPanel?.likesLabel || 'likes'}
                   </div>
                 </div>
                 <div className="rp-play-btn">
@@ -169,7 +174,9 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
           trendingHashtags.map((item, i) => (
             <div key={i} className="rp-hashtag-item">
               <span className="rp-hashtag-tag">{item.tag}</span>
-              <span className="rp-hashtag-count">{formatCount(item.count)} {t.rightPanel?.posts || 'posts'}</span>
+              <span className="rp-hashtag-count">
+                {formatCount(item.count)} {t.rightPanel?.posts || 'posts'}
+              </span>
             </div>
           ))
         )}
@@ -194,7 +201,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
                   {creator.username?.charAt(1)?.toUpperCase() || '?'}
                 </div>
                 <div className="rp-creator-info">
-                  <div className="rp-creator-name">{creator.username}</div>
+                  <div className="rp-creator-name" title={creator.username}>{creator.username}</div>
                   <div className="rp-creator-stats">
                     <span>{formatCount(creator.followers)} {t.rightPanel?.followersLabel || 'followers'}</span>
                     <span className="rp-stat-dot" />
@@ -203,7 +210,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
                 </div>
                 <button
                   className={`rp-follow-btn ${creator.isFollowing ? 'following' : ''}`}
-                  onClick={() => handleToggleFollow(creator.id)}
+                  onClick={(e) => { e.stopPropagation(); handleToggleFollow(creator.id); }}
                 >
                   {creator.isFollowing
                     ? (t.home?.following_btn || 'Following')

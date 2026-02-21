@@ -50,16 +50,102 @@ exports.uploadVideo = async (req, res) => {
 exports.getAllVideos = async (req, res) => {
     try {
         const videos = await Video.findAll({
-            // INCLUIR RELACIONES:
             include: [
-                { model: User, attributes: ['email'] }, // Para ver quién lo subió
-                { model: Like }                         // Para contar los likes reales
+                { model: User, attributes: ['email'] },
+                { model: Like }
             ],
-            order: [['createdAt', 'DESC']] // Opcional: Mostrar los más nuevos primero
+            order: [['createdAt', 'DESC']]
         });
         res.status(200).json(videos);
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener videos', error });
+    }
+};
+
+// Top 10 most-viewed / most-liked videos
+exports.getTopVideos = async (req, res) => {
+    try {
+        const videos = await Video.findAll({
+            include: [
+                { model: User, attributes: ['email'] },
+                { model: Like }
+            ],
+            order: [['views', 'DESC']],
+            limit: 10,
+        });
+
+        // Secondary sort: by likes count descending (for equal views)
+        const sorted = videos
+            .map(v => {
+                const vj = v.toJSON();
+                vj.likeCount = (vj.Likes || []).length;
+                return vj;
+            })
+            .sort((a, b) => {
+                if (b.views !== a.views) return b.views - a.views;
+                return b.likeCount - a.likeCount;
+            });
+
+        res.json(sorted);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching top videos', error });
+    }
+};
+
+// Trending hashtags extracted from all video descriptions + tags
+exports.getTrendingHashtags = async (req, res) => {
+    try {
+        const videos = await Video.findAll({
+            attributes: ['description', 'tags', 'views'],
+            include: [{ model: Like, attributes: ['id'] }],
+        });
+
+        const hashtagMap = {};
+        videos.forEach(video => {
+            const vj = video.toJSON();
+            const likeCount = (vj.Likes || []).length;
+            const viewWeight = vj.views || 0;
+
+            // Extract #hashtags from description
+            const desc = vj.description || '';
+            const matches = desc.match(/#[\w\u00C0-\u024F\u4e00-\u9fff]+/g) || [];
+            matches.forEach(tag => {
+                const lower = tag.toLowerCase();
+                if (!hashtagMap[lower]) hashtagMap[lower] = { tag: lower, count: 0, weight: 0 };
+                hashtagMap[lower].count += 1;
+                hashtagMap[lower].weight += viewWeight + likeCount * 3;
+            });
+
+            // Also count comma-separated tags field
+            let tagList = [];
+            try {
+                const rawTags = vj.tags;
+                if (typeof rawTags === 'string') {
+                    tagList = rawTags.split(',').map(t => t.trim()).filter(Boolean);
+                } else if (Array.isArray(rawTags)) {
+                    tagList = rawTags;
+                }
+            } catch { /* ignore */ }
+
+            tagList.forEach(tagStr => {
+                const ht = `#${tagStr.toLowerCase().replace(/^#/, '')}`;
+                if (!hashtagMap[ht]) hashtagMap[ht] = { tag: ht, count: 0, weight: 0 };
+                hashtagMap[ht].count += 1;
+                hashtagMap[ht].weight += viewWeight + likeCount * 3;
+            });
+        });
+
+        // Sort by weighted score (views + likes * 3), then by count
+        const sorted = Object.values(hashtagMap)
+            .sort((a, b) => {
+                if (b.weight !== a.weight) return b.weight - a.weight;
+                return b.count - a.count;
+            })
+            .slice(0, 10);
+
+        res.json(sorted);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching trending hashtags', error });
     }
 };
 
