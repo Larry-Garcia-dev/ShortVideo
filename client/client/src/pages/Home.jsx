@@ -1,10 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
+
+/* ── Announcements data ── */
+const ANNOUNCEMENTS = [
+  { key: 'challenge', meta: 'event' },
+  { key: 'thumbnails', meta: 'feature' },
+  { key: 'cdn', meta: 'improvement' },
+  { key: 'rewards', meta: 'weekly' },
+  { key: 'maintenance', meta: 'notice' },
+];
+const ROTATE_MS = 6000;
 
 function Home() {
   const [videos, setVideos] = useState([]);
@@ -14,9 +24,20 @@ function Home() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [likedVideos, setLikedVideos] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Collapsible state -- both closed by default
+  const [announceOpen, setAnnounceOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
+
+  // Announcement rotation
+  const [annIdx, setAnnIdx] = useState(0);
+  const timerRef = useRef(null);
+  const progressRef = useRef(null);
+
   const user = JSON.parse(localStorage.getItem('user'));
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
+  const ann = t.announcements || {};
 
   const categories = [
     { key: 'all', label: t.home.all },
@@ -34,6 +55,38 @@ function Home() {
   useEffect(() => {
     applyFilters();
   }, [activeCategory, videos]);
+
+  /* ── Announcement rotation ── */
+  const startProgress = useCallback(() => {
+    if (!progressRef.current) return;
+    progressRef.current.style.transition = 'none';
+    progressRef.current.style.width = '0%';
+    requestAnimationFrame(() => {
+      if (!progressRef.current) return;
+      progressRef.current.style.transition = `width ${ROTATE_MS}ms linear`;
+      progressRef.current.style.width = '100%';
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!announceOpen) { clearInterval(timerRef.current); return; }
+    startProgress();
+    timerRef.current = setInterval(() => {
+      setAnnIdx(prev => (prev + 1) % ANNOUNCEMENTS.length);
+      startProgress();
+    }, ROTATE_MS);
+    return () => clearInterval(timerRef.current);
+  }, [announceOpen, startProgress]);
+
+  const setAnn = (i) => {
+    setAnnIdx((i + ANNOUNCEMENTS.length) % ANNOUNCEMENTS.length);
+    clearInterval(timerRef.current);
+    startProgress();
+    timerRef.current = setInterval(() => {
+      setAnnIdx(prev => (prev + 1) % ANNOUNCEMENTS.length);
+      startProgress();
+    }, ROTATE_MS);
+  };
 
   const loadVideos = () => {
     setLoading(true);
@@ -152,11 +205,101 @@ function Home() {
 
         {/* Main Content - Grid */}
         <main style={{ padding: '18px', overflowY: 'auto' }}>
-          {/* Hero Section */}
-          <section className="home-hero">
-            <h1 className="home-hero-title">{t.home.title}</h1>
-            <p className="home-hero-subtitle">{t.home.subtitle}</p>
-            <div className="home-chips">
+
+          {/* Toggle buttons row -- both collapsed by default */}
+          <div className="home-toggle-row">
+            {/* Announcements toggle */}
+            <button
+              className={`home-toggle-btn ${announceOpen ? 'open' : ''}`}
+              onClick={() => setAnnounceOpen(prev => !prev)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              {ann.title || 'Announcements'}
+              <span className="home-toggle-badge">{ANNOUNCEMENTS.length}</span>
+              <svg className={`home-toggle-chevron ${announceOpen ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+
+            {/* Explore Videos toggle */}
+            <button
+              className={`home-toggle-btn ${exploreOpen ? 'open' : ''}`}
+              onClick={() => setExploreOpen(prev => !prev)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              {t.home.title}
+              <svg className={`home-toggle-chevron ${exploreOpen ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Announcements section (collapsible) */}
+          {announceOpen && (
+            <section className="home-announce">
+              <div className="home-announce-body">
+                <p className="home-announce-text">
+                  {ann[ANNOUNCEMENTS[annIdx].key] || ANNOUNCEMENTS[annIdx].key}
+                </p>
+                <p className="home-announce-meta">
+                  {ann[`meta_${ANNOUNCEMENTS[annIdx].meta}`] || ANNOUNCEMENTS[annIdx].meta}
+                </p>
+
+                <div className="home-announce-controls">
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button className="iconBtn" onClick={() => setAnn(annIdx - 1)} aria-label="Previous">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button className="iconBtn" onClick={() => setAnn(annIdx + 1)} aria-label="Next">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  </div>
+                  <div className="home-announce-dots">
+                    {ANNOUNCEMENTS.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`home-announce-dot ${i === annIdx ? 'active' : ''}`}
+                        onClick={() => setAnn(i)}
+                        aria-label={`Announcement ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="home-announce-progress">
+                  <div className="home-announce-progress-fill" ref={progressRef} />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Explore Videos section (collapsible) */}
+          {exploreOpen && (
+            <section className="home-hero">
+              <h1 className="home-hero-title">{t.home.title}</h1>
+              <p className="home-hero-subtitle">{t.home.subtitle}</p>
+              <div className="home-chips">
+                {categories.map(cat => (
+                  <button
+                    key={cat.key}
+                    className={`home-chip ${activeCategory === cat.key ? 'active' : ''}`}
+                    onClick={() => setActiveCategory(cat.key)}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Always-visible category chips */}
+          {!exploreOpen && (
+            <div className="home-chips" style={{ marginBottom: '14px' }}>
               {categories.map(cat => (
                 <button
                   key={cat.key}
@@ -167,7 +310,7 @@ function Home() {
                 </button>
               ))}
             </div>
-          </section>
+          )}
 
           {/* Video Grid */}
           {loading ? (

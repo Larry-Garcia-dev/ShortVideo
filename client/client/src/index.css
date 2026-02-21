@@ -373,7 +373,141 @@ input[type="range"] {
 /* HOME PAGE STYLES      */
 /* ===================== */
 
-/* Hero Section */
+/* ── Collapsible toggle bars ── */
+.home-toggle-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.home-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--r18);
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.home-toggle-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(234,240,255,0.22);
+}
+
+.home-toggle-btn.open {
+  background: linear-gradient(135deg, rgba(124,92,255,0.12), rgba(25,211,255,0.08));
+  border-color: rgba(124,92,255,0.30);
+}
+
+.home-toggle-chevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.home-toggle-chevron.open {
+  transform: rotate(180deg);
+}
+
+.home-toggle-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(70,230,165,0.14);
+  border: 1px solid rgba(70,230,165,0.25);
+  color: rgba(70,230,165,0.95);
+}
+
+/* ── Announcements ── */
+.home-announce {
+  border: 1px solid rgba(234,240,255,0.14);
+  border-radius: var(--r22);
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(25,211,255,0.18), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(124,92,255,0.22), transparent 65%),
+    rgba(255,255,255,0.05);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.home-announce-body {
+  padding: 18px;
+  animation: annFadeIn 0.25s ease;
+}
+
+@keyframes annFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.home-announce-text {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+
+.home-announce-meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.home-announce-controls {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.home-announce-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.home-announce-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(234,240,255,0.22);
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.home-announce-dot.active {
+  background: rgba(25,211,255,0.75);
+}
+
+.home-announce-progress {
+  height: 4px;
+  background: rgba(234,240,255,0.10);
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.home-announce-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(25,211,255,0.75), rgba(124,92,255,0.85));
+  border-radius: 2px;
+}
+
+/* ── Hero Section (Explore Videos) ── */
 .home-hero {
   border: 1px solid var(--line);
   background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
@@ -381,6 +515,7 @@ input[type="range"] {
   box-shadow: var(--shadow);
   padding: 20px;
   margin-bottom: 18px;
+  animation: annFadeIn 0.25s ease;
 }
 
 .home-hero-title {
