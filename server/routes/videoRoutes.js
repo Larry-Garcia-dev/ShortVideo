@@ -9,6 +9,7 @@ router.post('/upload', upload.fields([
 ]), videoController.uploadVideo);
 router.get('/', videoController.getAllVideos);
 router.get('/top', videoController.getTopVideos);
+router.get('/trending', videoController.getTrendingVideos);
 router.get('/trending-hashtags', videoController.getTrendingHashtags);
 
 // Update video (title, description, thumbnail)

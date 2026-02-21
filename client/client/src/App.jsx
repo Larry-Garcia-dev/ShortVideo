@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import MyVideos from './pages/MyVideos';
 import Following from './pages/Following';
 import Favorites from './pages/Favorites';
+import Trending from './pages/Trending';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
       <Route path="/my-videos" element={<MyVideos />} />
       <Route path="/following" element={<Following />} />
       <Route path="/favorites" element={<Favorites />} />
+      <Route path="/trending" element={<Trending />} />
     </Routes>
   );
 }

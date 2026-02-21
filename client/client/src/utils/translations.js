@@ -7,6 +7,11 @@ export const translations = {
       success: 'Success',
       language: 'Language',
     },
+    trendingPage: {
+      title: 'Trending',
+      subtitle: 'Videos with the most views and likes in the shortest time.',
+      noVideos: 'No trending videos yet.',
+    },
     shareModal: {
       title: 'Share',
       copyLink: 'Copy link',
@@ -394,6 +399,11 @@ export const translations = {
       error: 'Error',
       success: 'Éxito',
       language: 'Idioma',
+    },
+    trendingPage: {
+      title: 'Tendencias',
+      subtitle: 'Videos con mas vistas y likes en el menor tiempo.',
+      noVideos: 'Aun no hay videos en tendencia.',
     },
     shareModal: {
       title: 'Compartir',
@@ -783,6 +793,11 @@ export const translations = {
       success: '成功',
       language: '语言',
     },
+    trendingPage: {
+      title: '热门趋势',
+      subtitle: '在最短时间内获得最多观看和点赞的视频。',
+      noVideos: '暂无热门视频。',
+    },
     shareModal: {
       title: '分享',
       copyLink: '复制链接',
@@ -1067,7 +1082,7 @@ export const translations = {
     campaigns: {
       activeChallenges: '活跃挑战',
       title: '视频挑战与活动',
-      subtitle: '参与挑战，让你的视频登上排行榜。',
+      subtitle: '参与挑战，让你的视频登上排行��。',
       newCampaign: '+ 新活动',
       activeCampaigns: '活跃活动',
       realtimeRanking: '排名更新',

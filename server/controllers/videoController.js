@@ -152,6 +152,39 @@ exports.getTopVideos = async (req, res) => {
     }
 };
 
+// Trending videos: highest (views + likes*3) / ageInHours  --  rewards recent viral content
+exports.getTrendingVideos = async (req, res) => {
+    try {
+        const videos = await Video.findAll({
+            include: [
+                { model: User, attributes: ['id', 'email', 'avatar'] },
+                { model: Like }
+            ],
+        });
+
+        const now = Date.now();
+
+        const scored = videos.map(v => {
+            const vj = v.toJSON();
+            const likes = (vj.Likes || []).length;
+            const views = vj.views || 0;
+            const ageMs = now - new Date(vj.createdAt).getTime();
+            // Minimum 1 hour to avoid division by near-zero
+            const ageHours = Math.max(ageMs / (1000 * 60 * 60), 1);
+            // Score: engagement per hour, likes weighted x3
+            vj.trendingScore = (views + likes * 3) / ageHours;
+            vj.likeCount = likes;
+            return vj;
+        });
+
+        scored.sort((a, b) => b.trendingScore - a.trendingScore);
+
+        res.json(scored.slice(0, 30));
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching trending videos', error });
+    }
+};
+
 // Trending hashtags extracted from all video descriptions + tags
 exports.getTrendingHashtags = async (req, res) => {
     try {
