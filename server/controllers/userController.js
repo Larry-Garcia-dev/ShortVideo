@@ -255,6 +255,100 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+// Get users the current user follows + their most viewed video
+exports.getFollowingFeed = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Get all users that this user follows
+        const follows = await Follow.findAll({
+            where: { followerId: id },
+            include: [{
+                model: User,
+                as: 'following',
+                attributes: ['id', 'email', 'avatar']
+            }]
+        });
+
+        if (!follows.length) {
+            return res.json([]);
+        }
+
+        // For each followed user, get their most viewed video
+        const feed = await Promise.all(follows.map(async (f) => {
+            const followedUser = f.following;
+            const username = followedUser.email.split('@')[0];
+
+            // Get follower count for this user
+            const followerCount = await Follow.count({ where: { followingId: followedUser.id } });
+
+            // Get their most viewed video
+            const topVideo = await Video.findOne({
+                where: { userId: followedUser.id },
+                order: [['views', 'DESC']],
+                include: [{ model: Like }]
+            });
+
+            // Get total video count
+            const videoCount = await Video.count({ where: { userId: followedUser.id } });
+
+            return {
+                id: followedUser.id,
+                email: followedUser.email,
+                avatar: followedUser.avatar,
+                username: `@${username}`,
+                followers: followerCount,
+                videoCount,
+                topVideo: topVideo ? {
+                    id: topVideo.id,
+                    title: topVideo.title,
+                    thumbnailUrl: topVideo.thumbnailUrl,
+                    videoUrl: topVideo.videoUrl,
+                    views: topVideo.views || 0,
+                    likes: topVideo.Likes?.length || 0,
+                    category: topVideo.category,
+                } : null,
+            };
+        }));
+
+        // Sort by follower count descending
+        feed.sort((a, b) => b.followers - a.followers);
+
+        res.json(feed);
+    } catch (error) {
+        console.error('getFollowingFeed error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Get videos liked by the current user (favorites)
+exports.getFavorites = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const likes = await Like.findAll({
+            where: { userId: id },
+            include: [{
+                model: Video,
+                include: [
+                    { model: User, attributes: ['id', 'email', 'avatar'] },
+                    { model: Like }
+                ]
+            }],
+            order: [['createdAt', 'DESC']]
+        });
+
+        const videos = likes
+            .filter(l => l.Video)
+            .map(l => l.Video);
+
+        res.json(videos);
+    } catch (error) {
+        console.error('getFavorites error:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get follower count for a user
 exports.getFollowerCount = async (req, res) => {
     try {

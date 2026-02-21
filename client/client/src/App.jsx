@@ -11,6 +11,8 @@ import CampaignDetail from './pages/CampaignDetail';
 import CreateCampaign from './pages/CreateCampaign';
 import Profile from './pages/Profile';
 import MyVideos from './pages/MyVideos';
+import Following from './pages/Following';
+import Favorites from './pages/Favorites';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
       <Route path="/create-campaign" element={<CreateCampaign />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/my-videos" element={<MyVideos />} />
+      <Route path="/following" element={<Following />} />
+      <Route path="/favorites" element={<Favorites />} />
     </Routes>
   );
 }

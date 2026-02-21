@@ -17,6 +17,12 @@ router.post('/follow', userController.followUser);
 router.post('/unfollow', userController.unfollowUser);
 router.post('/toggle-follow', userController.toggleFollow);
 
+// Following feed (users I follow + their top video)
+router.get('/:id/following-feed', userController.getFollowingFeed);
+
+// Favorites (videos I liked)
+router.get('/:id/favorites', userController.getFavorites);
+
 // Follower count
 router.get('/:id/followers', userController.getFollowerCount);
 
