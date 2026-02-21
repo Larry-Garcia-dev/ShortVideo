@@ -14,6 +14,9 @@ router.get('/trending-hashtags', videoController.getTrendingHashtags);
 // Update video (title, description, thumbnail)
 router.put('/:id', upload.fields([{ name: 'thumbnail', maxCount: 1 }]), videoController.updateVideo);
 
+// Delete video
+router.delete('/:id', videoController.deleteVideo);
+
 // NUEVAS RUTAS
 router.get('/:id', videoController.getVideoById);           // Ver video individual
 router.post('/:id/like', videoController.likeVideo);        // Dar like

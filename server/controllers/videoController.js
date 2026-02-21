@@ -74,6 +74,39 @@ exports.updateVideo = async (req, res) => {
     }
 };
 
+// Delete video
+exports.deleteVideo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId } = req.body;
+
+        const video = await Video.findByPk(id);
+        if (!video) return res.status(404).json({ message: 'Video not found' });
+
+        // Only allow the owner to delete
+        if (video.userId !== userId) {
+            return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        // Delete files from disk
+        if (video.videoUrl && fs.existsSync(video.videoUrl)) {
+            fs.unlinkSync(video.videoUrl);
+        }
+        if (video.thumbnailUrl && fs.existsSync(video.thumbnailUrl)) {
+            fs.unlinkSync(video.thumbnailUrl);
+        }
+
+        // Delete related likes and comments first
+        await Like.destroy({ where: { videoId: id } });
+        await Comment.destroy({ where: { videoId: id } });
+        await video.destroy();
+
+        res.json({ message: 'Video deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getAllVideos = async (req, res) => {
     try {
         const videos = await Video.findAll({
