@@ -47,6 +47,33 @@ exports.uploadVideo = async (req, res) => {
     }
 };
 
+// Update video (title, description, thumbnail)
+exports.updateVideo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description } = req.body;
+        const thumbnailFile = req.files?.thumbnail?.[0] || req.file;
+
+        const video = await Video.findByPk(id);
+        if (!video) return res.status(404).json({ message: 'Video not found' });
+
+        if (title !== undefined) video.title = title;
+        if (description !== undefined) video.description = description;
+        if (thumbnailFile) {
+            video.thumbnailUrl = thumbnailFile.path;
+        }
+
+        await video.save();
+
+        res.json({
+            message: 'Video updated',
+            video: video.toJSON()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 exports.getAllVideos = async (req, res) => {
     try {
         const videos = await Video.findAll({

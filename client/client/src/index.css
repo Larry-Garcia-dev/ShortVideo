@@ -1409,6 +1409,123 @@ input[type="range"] {
   text-align: left;
 }
 
+/* ── User menu dropdown ── */
+.header-user-wrapper {
+  position: relative;
+}
+
+.header-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  border: 2px solid var(--line);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s ease;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.header-user-avatar:hover {
+  border-color: var(--brand2);
+}
+
+.header-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.header-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r14);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  z-index: 100;
+  animation: langDropIn 0.15s ease;
+}
+
+.header-user-dd-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.header-user-dd-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--brand2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.header-user-dd-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-user-dd-email {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-user-dd-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
+.header-user-dd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s ease;
+}
+
+.header-user-dd-item:hover {
+  background: var(--panel2);
+}
+
+.header-user-dd-item.logout {
+  color: var(--bad);
+}
+
+.header-user-dd-item.logout:hover {
+  background: rgba(255, 77, 109, 0.10);
+}
+
 .header-hamburger {
   display: none;
   width: 40px;

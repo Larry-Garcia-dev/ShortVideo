@@ -212,6 +212,49 @@ exports.toggleFollow = async (req, res) => {
     }
 };
 
+// Update profile (email, language, avatar)
+exports.updateProfile = async (req, res) => {
+    try {
+        const { userId, email, language } = req.body;
+        const avatarFile = req.files?.avatar?.[0] || req.file;
+
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (email && email !== user.email) {
+            const exists = await User.findOne({ where: { email } });
+            if (exists && exists.id !== user.id) {
+                return res.status(400).json({ message: 'Email already in use' });
+            }
+            user.email = email;
+        }
+
+        const validLangs = ['en', 'es', 'zh'];
+        if (language && validLangs.includes(language)) {
+            user.language = language;
+        }
+
+        if (avatarFile) {
+            user.avatar = '/' + avatarFile.path.replace(/\\/g, '/');
+        }
+
+        await user.save();
+
+        res.json({
+            message: 'Profile updated',
+            user: {
+                id: user.id,
+                email: user.email,
+                avatar: user.avatar,
+                language: user.language,
+                role: user.role,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get follower count for a user
 exports.getFollowerCount = async (req, res) => {
     try {

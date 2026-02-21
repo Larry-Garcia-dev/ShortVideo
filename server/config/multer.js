@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure directories exist
-['uploads', 'uploads/thumbnails'].forEach(dir => {
+['uploads', 'uploads/thumbnails', 'uploads/avatars'].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -11,6 +11,8 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         if (file.fieldname === 'thumbnail') {
             cb(null, 'uploads/thumbnails/');
+        } else if (file.fieldname === 'avatar') {
+            cb(null, 'uploads/avatars/');
         } else {
             cb(null, 'uploads/');
         }
@@ -33,12 +35,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.fieldname === 'thumbnail') {
+    if (file.fieldname === 'thumbnail' || file.fieldname === 'avatar') {
         const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (allowedImages.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Thumbnail: solo JPG, PNG, WEBP, GIF.'), false);
+            cb(new Error('Image: solo JPG, PNG, WEBP, GIF.'), false);
         }
     } else {
         const allowedVideos = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];

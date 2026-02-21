@@ -8,7 +8,9 @@ import Upload from './pages/Upload';
 import VideoPlayer from './pages/VideoPlayer';
 import CampaignList from './pages/CampaignList';
 import CampaignDetail from './pages/CampaignDetail';
-import CreateCampaign from './pages/CreateCampaign'; // Importar nueva página
+import CreateCampaign from './pages/CreateCampaign';
+import Profile from './pages/Profile';
+import MyVideos from './pages/MyVideos';
 
 function App() {
   return (
@@ -22,9 +24,9 @@ function App() {
       <Route path="/watch/:id" element={<VideoPlayer />} />
       <Route path="/campaigns" element={<CampaignList />} />
       <Route path="/campaign/:id" element={<CampaignDetail />} />
-      
-      {/* Nueva Ruta para Crear Campaña */}
       <Route path="/create-campaign" element={<CreateCampaign />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/my-videos" element={<MyVideos />} />
     </Routes>
   );
 }
