@@ -4,20 +4,40 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { translations } from '../utils/translations';
 
+/* Generate a random secure password: 10 chars, 1 upper, 1 lower, 1 digit, 1 symbol */
+function generatePassword() {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const digits = '0123456789';
+  const symbols = '!@#$%&*?';
+  const all = upper + lower + digits + symbols;
+
+  let pw = '';
+  pw += upper[Math.floor(Math.random() * upper.length)];
+  pw += lower[Math.floor(Math.random() * lower.length)];
+  pw += digits[Math.floor(Math.random() * digits.length)];
+  pw += symbols[Math.floor(Math.random() * symbols.length)];
+  for (let i = 4; i < 10; i++) {
+    pw += all[Math.floor(Math.random() * all.length)];
+  }
+  // Shuffle
+  return pw.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // Estado local para idioma
+  const [suggestedPw, setSuggestedPw] = useState('');
+
   const [currentLang, setCurrentLang] = useState(localStorage.getItem('appLanguage') || 'en');
   const navigate = useNavigate();
 
-  // Obtener textos traducidos
   const t = translations[currentLang] || translations.en;
 
-  // Actualizar localStorage cuando cambia el idioma
   useEffect(() => {
     localStorage.setItem('appLanguage', currentLang);
   }, [currentLang]);
@@ -25,6 +45,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLocked(false);
     setLoading(true);
 
     try {
@@ -33,23 +54,21 @@ function Login() {
         password
       });
 
-      // CORRECCIÓN: Extraemos user Y token
-      const { user: userData, token } = response.data; 
-      
-      // Lógica de idioma (sin cambios)
+      const { user: userData, token } = response.data;
+
       if (userData.language && userData.language !== currentLang) {
         localStorage.setItem('appLanguage', userData.language);
       }
 
-      // IMPORTANTE: Guardar el token por separado para que CreateCampaign lo encuentre
-      localStorage.setItem('token', token); 
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
-      
+
       navigate('/');
-      window.location.reload(); 
+      window.location.reload();
     } catch (err) {
       if (err.response && err.response.status === 403) {
         setError(t.errors.locked);
+        setIsLocked(true);
       } else if (err.response && err.response.status === 401) {
         setError(t.errors.credentials);
       } else {
@@ -64,42 +83,57 @@ function Login() {
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
-        // 1. DETECCIÓN INTELIGENTE DE URL 🧠
-        // Si estamos en el servidor (producción), usa nip.io. Si no, usa localhost.
-        const API_URL = import.meta.env.MODE === 'production' 
-            ? 'http://47.87.37.35.nip.io:5000/api/auth/google' 
-            : 'http://localhost:5000/api/auth/google';
+        const API_URL = import.meta.env.MODE === 'production'
+          ? 'http://47.87.37.35.nip.io:5000/api/auth/google'
+          : 'http://localhost:5000/api/auth/google';
 
-        // 2. Enviar el token al backend correcto
         const res = await axios.post(API_URL, {
           accessToken: tokenResponse.access_token
         });
 
-        // 3. Guardar sesión (Esto queda igual)
         const { user: userData, token } = res.data;
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
-        
+
         if (userData.language) {
-            localStorage.setItem('appLanguage', userData.language);
+          localStorage.setItem('appLanguage', userData.language);
         }
 
         navigate('/');
-        // Esperamos un poquito para que React termine de procesar antes de recargar
-        setTimeout(() => {
-             window.location.reload();
-        }, 100);
+        setTimeout(() => { window.location.reload(); }, 100);
       } catch (err) {
         console.error(err);
-        setError('Error iniciando sesión con Google');
+        setError('Error starting session with Google');
         setLoading(false);
       }
     },
     onError: () => {
-      setError('Fallo la conexión con Google');
+      setError('Google connection failed');
       setLoading(false);
     }
   });
+
+  const handleSuggestPassword = () => {
+    const pw = generatePassword();
+    setSuggestedPw(pw);
+    setPassword(pw);
+    setShowPassword(true);
+  };
+
+  // Eye icon SVGs
+  const EyeIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+
+  const EyeOffIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
 
   return (
     <div style={{
@@ -118,7 +152,6 @@ function Login() {
           justifyContent: 'space-between',
           marginBottom: '32px',
         }}>
-          {/* Brand Logo */}
           <Link to="/" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <img
               src="/logo.png"
@@ -127,9 +160,12 @@ function Login() {
             />
           </Link>
 
-          {/* Language Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-            <span style={{ fontSize: '16px' }}>🌐</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
             <select
               value={currentLang}
               onChange={(e) => setCurrentLang(e.target.value)}
@@ -145,7 +181,7 @@ function Login() {
             >
               <option value="en">English</option>
               <option value="es">Espanol</option>
-              <option value="zh">中文</option>
+              <option value="zh">{'中文'}</option>
             </select>
           </div>
         </div>
@@ -161,11 +197,38 @@ function Login() {
 
           {error && (
             <div style={{
-              background: 'rgba(255, 77, 109, 0.1)', border: '1px solid rgba(255, 77, 109, 0.2)',
-              color: 'var(--bad)', padding: '12px 14px', borderRadius: '12px',
-              fontSize: '13px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px',
+              background: 'rgba(255, 77, 109, 0.1)',
+              border: '1px solid rgba(255, 77, 109, 0.2)',
+              color: 'var(--bad)',
+              padding: '12px 14px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              marginBottom: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
             }}>
-              ⚠️ {error}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>{error}</span>
+              </div>
+              {isLocked && (
+                <Link
+                  to="/forgot-password"
+                  style={{
+                    color: 'var(--brand2)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    textDecoration: 'underline',
+                    marginLeft: '24px',
+                  }}
+                >
+                  {t.login.recoverHere || 'Recover your password here'}
+                </Link>
+              )}
             </div>
           )}
 
@@ -193,7 +256,12 @@ function Login() {
               transition: 'all 0.15s ease',
             }}
           >
-            <span style={{ fontSize: '16px' }}>G</span> 
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
             {loading ? 'Connecting...' : t.login.googleLogin}
           </button>
 
@@ -215,13 +283,71 @@ function Login() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--muted)' }}>
-                {t.login.passwordLabel}
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', color: 'var(--muted)' }}>
+                <span>{t.login.passwordLabel}</span>
+                <button
+                  type="button"
+                  onClick={handleSuggestPassword}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--brand2)',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    padding: 0,
+                  }}
+                >
+                  {t.login.suggestPassword || 'Suggest password'}
+                </button>
               </label>
-              <input
-                type="password" className="input" placeholder={t.login.passwordPlaceholder}
-                value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="input"
+                  placeholder={t.login.passwordPlaceholder}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setSuggestedPw(''); }}
+                  required
+                  style={{ width: '100%', paddingRight: '44px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '4px',
+                  }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              {suggestedPw && (
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '11px',
+                  color: 'var(--good)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  {t.login.passwordSuggested || 'Secure password applied'}
+                </div>
+              )}
             </div>
 
             <div style={{ textAlign: 'right' }}>
@@ -252,8 +378,8 @@ function Login() {
 
         <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '12px', color: 'var(--muted)' }}>
           <Link to="/" style={{ color: 'var(--muted)' }}>{t.login.backHome}</Link>
-          <span style={{ margin: '0 10px' }}>•</span>
-          <span>© 2026 {t.common.appName}</span>
+          <span style={{ margin: '0 10px' }}>{'|'}</span>
+          <span>&copy; 2026 {t.common.appName}</span>
         </div>
       </div>
     </div>

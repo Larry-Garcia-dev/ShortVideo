@@ -870,9 +870,18 @@ input[type="range"] {
 
 .rp-section-title {
   font-weight: 800;
-  font-size: 14px;
-  letter-spacing: -0.2px;
+  font-size: 13px;
   color: var(--text);
+}
+
+.rp-section-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(25, 211, 255, 0.12);
+  border: 1px solid rgba(25, 211, 255, 0.25);
+  color: var(--brand2);
 }
 
 .rp-loading,
@@ -890,7 +899,8 @@ input[type="range"] {
 }
 
 .rp-creator-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 22px 34px 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 10px 0;
@@ -1052,6 +1062,8 @@ input[type="range"] {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: 420px;
+  overflow-y: auto;
 }
 
 .rp-queue-item {
@@ -1060,6 +1072,16 @@ input[type="range"] {
   gap: 10px;
   padding: 8px 0;
   border-bottom: 1px solid var(--line);
+}
+
+.rp-queue-rank {
+  width: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: center;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .rp-queue-item:last-child {

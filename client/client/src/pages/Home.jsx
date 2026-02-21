@@ -83,9 +83,29 @@ function Home() {
       return;
     }
     try {
-      await axios.post(`http://localhost:5000/api/videos/${video.id}/like`, { userId: user.id });
-      setLikedVideos(prev => ({ ...prev, [video.id]: !prev[video.id] }));
-      showToast(likedVideos[video.id] ? t.home.likeRemoved : t.home.liked);
+      const res = await axios.post(`http://localhost:5000/api/videos/${video.id}/like`, { userId: user.id });
+      const wasLiked = likedVideos[video.id];
+      setLikedVideos(prev => ({ ...prev, [video.id]: !wasLiked }));
+
+      // Update the like count in real-time in the videos array
+      const updateList = (list) => list.map(v => {
+        if (v.id === video.id) {
+          const currentCount = v.Likes?.length || 0;
+          const newCount = wasLiked ? Math.max(0, currentCount - 1) : currentCount + 1;
+          // If backend returns the new count, use it
+          const serverCount = res.data?.likeCount ?? res.data?.likes ?? newCount;
+          return {
+            ...v,
+            Likes: Array(serverCount).fill({})
+          };
+        }
+        return v;
+      });
+
+      setVideos(prev => updateList(prev));
+      setFilteredVideos(prev => updateList(prev));
+
+      showToast(wasLiked ? t.home.likeRemoved : t.home.liked);
     } catch (error) {
       showToast(error.response?.data?.message || t.home.alreadyLiked);
     }
