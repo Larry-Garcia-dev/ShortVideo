@@ -427,7 +427,7 @@ input[type="range"] {
   color: rgba(70,230,165,0.95);
 }
 
-/* ── Announcements ── */
+/* ── Announcements (campaign-based) ── */
 .home-announce {
   border: 1px solid rgba(234,240,255,0.14);
   border-radius: var(--r22);
@@ -438,10 +438,139 @@ input[type="range"] {
   box-shadow: var(--shadow);
   overflow: hidden;
   margin-bottom: 14px;
+  position: relative;
+}
+
+/* Ending-soon variant: orange/red glow */
+.home-announce.ending-soon {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(255,170,50,0.22), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(255,77,109,0.20), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(255,130,50,0.30);
+}
+
+/* Popular variant: green glow */
+.home-announce.popular {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(70,230,165,0.18), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(25,211,255,0.14), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(70,230,165,0.28);
+}
+
+/* Maintenance variant: amber/yellow glow */
+.home-announce.maintenance {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(245,190,60,0.20), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(255,140,40,0.16), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(245,190,60,0.30);
+}
+
+/* Feature variant: cyan/blue glow (default but with slightly different tone) */
+.home-announce.feature {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(25,211,255,0.20), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(100,160,255,0.18), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(25,211,255,0.25);
+}
+
+/* Improvement variant: purple glow */
+.home-announce.improvement {
+  background:
+    radial-gradient(700px 420px at 20% 20%, rgba(160,120,255,0.18), transparent 60%),
+    radial-gradient(760px 420px at 80% 30%, rgba(100,180,255,0.14), transparent 65%),
+    rgba(255,255,255,0.05);
+  border-color: rgba(160,120,255,0.25);
+}
+
+.home-announce-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 0;
+}
+
+.home-announce-close {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.home-announce-close:hover {
+  background: rgba(255,77,109,0.14);
+  color: var(--bad);
+  border-color: rgba(255,77,109,0.30);
+}
+
+.home-announce-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.home-announce-tag.new {
+  background: rgba(25,211,255,0.14);
+  border: 1px solid rgba(25,211,255,0.30);
+  color: rgba(25,211,255,0.95);
+}
+
+.home-announce-tag.ending {
+  background: rgba(255,130,50,0.16);
+  border: 1px solid rgba(255,130,50,0.35);
+  color: rgba(255,160,70,0.95);
+  animation: endingPulse 2s ease infinite;
+}
+
+@keyframes endingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.home-announce-tag.popular {
+  background: rgba(70,230,165,0.14);
+  border: 1px solid rgba(70,230,165,0.30);
+  color: rgba(70,230,165,0.95);
+}
+
+.home-announce-tag.maintenance {
+  background: rgba(245,190,60,0.14);
+  border: 1px solid rgba(245,190,60,0.32);
+  color: rgba(245,200,80,0.95);
+}
+
+.home-announce-tag.feature {
+  background: rgba(25,211,255,0.14);
+  border: 1px solid rgba(25,211,255,0.30);
+  color: rgba(25,211,255,0.95);
+}
+
+.home-announce-tag.improvement {
+  background: rgba(160,120,255,0.14);
+  border: 1px solid rgba(160,120,255,0.30);
+  color: rgba(170,140,255,0.95);
 }
 
 .home-announce-body {
-  padding: 18px;
+  padding: 12px 18px 18px;
   animation: annFadeIn 0.25s ease;
 }
 
@@ -450,17 +579,59 @@ input[type="range"] {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.home-announce-text {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 6px;
+.home-announce-name {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 4px;
   color: var(--text);
 }
 
-.home-announce-meta {
+.home-announce-desc {
   font-size: 13px;
   color: var(--muted);
-  margin: 0;
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-announce-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  align-items: center;
+}
+
+.home-announce-dates strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.home-announce-dates .ending-warn {
+  color: rgba(255,130,50,0.95);
+  font-weight: 700;
+}
+
+.home-announce-cta {
+  margin-top: 12px;
+}
+
+.home-announce-cta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand2);
+  text-decoration: none;
+  transition: opacity 0.12s ease;
+}
+
+.home-announce-cta a:hover {
+  opacity: 0.75;
 }
 
 .home-announce-controls {
@@ -492,6 +663,26 @@ input[type="range"] {
   background: rgba(25,211,255,0.75);
 }
 
+.home-announce-dot.active.ending {
+  background: rgba(255,130,50,0.85);
+}
+
+.home-announce-dot.active.popular {
+  background: rgba(70,230,165,0.80);
+}
+
+.home-announce-dot.active.maintenance {
+  background: rgba(245,190,60,0.85);
+}
+
+.home-announce-dot.active.feature {
+  background: rgba(25,211,255,0.80);
+}
+
+.home-announce-dot.active.improvement {
+  background: rgba(160,120,255,0.80);
+}
+
 .home-announce-progress {
   height: 4px;
   background: rgba(234,240,255,0.10);
@@ -505,6 +696,26 @@ input[type="range"] {
   width: 0%;
   background: linear-gradient(90deg, rgba(25,211,255,0.75), rgba(124,92,255,0.85));
   border-radius: 2px;
+}
+
+.home-announce-progress-fill.ending {
+  background: linear-gradient(90deg, rgba(255,170,50,0.80), rgba(255,77,109,0.85));
+}
+
+.home-announce-progress-fill.popular {
+  background: linear-gradient(90deg, rgba(70,230,165,0.75), rgba(25,211,255,0.80));
+}
+
+.home-announce-progress-fill.maintenance {
+  background: linear-gradient(90deg, rgba(245,190,60,0.80), rgba(255,140,40,0.85));
+}
+
+.home-announce-progress-fill.feature {
+  background: linear-gradient(90deg, rgba(25,211,255,0.75), rgba(100,160,255,0.85));
+}
+
+.home-announce-progress-fill.improvement {
+  background: linear-gradient(90deg, rgba(160,120,255,0.75), rgba(100,180,255,0.85));
 }
 
 /* ── Hero Section (Explore Videos) ── */
