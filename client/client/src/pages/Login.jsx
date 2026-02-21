@@ -4,26 +4,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { translations } from '../utils/translations';
 
-/* Generate a random secure password: 10 chars, 1 upper, 1 lower, 1 digit, 1 symbol */
-function generatePassword() {
-  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lower = 'abcdefghijklmnopqrstuvwxyz';
-  const digits = '0123456789';
-  const symbols = '!@#$%&*?';
-  const all = upper + lower + digits + symbols;
-
-  let pw = '';
-  pw += upper[Math.floor(Math.random() * upper.length)];
-  pw += lower[Math.floor(Math.random() * lower.length)];
-  pw += digits[Math.floor(Math.random() * digits.length)];
-  pw += symbols[Math.floor(Math.random() * symbols.length)];
-  for (let i = 4; i < 10; i++) {
-    pw += all[Math.floor(Math.random() * all.length)];
-  }
-  // Shuffle
-  return pw.split('').sort(() => Math.random() - 0.5).join('');
-}
-
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +11,6 @@ function Login() {
   const [error, setError] = useState('');
   const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [suggestedPw, setSuggestedPw] = useState('');
 
   const [currentLang, setCurrentLang] = useState(localStorage.getItem('appLanguage') || 'en');
   const navigate = useNavigate();
@@ -112,13 +91,6 @@ function Login() {
       setLoading(false);
     }
   });
-
-  const handleSuggestPassword = () => {
-    const pw = generatePassword();
-    setSuggestedPw(pw);
-    setPassword(pw);
-    setShowPassword(true);
-  };
 
   // Eye icon SVGs
   const EyeIcon = () => (
@@ -283,23 +255,8 @@ function Login() {
             </div>
 
             <div>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', color: 'var(--muted)' }}>
-                <span>{t.login.passwordLabel}</span>
-                <button
-                  type="button"
-                  onClick={handleSuggestPassword}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--brand2)',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    padding: 0,
-                  }}
-                >
-                  {t.login.suggestPassword || 'Suggest password'}
-                </button>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--muted)' }}>
+                {t.login.passwordLabel}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -307,7 +264,7 @@ function Login() {
                   className="input"
                   placeholder={t.login.passwordPlaceholder}
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setSuggestedPw(''); }}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   style={{ width: '100%', paddingRight: '44px' }}
                 />
@@ -332,22 +289,7 @@ function Login() {
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
-              {suggestedPw && (
-                <div style={{
-                  marginTop: '6px',
-                  fontSize: '11px',
-                  color: 'var(--good)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                  {t.login.passwordSuggested || 'Secure password applied'}
-                </div>
-              )}
+
             </div>
 
             <div style={{ textAlign: 'right' }}>

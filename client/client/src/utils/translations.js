@@ -70,7 +70,9 @@ export const translations = {
       submittingBtn: 'Creating...',
       hasAccount: 'Already have an account?',
       loginLink: 'Login',
-      errorRegex: 'Password must be 8-12 chars, contain 1 uppercase, 1 number, and 1 special char.'
+      errorRegex: 'Password must be 8-12 chars, contain 1 uppercase, 1 number, and 1 special char.',
+      suggestPassword: 'Suggest password',
+      passwordSuggested: 'Secure password applied',
     },
     sidebar: {
       home: 'Home',
@@ -370,7 +372,9 @@ export const translations = {
       submittingBtn: 'Creando...',
       hasAccount: '¿Ya tienes una cuenta?',
       loginLink: 'Iniciar Sesión',
-      errorRegex: 'La contraseña debe tener 8-12 caracteres, 1 mayúscula, 1 número y 1 símbolo.'
+      errorRegex: 'La contrasena debe tener 8-12 caracteres, 1 mayuscula, 1 numero y 1 simbolo.',
+      suggestPassword: 'Sugerir contrasena',
+      passwordSuggested: 'Contrasena segura aplicada',
     },
     sidebar: {
       home: 'Inicio',
@@ -624,7 +628,7 @@ export const translations = {
       tutorials: '教程',
       clips: '剪辑',
       highlights: '精选',
-      noVideos: '还没有视频。成为第一个上传的人!',
+      noVideos: '还没有视频。成为��一个上传的人!',
       uploadBtn: '上传视频',
       views: '次观看',
       like: '点赞',
@@ -670,7 +674,9 @@ export const translations = {
       submittingBtn: '创建中...',
       hasAccount: '已经有账号了？',
       loginLink: '登录',
-      errorRegex: '密码必须为8-12个字符，包含1个大写字母，1个数字和1个特殊字符。'
+      errorRegex: '密码必须为8-12个字符，包含1个大写字母，1个数字和1个特殊字符。',
+      suggestPassword: '建议密码',
+      passwordSuggested: '已应用安全密码',
     },
     sidebar: {
       home: '首页',

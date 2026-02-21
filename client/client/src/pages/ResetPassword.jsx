@@ -100,7 +100,7 @@ function ResetPassword() {
                   padding: 0,
                 }}
               >
-                {t.login?.suggestPassword || 'Suggest password'}
+                {rp.suggestPassword || 'Suggest password'}
               </button>
             </label>
             <div style={{ position: 'relative' }}>
@@ -149,7 +149,7 @@ function ResetPassword() {
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                   <polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>
-                {t.login?.passwordSuggested || 'Secure password applied'}
+                {rp.passwordSuggested || 'Secure password applied'}
               </div>
             )}
           </div>
