@@ -400,7 +400,7 @@ export const translations = {
       creatorRewards: 'Weekly Creator Rewards',
       creatorRewards_desc: 'Top 10 most-viewed videos each week will be featured on the homepage. Keep creating!',
       sharePlatforms: 'Share to Social Platforms',
-      sharePlatforms_desc: 'You can now share videos directly to WhatsApp, Telegram, X, Facebook, Reddit, and Email.',
+      sharePlatforms_desc: 'You can now share videos directly to WhatsApp, Telegram, X, Facebook, TikTok, Instagram, WeChat, Reddit, and Email.',
     },
     errors: {
       locked: 'Account locked due to too many failed attempts.',
@@ -809,7 +809,7 @@ export const translations = {
       creatorRewards: 'Recompensas semanales para creadores',
       creatorRewards_desc: 'Los 10 videos mas vistos cada semana seran destacados en la pagina principal. Sigue creando!',
       sharePlatforms: 'Compartir en redes sociales',
-      sharePlatforms_desc: 'Ahora puedes compartir videos directamente a WhatsApp, Telegram, X, Facebook, Reddit y correo.',
+      sharePlatforms_desc: 'Ahora puedes compartir videos directamente a WhatsApp, Telegram, X, Facebook, TikTok, Instagram, WeChat, Reddit y correo.',
     },
     errors: {
       locked: 'Cuenta bloqueada por demasiados intentos fallidos.',
@@ -1214,11 +1214,11 @@ export const translations = {
       cdnPerformance: '视频加载更快',
       cdnPerformance_desc: '我们在视频CDN上部署了性能优化，全球播放更流畅。',
       maintenance: '计划维护',
-      maintenance_desc: '本周日凌晨2:00 (ET) 进行计划维护，平台可能短暂不可用。',
+      maintenance_desc: '本周日凌晨2:00 (ET) 进行计划维护，平台��能短暂不可用。',
       creatorRewards: '每周创作者奖励',
       creatorRewards_desc: '每周观看量最高的前10个视频将在首页推荐。继续创作吧!',
       sharePlatforms: '分享到社交平台',
-      sharePlatforms_desc: '现在可以直接将视频分享到WhatsApp、Telegram、X、Facebook、Reddit和邮件。',
+      sharePlatforms_desc: '现在可以直接将视频分享到WhatsApp、Telegram、X、Facebook、TikTok、Instagram、WeChat、Reddit和邮件。',
     },
     errors: {
       locked: '尝试次数过多，账户已锁定。',
