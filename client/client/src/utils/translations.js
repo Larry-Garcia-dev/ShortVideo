@@ -20,6 +20,7 @@ export const translations = {
     },
     header: {
       searchPlaceholder: 'Search videos, creators...',
+      searchBtn: 'Search',
       upload: 'Upload',
       login: 'Login',
       logout: 'Logout',
@@ -428,6 +429,7 @@ export const translations = {
     },
     header: {
       searchPlaceholder: 'Buscar videos, creadores...',
+      searchBtn: 'Buscar',
       upload: 'Subir',
       login: 'Ingresar',
       logout: 'Salir',
@@ -836,6 +838,7 @@ export const translations = {
     },
     header: {
       searchPlaceholder: '搜索视频，创作者...',
+      searchBtn: '搜索',
       upload: '上传',
       login: '登录',
       logout: '退出',
@@ -844,7 +847,7 @@ export const translations = {
     },
     profile: {
       title: '我的资料',
-      subtitle: '编辑您的账户信息和头像。',
+      subtitle: '编辑您的账���信息和头像。',
       usernameLabel: '用户名',
       emailLabel: '邮箱',
       languageLabel: '语言',
@@ -1056,7 +1059,7 @@ export const translations = {
       writeComment: '请先写评论',
       commentPosted: '评论已发布',
       errorComment: '发布评论出错',
-      linkCopied: '链接已复制!',
+      linkCopied: '链��已复制!',
       shareVideo: '分享',
       autoplayBlocked: '自动播放被阻止 - 点击播放',
       muted: '已静音',

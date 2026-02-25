@@ -7,6 +7,7 @@ function Header({ onSearch, onToggleSidebar }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileSearchVisible, setMobileSearchVisible] = useState(true);
   const user = JSON.parse(localStorage.getItem('user'));
   const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
 
@@ -14,8 +15,47 @@ function Header({ onSearch, onToggleSidebar }) {
   const navigate = useNavigate();
   const langRef = useRef(null);
   const userMenuRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   const t = translations[currentLang] || translations.en;
+
+  // Dynamic scroll show/hide for mobile search bar
+  // Listens on both window and any <main> element (which may have its own overflow scroll)
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const target = e.target;
+      let currentY = 0;
+
+      if (target === document || target === window) {
+        currentY = window.scrollY;
+      } else if (target.scrollTop !== undefined) {
+        currentY = target.scrollTop;
+      }
+
+      if (currentY > lastScrollY.current && currentY > 60) {
+        setMobileSearchVisible(false);
+      } else {
+        setMobileSearchVisible(true);
+      }
+      lastScrollY.current = currentY;
+    };
+
+    // Listen on window scroll
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Also listen on <main> elements which have their own scroll
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+      mainEl.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (mainEl) {
+        mainEl.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('appLanguage', currentLang);
@@ -31,6 +71,11 @@ function Header({ onSearch, onToggleSidebar }) {
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     if (onSearch) onSearch(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (onSearch) onSearch(searchQuery);
   };
 
   const handleLanguageSelect = async (newLang) => {
@@ -102,6 +147,7 @@ function Header({ onSearch, onToggleSidebar }) {
   const username = user?.email?.split('@')[0] || '';
 
   return (
+    <>
     <header style={{
       position: 'sticky', top: 0, zIndex: 20,
       backdropFilter: 'blur(12px)',
@@ -122,7 +168,8 @@ function Header({ onSearch, onToggleSidebar }) {
           <img src="/logo.png" alt="Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }}/>
         </Link>
 
-        <div className="header-search-wrapper">
+        {/* Desktop search - hidden on mobile via CSS */}
+        <div className="header-search-wrapper header-search-desktop">
           <span className="header-search-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -227,6 +274,28 @@ function Header({ onSearch, onToggleSidebar }) {
         </div>
       </div>
     </header>
+
+    {/* Mobile search bar - visible only on mobile, hides on scroll down, shows on scroll up */}
+    <div className={`header-mobile-search${mobileSearchVisible ? '' : ' hidden'}`}>
+      <form className="header-mobile-search-form" onSubmit={handleSearchSubmit}>
+        <span className="header-search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input
+          type="text"
+          className="header-search-input"
+          placeholder={t.header.searchPlaceholder}
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+        <button type="submit" className="header-mobile-search-btn">
+          {t.header.searchBtn || 'Search'}
+        </button>
+      </form>
+    </div>
+    </>
   );
 }
 

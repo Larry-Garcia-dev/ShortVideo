@@ -1009,6 +1009,78 @@ input[type="range"] {
   box-shadow: 0 0 0 3px rgba(124,92,255,0.12);
 }
 
+/* ── Mobile search bar (below header) ── */
+.header-mobile-search {
+  display: none; /* Hidden on desktop by default */
+}
+
+@media (max-width: 768px) {
+  .header-mobile-search {
+    display: block;
+    position: sticky;
+    top: 60px;
+    z-index: 19;
+    padding: 10px 14px;
+    background: rgba(7, 10, 18, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .header-mobile-search.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .header-mobile-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+
+  .header-mobile-search-form .header-search-icon {
+    position: absolute;
+    left: 14px;
+    z-index: 1;
+  }
+
+  .header-mobile-search-form .header-search-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    padding: 10px 14px 10px 40px;
+    border-radius: 12px;
+  }
+
+  .header-mobile-search-btn {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(25, 211, 255, 0.75));
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .header-mobile-search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(124, 92, 255, 0.25);
+  }
+
+  .header-mobile-search-btn:active {
+    transform: translateY(0);
+  }
+}
+
 /* ===================== */
 /* UPLOAD PAGE STYLES    */
 /* ===================== */
@@ -1956,14 +2028,8 @@ input[type="range"] {
     display: flex;
   }
 
-  .header-search-wrapper {
-    max-width: none;
-    flex: 1;
-    min-width: 0;
-  }
-
-  .header-search-input {
-    font-size: 13px;
+  .header-search-desktop {
+    display: none;
   }
 
   .sidebar {
@@ -2184,7 +2250,7 @@ input[type="range"] {
     height: 32px;
   }
 
-  .header-search-wrapper {
+  .header-search-desktop {
     display: none;
   }
 
@@ -2192,7 +2258,14 @@ input[type="range"] {
     gap: 6px;
   }
 
+  .header-mobile-search {
+    padding: 8px 10px;
+  }
 
+  .header-mobile-search-btn {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
 
   .home-hero {
     padding: 14px;
