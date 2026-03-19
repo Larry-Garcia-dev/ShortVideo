@@ -20,7 +20,7 @@ const User = sequelize.define('User', {
         // QUITAR "unique: true" DE AQUÍ
     },
     avatar: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     role: {
