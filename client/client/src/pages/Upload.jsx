@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
+import { API_URL } from '../config';
 
 const CATEGORIES = [
   'Gaming',
@@ -213,7 +214,7 @@ function Upload() {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/videos/upload', formData, {
+      await axios.post(`${API_URL}/videos/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.lengthComputable) {

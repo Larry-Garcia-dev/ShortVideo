@@ -6,6 +6,7 @@ import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
+import { API_URL, BASE_URL } from '../config';
 
 const ROTATE_MS = 6000;
 const ENDING_SOON_DAYS = 3; // campaigns ending within 3 days get special color
@@ -57,11 +58,11 @@ function Home() {
   /* ── Build system (static) announcements ── */
   const buildSystemAnnouncements = () => {
     return [
-      { _sys: true, type: 'feature',     sysKey: 'customThumbnails' },
+      { _sys: true, type: 'feature', sysKey: 'customThumbnails' },
       { _sys: true, type: 'improvement', sysKey: 'cdnPerformance' },
       { _sys: true, type: 'maintenance', sysKey: 'maintenance' },
-      { _sys: true, type: 'feature',     sysKey: 'creatorRewards' },
-      { _sys: true, type: 'feature',     sysKey: 'sharePlatforms' },
+      { _sys: true, type: 'feature', sysKey: 'creatorRewards' },
+      { _sys: true, type: 'feature', sysKey: 'sharePlatforms' },
     ];
   };
 
@@ -69,7 +70,7 @@ function Home() {
   const loadCampaignAnnouncements = () => {
     const systemItems = buildSystemAnnouncements();
 
-    axios.get('http://localhost:5000/api/campaigns')
+    axios.get(`${API_URL}/campaigns`)
       .then(res => {
         const now = new Date();
         const active = (res.data || []).filter(c => {
@@ -176,7 +177,7 @@ function Home() {
 
   const loadVideos = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/videos')
+    axios.get(`${API_URL}/videos`)
       .then(response => {
         const sorted = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         setVideos(sorted);
@@ -232,7 +233,7 @@ function Home() {
       return;
     }
     try {
-      const res = await axios.post(`http://localhost:5000/api/videos/${video.id}/toggle-like`, { userId: user.id });
+      const res = await axios.post(`${API_URL}/videos/${video.id}/toggle-like`, { userId: user.id });
       const nowLiked = res.data?.liked ?? !likedVideos[video.id];
       setLikedVideos(prev => ({ ...prev, [video.id]: nowLiked }));
 
@@ -273,7 +274,7 @@ function Home() {
 
   const getThumbnailUrl = (video) => {
     if (video.thumbnailUrl) {
-      return `http://localhost:5000/${video.thumbnailUrl.replace(/\\/g, '/')}`;
+      return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
     }
     // fallback gradient placeholder
     return null;
@@ -305,8 +306,8 @@ function Home() {
                 onClick={() => setAnnounceOpen(true)}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 {sysAnn.announcements || 'Announcements'}
                 <span className="home-toggle-badge">{totalAnn}</span>
@@ -319,11 +320,11 @@ function Home() {
               onClick={() => setExploreOpen(prev => !prev)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               {t.home.title}
               <svg className={`home-toggle-chevron ${exploreOpen ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"/>
+                <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
           </div>
@@ -341,11 +342,11 @@ function Home() {
             let tagClass = '';
             let tagIcon = null;
 
-            const iconPlus = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>;
-            const iconClock = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
-            const iconStar = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-            const iconWrench = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
-            const iconZap = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+            const iconPlus = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>;
+            const iconClock = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
+            const iconStar = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>;
+            const iconWrench = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>;
+            const iconZap = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
 
             if (isSys) {
               if (item.type === 'maintenance') {
@@ -385,7 +386,7 @@ function Home() {
                     {tagLabel}
                   </span>
                   <button className="home-announce-close" onClick={() => setAnnounceOpen(false)} aria-label="Close">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                   </button>
                 </div>
 
@@ -412,7 +413,7 @@ function Home() {
                             <span className="ending-warn">
                               {dl <= 0 ? (ann.endsToday || 'Ends today!')
                                 : dl === 1 ? (ann.endsTomorrow || 'Ends tomorrow!')
-                                : `${dl} ${ann.daysLeft || 'days left'}`}
+                                  : `${dl} ${ann.daysLeft || 'days left'}`}
                             </span>
                           );
                         })()}
@@ -421,7 +422,7 @@ function Home() {
                       <div className="home-announce-cta">
                         <Link to={`/campaign/${item.id}`}>
                           {ann.viewCampaign || 'View campaign'}
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                         </Link>
                       </div>
                     </>
@@ -430,10 +431,10 @@ function Home() {
                   <div className="home-announce-controls">
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button className="iconBtn" onClick={() => setAnn(annIdx - 1)} aria-label="Previous">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                       </button>
                       <button className="iconBtn" onClick={() => setAnn(annIdx + 1)} aria-label="Next">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                       </button>
                     </div>
                     <div className="home-announce-dots">
@@ -530,7 +531,7 @@ function Home() {
                       />
                     ) : (
                       <video
-                        src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
+                        src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
                         preload="metadata"
                         muted
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -567,7 +568,7 @@ function Home() {
                           title={t.home.like}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill={likedVideos[video.id] ? '#FF4D6D' : 'none'} stroke={likedVideos[video.id] ? '#FF4D6D' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                           </svg>
                           <span>{formatCount(video.Likes?.length || 0)}</span>
                         </button>
@@ -577,8 +578,8 @@ function Home() {
                           title={t.home.share}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                           </svg>
                         </button>
                       </div>

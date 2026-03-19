@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
-
+import { API_URL } from '../config';
 function CampaignList() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,11 +14,8 @@ function CampaignList() {
   const c = t.campaigns || {};
 
   useEffect(() => {
-    const API_URL = import.meta.env.MODE === 'production' 
-        ? 'http://47.87.37.35:5000/api/campaigns'
-        : 'http://localhost:5000/api/campaigns';
-
-    axios.get(API_URL)
+    // Ya no necesitas el if/else aquí, la variable API_URL lo hace todo
+    axios.get(`${API_URL}/campaigns`)
       .then(res => setCampaigns(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
