@@ -2,7 +2,7 @@
 const isProd = import.meta.env.MODE === 'production';
 
 // URL base para cargar imágenes y videos
-export const BASE_URL = isProd ? 'http://hurammy.com:5000' : 'http://localhost:5000';
+export const BASE_URL = isProd ? 'https://hurammy.com' : 'http://localhost:5000';
 
 // URL base para las peticiones a la API
 export const API_URL = `${BASE_URL}/api`;
