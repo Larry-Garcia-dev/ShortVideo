@@ -1,162 +1,104 @@
 import { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
-import { translations } from '../utils/translations';
-
-/* Generate a random secure password */
-function generatePassword() {
-  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lower = 'abcdefghijklmnopqrstuvwxyz';
-  const digits = '0123456789';
-  const symbols = '!@#$%&*?';
-  const all = upper + lower + digits + symbols;
-
-  let pw = '';
-  pw += upper[Math.floor(Math.random() * upper.length)];
-  pw += lower[Math.floor(Math.random() * lower.length)];
-  pw += digits[Math.floor(Math.random() * digits.length)];
-  pw += symbols[Math.floor(Math.random() * symbols.length)];
-  for (let i = 4; i < 10; i++) {
-    pw += all[Math.floor(Math.random() * all.length)];
-  }
-  return pw.split('').sort(() => Math.random() - 0.5).join('');
-}
-
-const EyeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
+import { API_URL } from '../config';
 
 function ResetPassword() {
-  const { token } = useParams();
+  const { token } = useParams(); // Extrae el token de la URL
+  const navigate = useNavigate();
+  
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [suggestedPw, setSuggestedPw] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const lang = localStorage.getItem('appLanguage') || 'en';
-  const t = translations[lang] || translations.en;
-  const rp = t.resetPassword || {};
+  const [loading, setLoading] = useState(false);
 
   const handleReset = async (e) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      return setError("Las contraseñas no coinciden");
+    }
+
     setLoading(true);
     setError('');
+    setMessage('');
 
     try {
-      await axios.put(`http://localhost:5000/api/auth/reset-password/${token}`, { password });
-      setMessage(rp.successMessage || 'Password updated successfully! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      // CORRECCIÓN 1 Y 2: Usar API_URL dinámica y el método PUT (no POST)
+      const res = await axios.put(`${API_URL}/auth/reset-password/${token}`, { password });
+      
+      setMessage(res.data.message || 'Contraseña actualizada correctamente.');
+      
+      // Redirigir al login después de 3 segundos
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+
     } catch (err) {
-      setError(err.response?.data?.message || (rp.errorDefault || 'Error resetting password'));
+      setError(err.response?.data?.message || "Error al restablecer la contraseña. Verifica que cumpla los requisitos de seguridad.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSuggestPassword = () => {
-    const pw = generatePassword();
-    setSuggestedPw(pw);
-    setPassword(pw);
-    setShowPassword(true);
-  };
-
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px' }}>
       <div className="panel" style={{ width: '100%', maxWidth: '400px', padding: '28px' }}>
-        <h2 style={{ marginBottom: '16px', fontWeight: 800 }}>
-          {rp.title || 'New Password'}
-        </h2>
+        <h2 style={{ marginBottom: '16px', fontWeight: 800 }}>Nueva Contraseña</h2>
+        <p className="muted" style={{ marginBottom: '20px', fontSize: '14px' }}>
+          Ingresa tu nueva clave de acceso. Recuerda usar mayúsculas, números y símbolos.
+        </p>
 
-        {message && <div style={{ color: 'var(--good)', marginBottom: '16px', fontSize: '13px', background: 'rgba(70,230,165,0.1)', padding: '12px', borderRadius: '12px' }}>{message}</div>}
-        {error && <div style={{ color: 'var(--bad)', marginBottom: '16px', fontSize: '13px', background: 'rgba(255,77,109,0.1)', padding: '12px', borderRadius: '12px' }}>{error}</div>}
+        {message && (
+          <div style={{ background: 'rgba(70, 230, 165, 0.1)', color: 'var(--good)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '13px' }}>
+            {message} Redirigiendo al login...
+          </div>
+        )}
+        
+        {error && (
+          <div style={{ background: 'rgba(230, 70, 70, 0.1)', color: 'var(--bad)', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '13px' }}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleReset}>
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px', color: 'var(--muted)' }}>
-              <span>{rp.newPasswordLabel || 'New Password'}</span>
-              <button
-                type="button"
-                onClick={handleSuggestPassword}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--brand2)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  padding: 0,
-                }}
-              >
-                {rp.suggestPassword || 'Suggest password'}
-              </button>
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="input"
-                style={{ width: '100%', paddingRight: '44px' }}
-                value={password}
-                onChange={e => { setPassword(e.target.value); setSuggestedPw(''); }}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '4px',
-                }}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-            <div className="muted" style={{ fontSize: '11px', marginTop: '4px' }}>
-              {rp.passwordHelp || '8-12 chars, 1 uppercase, 1 number, 1 symbol.'}
-            </div>
-            {suggestedPw && (
-              <div style={{
-                marginTop: '6px',
-                fontSize: '11px',
-                color: 'var(--good)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                {rp.passwordSuggested || 'Secure password applied'}
-              </div>
-            )}
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Nueva Contraseña</label>
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="Ej: Hurammy2024*" 
+              style={{ width: '100%' }}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
           </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Confirmar Contraseña</label>
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="Repite tu contraseña" 
+              style={{ width: '100%' }}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+
           <button type="submit" className="btn primary" style={{ width: '100%' }} disabled={loading}>
-            {loading ? (rp.updating || 'Updating...') : (rp.setNewPassword || 'Set New Password')}
+            {loading ? 'Procesando...' : 'Cambiar Contraseña'}
           </button>
         </form>
+
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <Link to="/login" className="muted" style={{ fontSize: '13px', textDecoration: 'none' }}>
+            ← Volver al Login
+          </Link>
+        </div>
       </div>
     </div>
   );

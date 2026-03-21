@@ -6,7 +6,7 @@ const { Op } = require('sequelize');
 const axios = require('axios');
 const nodemailer = require('nodemailer');
 
-// Req 3.2: Regex de contraseña (8-12 chars, 1 Mayúscula, 1 Número, 1 Especial)
+// Regex de contraseña (8-12 chars, 1 Mayúscula, 1 Número, 1 Especial)
 const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,12}$/;
 
 // Configuración de Nodemailer usando variables de entorno
@@ -99,16 +99,23 @@ exports.forgotPassword = async (req, res) => {
             return res.status(404).json({ message: 'No existe usuario con ese email' });
         }
 
+        // 1. GENERAR TOKEN PLANO (Se envía al usuario)
         const resetToken = crypto.randomBytes(20).toString('hex');
+        
+        // 2. HASHEAR EL TOKEN (Se guarda en la DB)
         const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+        
+        // 3. EXPIRACIÓN A 1 HORA (60 minutos para evitar problemas de reloj)
+        const resetPasswordExpire = Date.now() + 60 * 60 * 1000;
 
         await user.update({ resetPasswordToken, resetPasswordExpire });
 
-        // Link dinámico basado en el host de la petición
+        // Link dinámico
         const host = req.get('host');
         const protocol = host.includes('hurammy.com') ? 'https' : 'http';
         const domain = host.includes('localhost') ? 'localhost:5173' : 'hurammy.com';
+        
+        // IMPORTANTE: Se envía el resetToken (plano) en la URL
         const resetUrl = `${protocol}://${domain}/reset-password/${resetToken}`;
 
         const mailOptions = {
@@ -118,7 +125,7 @@ exports.forgotPassword = async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
                     <h2 style="color: #333;">Solicitaste restablecer tu contraseña</h2>
-                    <p>Haz clic en el siguiente botón para crear una nueva contraseña. Este enlace expira en 10 minutos.</p>
+                    <p>Haz clic en el siguiente botón para crear una nueva contraseña. Este enlace expira en 1 hora.</p>
                     <a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #007bff; text-decoration: none; border-radius: 5px;">Restablecer Contraseña</a>
                     <p style="margin-top: 20px; font-size: 12px; color: #777;">Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
                 </div>
@@ -139,6 +146,8 @@ exports.resetPassword = async (req, res) => {
     try {
         const { token } = req.params;
         const { password } = req.body;
+        
+        // Hasheamos el token que viene de la URL para compararlo con la DB
         const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
 
         const user = await User.findOne({
