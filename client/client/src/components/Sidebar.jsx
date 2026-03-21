@@ -124,10 +124,10 @@ function Sidebar({ isOpen, onClose }) {
           <UsersIcon />
           <span>{t.sidebar?.following || 'Following'}</span>
         </Link>
-        <Link to="/sounds" style={navItemStyle(isActive('/sounds'))} onClick={onClose}>
+        {/* <Link to="/sounds" style={navItemStyle(isActive('/sounds'))} onClick={onClose}>
           <MusicIcon />
           <span>{t.sidebar?.sounds || 'Sounds'}</span>
-        </Link>
+        </Link> */}
         <Link to="/favorites" style={navItemStyle(isActive('/favorites'))} onClick={onClose}>
           <StarIcon />
           <span>{t.sidebar?.favorites || 'Favorites'}</span>
