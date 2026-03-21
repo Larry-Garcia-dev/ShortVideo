@@ -14,6 +14,7 @@ import MyVideos from './pages/MyVideos';
 import Following from './pages/Following';
 import Favorites from './pages/Favorites';
 import Trending from './pages/Trending';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
       <Route path="/following" element={<Following />} />
       <Route path="/favorites" element={<Favorites />} />
       <Route path="/trending" element={<Trending />} />
+      <Route path="/admin" element={<AdminPanel />} />
     </Routes>
   );
 }

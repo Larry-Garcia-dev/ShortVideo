@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes');
 const videoRoutes = require('./routes/videoRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
 const userRoutes = require('./routes/userRoutes'); // Nueva ruta
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/users', userRoutes); // Endpoint de usuarios
+app.use('/api/admin', adminRoutes);
 
 // Static Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

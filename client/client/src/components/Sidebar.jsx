@@ -74,10 +74,21 @@ const UploadIcon = () => (
   </Icon>
 );
 
+// NUEVO: Ícono del Panel Admin (Candado)
+const ShieldIcon = () => (
+  <Icon>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </Icon>
+);
+
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
+  
+  // Obtenemos al usuario de forma segura
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
 
   const isActive = (path) => location.pathname === path;
 
@@ -128,10 +139,19 @@ function Sidebar({ isOpen, onClose }) {
           <TrophyIcon />
           <span>{t.sidebar?.campaigns || 'Campaigns'}</span>
         </Link>
+        
         <Link to="/upload" style={navItemStyle(isActive('/upload'))} onClick={onClose}>
           <UploadIcon />
           <span>{t.sidebar?.upload || 'Upload'}</span>
         </Link>
+
+        {/* 🛡️ BOTÓN PRIVADO: Solo para administradores */}
+        {user && user.role === 'admin' && (
+          <Link to="/admin" style={navItemStyle(isActive('/admin'))} onClick={onClose}>
+            <ShieldIcon />
+            <span style={{ color: 'var(--brand2)' }}>Panel Admin</span>
+          </Link>
+        )}
       </nav>
 
       {/* Tip */}
