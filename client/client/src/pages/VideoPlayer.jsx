@@ -6,6 +6,8 @@ import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
+// IMPORTANTE: Importamos las variables dinámicas de entorno
+import { API_URL, BASE_URL } from '../config'; 
 
 /* ── SVG icon helpers ──────────────────────────────── */
 const Ico = ({ children, size = 16, ...p }) => (
@@ -92,7 +94,8 @@ function VideoPlayer() {
   }, [isPlaying, isMuted]);
 
   const loadVideo = () => {
-    axios.get(`http://localhost:5000/api/videos/${id}`)
+    // CORRECCIÓN: Usamos API_URL en lugar de localhost
+    axios.get(`${API_URL}/videos/${id}`)
       .then(res => {
         setVideo(res.data);
         setLikes(res.data.Likes?.length || 0);
@@ -101,11 +104,12 @@ function VideoPlayer() {
           setIsLiked(res.data.Likes.some(like => like.userId === user.id));
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => console.error("Error cargando video:", err));
   };
 
   const loadAllVideos = () => {
-    axios.get('http://localhost:5000/api/videos')
+    // CORRECCIÓN: Usamos API_URL en lugar de localhost
+    axios.get(`${API_URL}/videos`)
       .then(res => setAllVideos(res.data))
       .catch(() => {});
   };
@@ -172,13 +176,14 @@ function VideoPlayer() {
       return;
     }
     try {
+      // CORRECCIÓN: Usamos API_URL en lugar de localhost
       if (isLiked) {
-        await axios.delete(`http://localhost:5000/api/videos/${id}/like`, { data: { userId: user.id } });
+        await axios.delete(`${API_URL}/videos/${id}/like`, { data: { userId: user.id } });
         setLikes(likes - 1);
         setIsLiked(false);
         showToast(vp.unliked || 'Unliked');
       } else {
-        await axios.post(`http://localhost:5000/api/videos/${id}/like`, { userId: user.id });
+        await axios.post(`${API_URL}/videos/${id}/like`, { userId: user.id });
         setLikes(likes + 1);
         setIsLiked(true);
         showToast(vp.liked || 'Liked!');
@@ -194,7 +199,8 @@ function VideoPlayer() {
     if (!commentText.trim()) { showToast(vp.writeComment || 'Write a comment first'); return; }
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/videos/${id}/comment`, {
+      // CORRECCIÓN: Usamos API_URL en lugar de localhost
+      const res = await axios.post(`${API_URL}/videos/${id}/comment`, {
         userId: user.id,
         text: commentText
       });
@@ -283,7 +289,8 @@ function VideoPlayer() {
                       ref={videoRef}
                       playsInline
                       preload="metadata"
-                      src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
+                      // CORRECCIÓN: Usamos BASE_URL en lugar de localhost para que Nginx sirva el video
+                      src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
                       style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                       onLoadedMetadata={() => {
                         setDuration(videoRef.current?.duration || 0);
