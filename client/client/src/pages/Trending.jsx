@@ -6,6 +6,8 @@ import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
+// IMPORTANTE: Importamos las variables dinámicas
+import { API_URL, BASE_URL } from '../config';
 
 function Trending() {
   const [videos, setVideos] = useState([]);
@@ -23,7 +25,8 @@ function Trending() {
 
   const loadTrending = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/videos/trending')
+    // CORRECCIÓN: Uso de API_URL dinámica
+    axios.get(`${API_URL}/videos/trending`)
       .then(res => {
         setVideos(res.data);
         if (user) {
@@ -48,7 +51,8 @@ function Trending() {
     e.stopPropagation();
     if (!user) { showToast(t.home?.loginToLike || 'Login to like'); return; }
     try {
-      const res = await axios.post(`http://localhost:5000/api/videos/${video.id}/toggle-like`, { userId: user.id });
+      // CORRECCIÓN: Uso de API_URL dinámica
+      const res = await axios.post(`${API_URL}/videos/${video.id}/toggle-like`, { userId: user.id });
       const nowLiked = res.data?.liked ?? !likedVideos[video.id];
       setLikedVideos(prev => ({ ...prev, [video.id]: nowLiked }));
       setVideos(prev => prev.map(v => {
@@ -79,7 +83,8 @@ function Trending() {
   const getThumbnailUrl = (video) => {
     if (!video.thumbnailUrl) return null;
     if (video.thumbnailUrl.startsWith('http')) return video.thumbnailUrl;
-    return `http://localhost:5000/${video.thumbnailUrl.replace(/\\/g, '/')}`;
+    // CORRECCIÓN: Uso de BASE_URL dinámica
+    return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
   };
 
   const getCreatorName = (video) => {
@@ -87,7 +92,6 @@ function Trending() {
     return 'creator';
   };
 
-  // Rank medal for position
   const getRankBadge = (index) => {
     if (index === 0) return { label: '#1', bg: 'linear-gradient(135deg, #FFD700, #FFA500)', color: '#000' };
     if (index === 1) return { label: '#2', bg: 'linear-gradient(135deg, #C0C0C0, #A0A0A0)', color: '#000' };
@@ -154,7 +158,8 @@ function Trending() {
                         <img src={getThumbnailUrl(video)} alt={video.title || 'Video'} loading="lazy" />
                       ) : (
                         <video
-                          src={`http://localhost:5000/${video.videoUrl.replace(/\\/g, '/')}`}
+                          // CORRECCIÓN: Uso de BASE_URL dinámica para la reproducción del video
+                          src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
                           preload="metadata" muted
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
+import { API_URL, BASE_URL } from '../config';
 
 function CampaignDetail() {
   const { id } = useParams();
@@ -37,7 +38,8 @@ function CampaignDetail() {
 
   const loadCampaignData = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/api/campaigns/${id}`)
+    // CORRECCIÓN: Uso de API_URL dinámica
+    axios.get(`${API_URL}/campaigns/${id}`)
       .then(res => {
         setCampaign(res.data);
         if (res.data.Videos?.length > 0) {
@@ -50,7 +52,8 @@ function CampaignDetail() {
   };
 
   const loadMyVideos = () => {
-    axios.get('http://localhost:5000/api/videos')
+    // CORRECCIÓN: Uso de API_URL dinámica
+    axios.get(`${API_URL}/videos`)
       .then(res => {
         const mine = res.data.filter(v => v.userId === user.id);
         setMyVideos(mine);
@@ -64,7 +67,8 @@ function CampaignDetail() {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/campaigns/${id}/join`, {
+      // CORRECCIÓN: Uso de API_URL dinámica
+      await axios.post(`${API_URL}/campaigns/${id}/join`, {
         videoId: selectedVideoId
       });
       showToast(cd.joinedSuccess || 'Successfully joined the campaign!');
@@ -82,7 +86,8 @@ function CampaignDetail() {
       return;
     }
     try {
-      await axios.post(`http://localhost:5000/api/videos/${videoId}/like`, { userId: user.id });
+      // CORRECCIÓN: Uso de API_URL dinámica
+      await axios.post(`${API_URL}/videos/${videoId}/like`, { userId: user.id });
       loadCampaignData();
       showToast(cd.likedLabel || 'Liked!');
     } catch (error) {
@@ -162,6 +167,8 @@ function CampaignDetail() {
       case 'creator_asc':
         videos.sort((a, b) => (a.User?.email || '').localeCompare(b.User?.email || ''));
         break;
+      default:
+        break;
     }
 
     return videos;
@@ -209,7 +216,6 @@ function CampaignDetail() {
       <Header />
 
       <main className="wrap" style={{ maxWidth: '1180px', margin: '0 auto', padding: '18px' }}>
-        {/* Campaign Announcement */}
         <section className="announce" style={{
           position: 'relative',
           padding: '16px',
@@ -290,7 +296,6 @@ function CampaignDetail() {
             </div>
           </div>
 
-          {/* Join Campaign */}
           {user && myVideos.length > 0 && (
             <div style={{
               marginTop: '14px',
@@ -329,7 +334,6 @@ function CampaignDetail() {
           )}
         </section>
 
-        {/* Controls Bar */}
         <section className="panel campaign-controls-bar">
           <div className="campaign-controls-left">
             <input
@@ -383,9 +387,7 @@ function CampaignDetail() {
           </div>
         </section>
 
-        {/* Leaderboard + Preview Grid */}
         <section className="campaign-grid">
-          {/* Leaderboard */}
           <section className="panel list" style={{ padding: '12px' }}>
             <div style={{
               display: 'flex',
@@ -520,7 +522,6 @@ function CampaignDetail() {
             )}
           </section>
 
-          {/* Preview */}
           <aside className="panel preview" style={{ padding: '12px' }}>
             {previewVideo ? (
               <>
@@ -539,7 +540,8 @@ function CampaignDetail() {
                     controls
                     preload="metadata"
                     muted={globalMuted}
-                    src={`http://localhost:5000/${previewVideo.videoUrl?.replace(/\\/g, '/')}`}
+                    // CORRECCIÓN: Uso de BASE_URL dinámica para la reproducción del video
+                    src={`${BASE_URL}/${previewVideo.videoUrl?.replace(/\\/g, '/')}`}
                     style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                   />
                 </div>
@@ -576,7 +578,6 @@ function CampaignDetail() {
           </aside>
         </section>
 
-        {/* Footer */}
         <footer style={{
           padding: '24px 0 10px',
           color: 'rgba(234,240,255,0.55)',
@@ -587,7 +588,6 @@ function CampaignDetail() {
         </footer>
       </main>
 
-      {/* Toast */}
       <div className={`toast ${toast.show ? 'show' : ''}`}>
         {toast.message}
       </div>

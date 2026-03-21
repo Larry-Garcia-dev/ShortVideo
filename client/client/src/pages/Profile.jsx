@@ -4,8 +4,11 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { translations } from '../utils/translations';
+// NUEVO: Importamos nuestras variables dinámicas
+import { API_URL, BASE_URL } from '../config';
 
-const API = 'http://localhost:5000/api';
+// CORRECCIÓN: Asignamos API a nuestra variable dinámica
+const API = API_URL;
 
 function Profile() {
   const navigate = useNavigate();
@@ -17,9 +20,12 @@ function Profile() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [email, setEmail] = useState(user?.email || '');
   const [language, setLanguage] = useState(user?.language || 'en');
+  
+  // CORRECCIÓN: Usamos BASE_URL para cargar el avatar actual correctamente en producción
   const [avatarPreview, setAvatarPreview] = useState(
-    user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${API.replace('/api', '')}${user.avatar}`) : null
+    user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}${user.avatar}`) : null
   );
+  
   const [avatarFile, setAvatarFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -31,7 +37,7 @@ function Profile() {
         <div style={{ textAlign: 'center' }}>
           <h2>{p.signInRequired || 'Sign in required'}</h2>
           <button className="btn primary" onClick={() => navigate('/login')} style={{ marginTop: '12px' }}>
-            {t.header.login}
+            {t.header?.login || 'Login'}
           </button>
         </div>
       </div>
@@ -151,7 +157,7 @@ function Profile() {
             </label>
             <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
               <option value="en">English</option>
-              <option value="es">Espanol</option>
+              <option value="es">Español</option>
               <option value="zh">中文</option>
             </select>
           </div>

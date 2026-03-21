@@ -5,6 +5,8 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
+// NUEVO: Importamos nuestras variables dinámicas
+import { API_URL, BASE_URL } from '../config';
 
 function Favorites() {
   const [videos, setVideos] = useState([]);
@@ -20,7 +22,8 @@ function Favorites() {
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    axios.get(`http://localhost:5000/api/users/${user.id}/favorites`)
+    // CORRECCIÓN: Usamos API_URL para pedir la lista de favoritos
+    axios.get(`${API_URL}/users/${user.id}/favorites`)
       .then(res => setVideos(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -28,7 +31,8 @@ function Favorites() {
 
   const handleUnlike = async (videoId) => {
     try {
-      await axios.post(`http://localhost:5000/api/videos/${videoId}/toggle-like`, { userId: user.id });
+      // CORRECCIÓN: Usamos API_URL para mandar el unlike
+      await axios.post(`${API_URL}/videos/${videoId}/toggle-like`, { userId: user.id });
       setVideos(prev => prev.filter(v => v.id !== videoId));
       showToast(fv.removed || 'Removed from favorites');
     } catch (err) {
@@ -49,7 +53,8 @@ function Favorites() {
   };
 
   const getThumb = (video) => {
-    if (video?.thumbnailUrl) return `http://localhost:5000/${video.thumbnailUrl.replace(/\\/g, '/')}`;
+    // CORRECCIÓN: Usamos BASE_URL para pedir la imagen al servidor
+    if (video?.thumbnailUrl) return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
     return null;
   };
 
@@ -100,7 +105,8 @@ function Favorites() {
                       <img src={getThumb(video)} alt={video.title || ''} loading="lazy" />
                     ) : (
                       <video
-                        src={`http://localhost:5000/${video.videoUrl?.replace(/\\/g, '/')}`}
+                        /* CORRECCIÓN: Usamos BASE_URL si el video no tiene miniatura */
+                        src={`${BASE_URL}/${video.videoUrl?.replace(/\\/g, '/')}`}
                         preload="metadata"
                         muted
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
