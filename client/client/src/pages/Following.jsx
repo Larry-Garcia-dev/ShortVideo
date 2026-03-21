@@ -4,6 +4,8 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
+// NUEVO: Importamos nuestras variables dinámicas
+import { API_URL, BASE_URL } from '../config';
 
 function Following() {
   const [feed, setFeed] = useState([]);
@@ -18,7 +20,8 @@ function Following() {
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    axios.get(`http://localhost:5000/api/users/${user.id}/following-feed`)
+    // CORRECCIÓN: Usamos API_URL
+    axios.get(`${API_URL}/users/${user.id}/following-feed`)
       .then(res => setFeed(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
@@ -26,7 +29,8 @@ function Following() {
 
   const handleUnfollow = async (creatorId) => {
     try {
-      await axios.post('http://localhost:5000/api/users/toggle-follow', {
+      // CORRECCIÓN: Usamos API_URL
+      await axios.post(`${API_URL}/users/toggle-follow`, {
         followerId: user.id,
         followingId: creatorId,
       });
@@ -50,7 +54,8 @@ function Following() {
   };
 
   const getThumb = (video) => {
-    if (video?.thumbnailUrl) return `http://localhost:5000/${video.thumbnailUrl.replace(/\\/g, '/')}`;
+    // CORRECCIÓN: Usamos BASE_URL para la imagen miniatura
+    if (video?.thumbnailUrl) return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
     return null;
   };
 
@@ -98,7 +103,8 @@ function Following() {
                       border: '2px solid var(--line)',
                     }}>
                       {creator.avatar ? (
-                        <img src={`http://localhost:5000${creator.avatar}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        // CORRECCIÓN: Usamos BASE_URL para el avatar
+                        <img src={`${BASE_URL}${creator.avatar}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span style={{ color: '#fff', fontWeight: 800, fontSize: '18px' }}>
                           {creator.email?.charAt(0).toUpperCase()}

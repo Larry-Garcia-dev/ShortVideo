@@ -4,6 +4,8 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
+// NUEVO: Importamos el sistema de traducciones
+import { translations } from '../utils/translations';
 
 function CreateCampaign() {
   const navigate = useNavigate();
@@ -19,6 +21,12 @@ function CreateCampaign() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // NUEVO: Extraemos el idioma del usuario y preparamos las traducciones
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  // Creamos un atajo "ct" (Campaign Translations) para que el código quede más limpio
+  const ct = t.createCampaign || {};
 
   // Verificamos que solo los administradores puedan ver esta página
   useEffect(() => {
@@ -41,7 +49,6 @@ function CreateCampaign() {
     try {
       const token = localStorage.getItem('token');
       
-      // LA CORRECCIÓN MÁGICA: Usamos API_URL dinámica para que funcione en producción
       const res = await axios.post(`${API_URL}/campaigns/create`, formData, {
         headers: {
           'Content-Type': 'application/json',
@@ -49,14 +56,14 @@ function CreateCampaign() {
         }
       });
 
-      setMessage('¡Campaña creada con éxito!');
-      setFormData({ name: '', description: '', startDate: '', endDate: '' }); // Limpiar formulario
+      // Usamos el texto traducido o el de por defecto
+      setMessage(ct.successMsg || '¡Campaña creada con éxito!');
+      setFormData({ name: '', description: '', startDate: '', endDate: '' }); 
       
-      // Opcional: Puedes redirigir a la lista de campañas tras 2 segundos
       setTimeout(() => navigate('/campaigns'), 2000);
 
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al crear la campaña.');
+      setError(err.response?.data?.message || ct.errorMsg || 'Error al crear la campaña.');
     } finally {
       setLoading(false);
     }
@@ -74,11 +81,11 @@ function CreateCampaign() {
         <main style={{ padding: '24px', width: '100%', overflowY: 'auto' }}>
           <div className="panel" style={{ maxWidth: '600px', margin: '0 auto', padding: '30px' }}>
             <h1 style={{ fontWeight: 800, marginBottom: '20px', borderBottom: '1px solid var(--line)', paddingBottom: '10px' }}>
-              📢 Lanzar Nueva Campaña
+              📢 {ct.title || 'Lanzar Nueva Campaña'}
             </h1>
             
             <p className="muted" style={{ marginBottom: '24px', fontSize: '14px' }}>
-              Crea un evento o reto para que la comunidad participe subiendo sus mejores videos.
+              {ct.subtitle || 'Crea un evento o reto para que la comunidad participe subiendo sus mejores videos.'}
             </p>
 
             {message && <div style={{ background: 'rgba(70,230,165,0.1)', color: 'var(--good)', padding: '12px', borderRadius: '12px', marginBottom: '20px', fontSize: '14px' }}>{message}</div>}
@@ -87,12 +94,14 @@ function CreateCampaign() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Nombre de la Campaña</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                  {ct.nameLabel || 'Nombre de la Campaña'}
+                </label>
                 <input 
                   type="text" 
                   name="name"
                   className="input" 
-                  placeholder="Ej: Reto de Baile Verano 2026" 
+                  placeholder={ct.namePlaceholder || 'Ej: Reto de Baile Verano 2026'}
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -101,11 +110,13 @@ function CreateCampaign() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Descripción y Reglas</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                  {ct.descLabel || 'Descripción y Reglas'}
+                </label>
                 <textarea 
                   name="description"
                   className="input" 
-                  placeholder="Explica de qué trata la campaña, qué deben subir los usuarios, etc." 
+                  placeholder={ct.descPlaceholder || 'Explica de qué trata la campaña, qué deben subir los usuarios, etc.'}
                   value={formData.description}
                   onChange={handleChange}
                   required
@@ -115,7 +126,9 @@ function CreateCampaign() {
 
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Fecha de Inicio</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                    {ct.startDateLabel || 'Fecha de Inicio'}
+                  </label>
                   <input 
                     type="date" 
                     name="startDate"
@@ -127,7 +140,9 @@ function CreateCampaign() {
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>Fecha de Cierre</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 600 }}>
+                    {ct.endDateLabel || 'Fecha de Cierre'}
+                  </label>
                   <input 
                     type="date" 
                     name="endDate"
@@ -142,7 +157,7 @@ function CreateCampaign() {
 
               <div style={{ marginTop: '10px' }}>
                 <button type="submit" className="btn primary" style={{ width: '100%', padding: '14px' }} disabled={loading}>
-                  {loading ? 'Creando campaña...' : 'Lanzar Campaña'}
+                  {loading ? (ct.creatingBtn || 'Creando campaña...') : (ct.createBtn || 'Lanzar Campaña')}
                 </button>
               </div>
             </form>
