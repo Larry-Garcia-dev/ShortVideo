@@ -90,13 +90,15 @@ exports.login = async (req, res) => {
 
         res.status(200).json({ 
             message: 'Login exitoso', 
-            token, // Enviamos el token
+            token,
             user: { 
                 id: user.id, 
                 email: user.email, 
                 status: user.status,
                 language: user.language,
-                role: user.role // Importante para el frontend
+                role: user.role,
+                avatar: user.avatar,
+                googleId: user.googleId
             } 
         });
 
@@ -176,9 +178,26 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-const axios = require('axios'); // Asegúrate de importarlo arriba
+const axios = require('axios');
 
-// ... (tus funciones register, login, etc.)
+// Get current user data (refresh from DB)
+exports.getMe = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'email', 'role', 'language', 'avatar', 'googleId', 'status']
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching user data' });
+    }
+};
 
 exports.googleLogin = async (req, res) => {
     try {
@@ -232,7 +251,8 @@ exports.googleLogin = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 language: user.language,
-                avatar: user.avatar
+                avatar: user.avatar,
+                googleId: user.googleId
             }
         });
 

@@ -7,5 +7,6 @@ router.post('/login', authController.login);
 router.post('/forgot-password', authController.forgotPassword); // Req 2.3
 router.put('/reset-password/:token', authController.resetPassword); // Req 2.3
 router.post('/google', authController.googleLogin);
+router.get('/me/:userId', authController.getMe);
 
 module.exports = router;

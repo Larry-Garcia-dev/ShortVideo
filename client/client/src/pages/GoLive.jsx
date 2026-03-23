@@ -22,19 +22,31 @@ function GoLive() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const fileInputRef = useRef(null);
 
-  const user = JSON.parse(localStorage.getItem('user'));
+  const [userData, setUserData] = useState(() => JSON.parse(localStorage.getItem('user')));
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
   const gl = t.goLive || {};
 
   // Check if user has Google linked
-  const hasGoogleLinked = user?.googleId;
+  const hasGoogleLinked = !!userData?.googleId;
 
   useEffect(() => {
-    if (!user) {
+    if (!userData) {
       navigate('/login');
+      return;
     }
-  }, [user, navigate]);
+
+    // Refresh user data from backend to get latest googleId status
+    axios.get(`http://localhost:5000/api/auth/me/${userData.id}`)
+      .then(res => {
+        const freshUser = res.data.user;
+        // Update localStorage and state with fresh data
+        const updatedUser = { ...userData, ...freshUser };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUserData(updatedUser);
+      })
+      .catch(err => console.error('Error refreshing user data:', err));
+  }, []);
 
   const showToast = (message) => {
     setToast({ show: true, message });
@@ -74,7 +86,7 @@ function GoLive() {
       if (thumbnail) {
         const formData = new FormData();
         formData.append('thumbnail', thumbnail);
-        formData.append('userId', user.id);
+        formData.append('userId', userData.id);
         
         // Use existing video upload endpoint for thumbnail
         const uploadRes = await axios.post('http://localhost:5000/api/videos/upload-thumbnail', formData, {
@@ -87,7 +99,7 @@ function GoLive() {
       }
 
       const res = await axios.post('http://localhost:5000/api/streams/start', {
-        userId: user.id,
+        userId: userData.id,
         title: title.trim(),
         description: description.trim(),
         category,
@@ -115,7 +127,7 @@ function GoLive() {
     setLoading(true);
     try {
       await axios.post(`http://localhost:5000/api/streams/${currentStream.id}/end`, {
-        userId: user.id
+        userId: userData.id
       });
 
       setIsStreaming(false);
@@ -130,7 +142,7 @@ function GoLive() {
     }
   };
 
-  if (!user) return null;
+  if (!userData) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
