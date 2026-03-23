@@ -4,6 +4,10 @@ const Comment = require('./Comment');
 const Like = require('./Like');
 const Campaign = require('./Campaign');
 const Follow = require('./Follow');
+const Stream = require('./Stream');
+const UserCoins = require('./UserCoins');
+const CoinTransaction = require('./CoinTransaction');
+const Gift = require('./Gift');
 
 // --- Relaciones Usuario - Video ---
 User.hasMany(Video, { foreignKey: 'userId' });
@@ -24,7 +28,6 @@ Video.hasMany(Like, { foreignKey: 'videoId' });
 Like.belongsTo(Video, { foreignKey: 'videoId' });
 
 // --- Relaciones Follow ---
-// Un usuario puede seguir a muchos usuarios
 User.belongsToMany(User, {
     as: 'Followers',
     through: Follow,
@@ -44,11 +47,27 @@ Follow.belongsTo(User, { as: 'following', foreignKey: 'followingId' });
 Campaign.belongsToMany(Video, { through: 'CampaignVideos' });
 Video.belongsToMany(Campaign, { through: 'CampaignVideos' });
 
+// --- Relaciones Stream ---
+User.hasMany(Stream, { foreignKey: 'userId' });
+Stream.belongsTo(User, { foreignKey: 'userId' });
+
+// --- Relaciones UserCoins ---
+User.hasOne(UserCoins, { foreignKey: 'userId' });
+UserCoins.belongsTo(User, { foreignKey: 'userId' });
+
+// --- Relaciones CoinTransaction ---
+User.hasMany(CoinTransaction, { foreignKey: 'userId' });
+CoinTransaction.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
     User,
     Video,
     Comment,
     Like,
     Campaign,
-    Follow
+    Follow,
+    Stream,
+    UserCoins,
+    CoinTransaction,
+    Gift
 };

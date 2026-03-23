@@ -5,13 +5,15 @@ const path = require('path');
 require('dotenv').config();
 
 // Modelos
-const { User, Video, Comment, Like, Campaign, Follow } = require('./models');
+const { User, Video, Comment, Like, Campaign, Follow, Stream, UserCoins, CoinTransaction, Gift } = require('./models');
 
 // Rutas
 const authRoutes = require('./routes/authRoutes');
 const videoRoutes = require('./routes/videoRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
-const userRoutes = require('./routes/userRoutes'); // Nueva ruta
+const userRoutes = require('./routes/userRoutes');
+const streamRoutes = require('./routes/streamRoutes');
+const coinRoutes = require('./routes/coinRoutes');
 
 const app = express();
 
@@ -24,7 +26,9 @@ app.use(express.urlencoded({ extended: true })); // Para parsear form-data si es
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/campaigns', campaignRoutes);
-app.use('/api/users', userRoutes); // Endpoint de usuarios
+app.use('/api/users', userRoutes);
+app.use('/api/streams', streamRoutes);
+app.use('/api/coins', coinRoutes);
 
 // Static Files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

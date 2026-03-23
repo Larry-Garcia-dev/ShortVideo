@@ -14,6 +14,10 @@ import MyVideos from './pages/MyVideos';
 import Following from './pages/Following';
 import Favorites from './pages/Favorites';
 import Trending from './pages/Trending';
+import Streams from './pages/Streams';
+import StreamView from './pages/StreamView';
+import GoLive from './pages/GoLive';
+import BuyCoins from './pages/BuyCoins';
 
 function App() {
   return (
@@ -33,6 +37,10 @@ function App() {
       <Route path="/following" element={<Following />} />
       <Route path="/favorites" element={<Favorites />} />
       <Route path="/trending" element={<Trending />} />
+      <Route path="/streams" element={<Streams />} />
+      <Route path="/stream/:id" element={<StreamView />} />
+      <Route path="/go-live" element={<GoLive />} />
+      <Route path="/buy-coins" element={<BuyCoins />} />
     </Routes>
   );
 }

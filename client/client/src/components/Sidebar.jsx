@@ -74,6 +74,20 @@ const UploadIcon = () => (
   </Icon>
 );
 
+const LiveIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+);
+
+const CoinIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v12M9 9h6M9 15h6" />
+  </Icon>
+);
+
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const lang = localStorage.getItem('appLanguage') || 'en';
@@ -121,6 +135,10 @@ function Sidebar({ isOpen, onClose }) {
           <StarIcon />
           <span>{t.sidebar?.favorites || 'Favorites'}</span>
         </Link>
+        <Link to="/streams" style={navItemStyle(isActive('/streams'))} onClick={onClose}>
+          <LiveIcon />
+          <span>{t.sidebar?.liveStreams || 'Live Streams'}</span>
+        </Link>
 
         <div style={{ borderTop: '1px solid var(--line)', margin: '12px 0' }} />
 
@@ -131,6 +149,10 @@ function Sidebar({ isOpen, onClose }) {
         <Link to="/upload" style={navItemStyle(isActive('/upload'))} onClick={onClose}>
           <UploadIcon />
           <span>{t.sidebar?.upload || 'Upload'}</span>
+        </Link>
+        <Link to="/buy-coins" style={navItemStyle(isActive('/buy-coins'))} onClick={onClose}>
+          <CoinIcon />
+          <span>{t.sidebar?.buyCoins || 'Buy Coins'}</span>
         </Link>
       </nav>
 
