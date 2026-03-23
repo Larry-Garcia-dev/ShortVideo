@@ -11,6 +11,9 @@ router.get('/gifts', streamController.getGifts);
 // Get stream by ID
 router.get('/:id', streamController.getStreamById);
 
+// Get user's active stream (for session recovery)
+router.get('/user/:userId/active', streamController.getUserActiveStream);
+
 // Get user's stream history
 router.get('/user/:userId', streamController.getUserStreams);
 

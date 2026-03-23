@@ -221,6 +221,23 @@ exports.sendGift = async (req, res) => {
     }
 };
 
+// Get user's currently active stream (for recovering session)
+exports.getUserActiveStream = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const stream = await Stream.findOne({
+            where: { userId, status: 'live' },
+            include: [{
+                model: User,
+                attributes: ['id', 'email', 'avatar']
+            }]
+        });
+        res.json(stream);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching active stream', error: error.message });
+    }
+};
+
 // Get user's stream history
 exports.getUserStreams = async (req, res) => {
     try {
