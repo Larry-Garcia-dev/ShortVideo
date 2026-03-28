@@ -149,10 +149,10 @@ function Sidebar({ isOpen, onClose }) {
           <UploadIcon />
           <span>{t.sidebar?.upload || 'Upload'}</span>
         </Link>
-        <Link to="/ai-generator" style={navItemStyle(isActive('/ai-generator'))} onClick={onClose}>
+        {/* <Link to="/ai-generator" style={navItemStyle(isActive('/ai-generator'))} onClick={onClose}>
           <SparkleIcon />
           <span style={{ color: 'var(--brand)' }}>{t.sidebar?.aiGenerator || 'AI Video'}</span>
-        </Link>
+        </Link> */}
 
         {/* 🛡️ BOTÓN PRIVADO: Solo para administradores */}
         {user && user.role === 'admin' && (
