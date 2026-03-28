@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_URL as BASE_API_URL } from '../config';
 
-// Asegúrate de que la URL base coincida con tu configuración de Vite/Axios
-const API_URL = '/api/ai'; 
+// Usa la URL base de la configuración para conectar con el backend
+const API_URL = `${BASE_API_URL}/ai`; 
 
 /**
  * Envía los datos para iniciar la generación del video
