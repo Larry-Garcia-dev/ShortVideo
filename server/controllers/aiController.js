@@ -109,7 +109,7 @@ exports.generateVideo = async (req, res) => {
         }
 
         const payload = {
-            model: "wan2.6-i2v-flash",
+            model: "wan2.1-i2v-turbo",
             input: { prompt, img_url, audio_url },
             parameters: {
                 resolution: "720P",
