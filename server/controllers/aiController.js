@@ -108,18 +108,14 @@ exports.generateVideo = async (req, res) => {
             });
         }
 
-       const payload = {
-            model: "wan2.1-i2v-turbo", // Usa wan2.6-i2v-flash o wan2.5-i2v
-            input: { 
-                prompt: prompt, 
-                image_url: img_url, // Asegúrate de que la API de DashScope espera 'image_url' o 'img_url' según su doc oficial para esta versión
-                audio_url: audio_url // El audio que quieres sincronizar
-            },
+        const payload = {
+            model: "wan2.6-i2v-flash",
+            input: { prompt, img_url, audio_url },
             parameters: {
-                resolution: "720P", // o "1080P" si tu plan lo permite
-                duration: 10,       // Cambiado de 5 a 10 segundos
-                prompt_extend: true 
-                // Nota: shot_type: "multi" puede no ser compatible con todos los modelos 2.5/2.6, revisa si la API te da error.
+                resolution: "720P",
+                prompt_extend: true,
+                duration: 5,
+                shot_type: "multi"
             }
         };
         // ==========================================
