@@ -118,6 +118,13 @@ exports.generateVideo = async (req, res) => {
                 shot_type: "multi"
             }
         };
+        // ==========================================
+        // PON EL CONSOLE.LOG AQUÍ:
+        // ==========================================
+        console.log("=== DEBUG URLS PARA DASHSCOPE ===");
+        console.log("IMG URL:", img_url);
+        console.log("AUDIO URL:", audio_url);
+        console.log("===================================");
 
         const response = await axios.post(`${BASE_URL}/services/aigc/video-generation/video-synthesis`, payload, {
             headers: {
