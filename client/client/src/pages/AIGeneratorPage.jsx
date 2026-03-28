@@ -1,18 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import AIVideoGenerator from '../components/AIVideoGenerator';
 import './AIGeneratorPage.css';
 
 const AIGeneratorPage = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
-    <div className="app-container">
-      <Header onMenuClick={() => setSidebarOpen(true)} />
-      <div className="main-layout">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="ai-page-content">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div className="app-layout">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        <main style={{ padding: '18px', overflowY: 'auto' }}>
           {/* Hero Section */}
           <div className="ai-page-hero">
             <div className="ai-page-hero-badge">
@@ -21,7 +36,7 @@ const AIGeneratorPage = () => {
             </div>
             <h1 className="ai-page-hero-title">Crea videos con Inteligencia Artificial</h1>
             <p className="ai-page-hero-subtitle">
-              Transforma tus imágenes en videos impresionantes con un solo clic. 
+              Transforma tus imagenes en videos impresionantes con un solo clic. 
               Nuestra IA genera contenido de alta calidad en minutos.
             </p>
           </div>
@@ -40,7 +55,7 @@ const AIGeneratorPage = () => {
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </div>
-              <h3>Rápido</h3>
+              <h3>Rapido</h3>
               <p>Videos generados en 1-5 minutos</p>
             </div>
             <div className="ai-feature-card">
@@ -50,7 +65,7 @@ const AIGeneratorPage = () => {
                 </svg>
               </div>
               <h3>Alta Calidad</h3>
-              <p>Resolución 720p profesional</p>
+              <p>Resolucion 720p profesional</p>
             </div>
             <div className="ai-feature-card">
               <div className="ai-feature-icon">
@@ -61,7 +76,7 @@ const AIGeneratorPage = () => {
                 </svg>
               </div>
               <h3>Con Audio</h3>
-              <p>Agrega tu propia música</p>
+              <p>Agrega tu propia musica</p>
             </div>
             <div className="ai-feature-card">
               <div className="ai-feature-icon">
@@ -72,7 +87,7 @@ const AIGeneratorPage = () => {
                 </svg>
               </div>
               <h3>Descargable</h3>
-              <p>Guarda tus videos fácilmente</p>
+              <p>Guarda tus videos facilmente</p>
             </div>
           </div>
         </main>
