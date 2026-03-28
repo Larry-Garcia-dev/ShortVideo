@@ -226,7 +226,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
 
       {/* Footer */}
       <div className="rp-footer">
-        &copy; 2026 ShortVideo App
+        &copy; 2026  HURRAMY.COM
         <br/>
         <span style={{ opacity: 0.7 }}>Terms & Privacy</span>
       </div>
