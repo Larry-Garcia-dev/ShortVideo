@@ -109,7 +109,7 @@ exports.generateVideo = async (req, res) => {
         }
 
        const payload = {
-            model: "wan2.6-i2v", // Usa wan2.6-i2v-flash o wan2.5-i2v
+            model: "wan2.1-i2v-turbo", // Usa wan2.6-i2v-flash o wan2.5-i2v
             input: { 
                 prompt: prompt, 
                 image_url: img_url, // Asegúrate de que la API de DashScope espera 'image_url' o 'img_url' según su doc oficial para esta versión
