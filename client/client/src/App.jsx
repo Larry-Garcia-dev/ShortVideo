@@ -15,6 +15,7 @@ import Following from './pages/Following';
 import Favorites from './pages/Favorites';
 import Trending from './pages/Trending';
 import AdminPanel from './pages/AdminPanel';
+import AIGeneratorPage from './pages/AIGeneratorPage'; // <-- 1. IMPORTA LA PÁGINA
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
       <Route path="/favorites" element={<Favorites />} />
       <Route path="/trending" element={<Trending />} />
       <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/ai-generator" element={<AIGeneratorPage />} /> {/* <-- 2. AGREGA LA RUTA */}
     </Routes>
   );
 }
