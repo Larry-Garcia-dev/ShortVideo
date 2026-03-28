@@ -386,6 +386,253 @@
     transform: translateY(-1px);
 }
 
+/* Modal Overlay */
+.ai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ai-modal-content {
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.ai-use-full-btn {
+    width: 100%;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--r14);
+    background: var(--panel);
+    color: var(--muted);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-use-full-btn:hover {
+    background: var(--panel2);
+    color: var(--text);
+}
+
+/* Upload Zone */
+.ai-upload-zone {
+    border: 2px dashed var(--line);
+    border-radius: var(--r14);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.ai-upload-zone:hover {
+    border-color: rgba(124, 92, 255, 0.50);
+    background: rgba(124, 92, 255, 0.05);
+}
+
+.ai-upload-zone.audio {
+    padding: 24px;
+}
+
+.ai-upload-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 12px;
+    border-radius: var(--r14);
+    background: linear-gradient(135deg, rgba(124, 92, 255, 0.15), rgba(25, 211, 255, 0.10));
+    display: grid;
+    place-items: center;
+    color: var(--brand2);
+}
+
+.ai-upload-text {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.ai-upload-hint {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Image Preview */
+.ai-preview-container {
+    position: relative;
+    border-radius: var(--r14);
+    overflow: hidden;
+    border: 1px solid var(--line);
+}
+
+.ai-image-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.ai-upload-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ai-preview-success {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(70, 230, 165, 0.20);
+    border: 1px solid rgba(70, 230, 165, 0.35);
+    border-radius: 999px;
+    color: var(--good);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ai-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.70);
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s ease;
+}
+
+.ai-remove-btn:hover {
+    background: rgba(255, 77, 109, 0.80);
+}
+
+/* Audio Preview */
+.ai-audio-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--r14);
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.ai-audio-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-audio-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r12);
+    background: linear-gradient(135deg, rgba(124, 92, 255, 0.20), rgba(25, 211, 255, 0.15));
+    display: grid;
+    place-items: center;
+    color: var(--brand2);
+}
+
+.ai-audio-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ai-audio-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-audio-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.ai-audio-status.uploading {
+    color: var(--brand2);
+}
+
+.ai-audio-status.ready {
+    color: var(--good);
+}
+
+.ai-remove-audio-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.15s ease;
+}
+
+.ai-remove-audio-btn:hover:not(:disabled) {
+    border-color: rgba(255, 77, 109, 0.50);
+    background: rgba(255, 77, 109, 0.10);
+    color: var(--bad);
+}
+
+.ai-remove-audio-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Tips */
 .ai-tips {
     margin: 0 24px 24px;

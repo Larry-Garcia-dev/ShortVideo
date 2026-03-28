@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // Ensure directories exist
-['uploads', 'uploads/thumbnails', 'uploads/avatars'].forEach(dir => {
+['uploads', 'uploads/thumbnails', 'uploads/avatars', 'uploads/ai-images', 'uploads/ai-audio'].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -13,6 +13,10 @@ const storage = multer.diskStorage({
             cb(null, 'uploads/thumbnails/');
         } else if (file.fieldname === 'avatar') {
             cb(null, 'uploads/avatars/');
+        } else if (file.fieldname === 'ai_image') {
+            cb(null, 'uploads/ai-images/');
+        } else if (file.fieldname === 'ai_audio') {
+            cb(null, 'uploads/ai-audio/');
         } else {
             cb(null, 'uploads/');
         }
@@ -35,12 +39,19 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    if (file.fieldname === 'thumbnail' || file.fieldname === 'avatar') {
+    if (file.fieldname === 'thumbnail' || file.fieldname === 'avatar' || file.fieldname === 'ai_image') {
         const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (allowedImages.includes(file.mimetype)) {
             cb(null, true);
         } else {
             cb(new Error('Image: solo JPG, PNG, WEBP, GIF.'), false);
+        }
+    } else if (file.fieldname === 'ai_audio') {
+        const allowedAudio = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav', 'audio/ogg', 'audio/webm'];
+        if (allowedAudio.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Audio: solo MP3, WAV, OGG, WEBM.'), false);
         }
     } else {
         const allowedVideos = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];

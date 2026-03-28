@@ -4,6 +4,97 @@ const axios = require('axios');
 const API_KEY = process.env.DASHSCOPE_API_KEY || 'sk-fc565dd26b854621bf394d123456';
 const BASE_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
 
+// Helper para construir URL pública de archivos
+const getPublicUrl = (req, filePath) => {
+    const protocol = req.protocol;
+    const host = req.get('host');
+    return `${protocol}://${host}/${filePath}`;
+};
+
+// Controlador para subir imagen
+exports.uploadImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se proporcionó ninguna imagen'
+            });
+        }
+
+        const imageUrl = getPublicUrl(req, req.file.path);
+
+        res.status(200).json({
+            success: true,
+            message: 'Imagen subida exitosamente',
+            url: imageUrl,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        console.error('Error en uploadImage:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error al subir la imagen',
+            error: error.message
+        });
+    }
+};
+
+// Controlador para subir audio
+exports.uploadAudio = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se proporcionó ningún audio'
+            });
+        }
+
+        const audioUrl = getPublicUrl(req, req.file.path);
+
+        res.status(200).json({
+            success: true,
+            message: 'Audio subido exitosamente',
+            url: audioUrl,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        console.error('Error en uploadAudio:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error al subir el audio',
+            error: error.message
+        });
+    }
+};
+
+// Controlador para subir audio recortado (blob)
+exports.uploadTrimmedAudio = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se proporcionó ningún audio recortado'
+            });
+        }
+
+        const audioUrl = getPublicUrl(req, req.file.path);
+
+        res.status(200).json({
+            success: true,
+            message: 'Audio recortado subido exitosamente',
+            url: audioUrl,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        console.error('Error en uploadTrimmedAudio:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error al subir el audio recortado',
+            error: error.message
+        });
+    }
+};
+
 // Controlador para iniciar la tarea de generación de video
 exports.generateVideo = async (req, res) => {
     try {

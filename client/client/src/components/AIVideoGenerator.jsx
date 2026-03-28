@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { generateVideo, checkVideoStatus } from '../services/aiService';
+import React, { useState, useEffect, useRef } from 'react';
+import { generateVideo, checkVideoStatus, uploadImage, uploadAudio, uploadTrimmedAudio } from '../services/aiService';
+import AudioTrimmer from './AudioTrimmer';
 import './AIVideoGenerator.css';
 
 const AIVideoGenerator = () => {
@@ -8,11 +9,126 @@ const AIVideoGenerator = () => {
         img_url: '',
         audio_url: ''
     });
-    const [status, setStatus] = useState('IDLE'); // IDLE, LOADING, PROCESSING, SUCCESS, ERROR
+    const [status, setStatus] = useState('IDLE');
     const [taskId, setTaskId] = useState(null);
     const [videoResult, setVideoResult] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
     const [progress, setProgress] = useState(0);
+
+    // Upload states
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [audioFile, setAudioFile] = useState(null);
+    const [audioName, setAudioName] = useState('');
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+    const [showAudioTrimmer, setShowAudioTrimmer] = useState(false);
+
+    // Refs
+    const imageInputRef = useRef(null);
+    const audioInputRef = useRef(null);
+
+    // Handle image file selection
+    const handleImageSelect = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Preview
+        setImageFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
+
+        // Upload
+        setIsUploadingImage(true);
+        try {
+            const response = await uploadImage(file);
+            setFormData(prev => ({ ...prev, img_url: response.url }));
+        } catch (error) {
+            setErrorMessage('Error al subir la imagen: ' + (error.message || error));
+            setImageFile(null);
+            setImagePreview(null);
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    // Handle audio file selection
+    const handleAudioSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setAudioFile(file);
+        setAudioName(file.name);
+        setShowAudioTrimmer(true);
+    };
+
+    // Handle trimmed audio
+    const handleTrimComplete = async (trimmedBlob) => {
+        setShowAudioTrimmer(false);
+        setIsUploadingAudio(true);
+
+        try {
+            const response = await uploadTrimmedAudio(trimmedBlob, 'audio-recortado.wav');
+            setFormData(prev => ({ ...prev, audio_url: response.url }));
+            setAudioName('Audio recortado listo');
+        } catch (error) {
+            setErrorMessage('Error al subir el audio: ' + (error.message || error));
+            setAudioFile(null);
+            setAudioName('');
+        } finally {
+            setIsUploadingAudio(false);
+        }
+    };
+
+    // Cancel audio trimming
+    const handleTrimCancel = () => {
+        setShowAudioTrimmer(false);
+        setAudioFile(null);
+        setAudioName('');
+        if (audioInputRef.current) {
+            audioInputRef.current.value = '';
+        }
+    };
+
+    // Use audio without trimming
+    const handleUseFullAudio = async () => {
+        if (!audioFile) return;
+        
+        setShowAudioTrimmer(false);
+        setIsUploadingAudio(true);
+
+        try {
+            const response = await uploadAudio(audioFile);
+            setFormData(prev => ({ ...prev, audio_url: response.url }));
+            setAudioName(audioFile.name);
+        } catch (error) {
+            setErrorMessage('Error al subir el audio: ' + (error.message || error));
+            setAudioFile(null);
+            setAudioName('');
+        } finally {
+            setIsUploadingAudio(false);
+        }
+    };
+
+    // Remove image
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setFormData(prev => ({ ...prev, img_url: '' }));
+        if (imageInputRef.current) {
+            imageInputRef.current.value = '';
+        }
+    };
+
+    // Remove audio
+    const removeAudio = () => {
+        setAudioFile(null);
+        setAudioName('');
+        setFormData(prev => ({ ...prev, audio_url: '' }));
+        if (audioInputRef.current) {
+            audioInputRef.current.value = '';
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,13 +152,12 @@ const AIVideoGenerator = () => {
         }
     };
 
-    // Lógica de Polling
+    // Polling logic
     useEffect(() => {
         let intervalId;
         let progressInterval;
 
         if (status === 'PROCESSING' && taskId) {
-            // Simular progreso visual
             progressInterval = setInterval(() => {
                 setProgress(prev => Math.min(prev + 2, 90));
             }, 1000);
@@ -86,7 +201,20 @@ const AIVideoGenerator = () => {
         setVideoResult(null);
         setErrorMessage('');
         setProgress(0);
+        setImageFile(null);
+        setImagePreview(null);
+        setAudioFile(null);
+        setAudioName('');
+        if (imageInputRef.current) imageInputRef.current.value = '';
+        if (audioInputRef.current) audioInputRef.current.value = '';
     };
+
+    // Cleanup
+    useEffect(() => {
+        return () => {
+            if (imagePreview) URL.revokeObjectURL(imagePreview);
+        };
+    }, [imagePreview]);
 
     return (
         <div className="ai-generator">
@@ -117,8 +245,30 @@ const AIVideoGenerator = () => {
                 </span>
             </div>
 
+            {/* Audio Trimmer Modal */}
+            {showAudioTrimmer && audioFile && (
+                <div className="ai-modal-overlay">
+                    <div className="ai-modal-content">
+                        <AudioTrimmer 
+                            audioFile={audioFile}
+                            onTrimComplete={handleTrimComplete}
+                            onCancel={handleTrimCancel}
+                        />
+                        <button className="ai-use-full-btn" onClick={handleUseFullAudio}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 18V5l12-2v13"/>
+                                <circle cx="6" cy="18" r="3"/>
+                                <circle cx="18" cy="16" r="3"/>
+                            </svg>
+                            Usar audio completo sin recortar
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Form */}
             <form onSubmit={handleSubmit} className="ai-form">
+                {/* Prompt */}
                 <div className="ai-form-group">
                     <label className="ai-label">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -138,48 +288,151 @@ const AIVideoGenerator = () => {
                     />
                 </div>
 
-                <div className="ai-form-row">
-                    <div className="ai-form-group">
-                        <label className="ai-label">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                                <circle cx="8.5" cy="8.5" r="1.5"/>
-                                <polyline points="21 15 16 10 5 21"/>
-                            </svg>
-                            URL de la imagen base
-                        </label>
-                        <input 
-                            type="url"
-                            name="img_url"
-                            value={formData.img_url}
-                            onChange={handleChange}
-                            required
-                            className="ai-input"
-                            placeholder="https://ejemplo.com/imagen.jpg"
-                            disabled={status === 'LOADING' || status === 'PROCESSING'}
-                        />
-                    </div>
+                {/* Image Upload */}
+                <div className="ai-form-group">
+                    <label className="ai-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        Imagen base
+                    </label>
 
-                    <div className="ai-form-group">
-                        <label className="ai-label">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 18V5l12-2v13"/>
-                                <circle cx="6" cy="18" r="3"/>
-                                <circle cx="18" cy="16" r="3"/>
-                            </svg>
-                            URL del audio
-                            <span className="ai-label-optional">(Opcional)</span>
-                        </label>
-                        <input 
-                            type="url"
-                            name="audio_url"
-                            value={formData.audio_url}
-                            onChange={handleChange}
-                            className="ai-input"
-                            placeholder="https://ejemplo.com/audio.mp3"
-                            disabled={status === 'LOADING' || status === 'PROCESSING'}
-                        />
-                    </div>
+                    {!imagePreview ? (
+                        <div 
+                            className="ai-upload-zone"
+                            onClick={() => imageInputRef.current?.click()}
+                        >
+                            <input 
+                                ref={imageInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={handleImageSelect}
+                                hidden
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            />
+                            <div className="ai-upload-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                            </div>
+                            <p className="ai-upload-text">Haz clic o arrastra una imagen</p>
+                            <span className="ai-upload-hint">JPG, PNG, WEBP, GIF - Max 10MB</span>
+                        </div>
+                    ) : (
+                        <div className="ai-preview-container">
+                            <img src={imagePreview} alt="Preview" className="ai-image-preview" />
+                            {isUploadingImage && (
+                                <div className="ai-upload-loading">
+                                    <svg className="ai-spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                                    </svg>
+                                    <span>Subiendo...</span>
+                                </div>
+                            )}
+                            {!isUploadingImage && formData.img_url && (
+                                <div className="ai-preview-success">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    Imagen lista
+                                </div>
+                            )}
+                            <button 
+                                type="button" 
+                                className="ai-remove-btn"
+                                onClick={removeImage}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Audio Upload */}
+                <div className="ai-form-group">
+                    <label className="ai-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 18V5l12-2v13"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <circle cx="18" cy="16" r="3"/>
+                        </svg>
+                        Audio
+                        <span className="ai-label-optional">(Opcional - Puedes recortarlo)</span>
+                    </label>
+
+                    {!audioName ? (
+                        <div 
+                            className="ai-upload-zone audio"
+                            onClick={() => audioInputRef.current?.click()}
+                        >
+                            <input 
+                                ref={audioInputRef}
+                                type="file"
+                                accept="audio/mpeg,audio/wav,audio/mp3,audio/ogg,audio/webm"
+                                onChange={handleAudioSelect}
+                                hidden
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            />
+                            <div className="ai-upload-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                    <path d="M9 18V5l12-2v13"/>
+                                    <circle cx="6" cy="18" r="3"/>
+                                    <circle cx="18" cy="16" r="3"/>
+                                </svg>
+                            </div>
+                            <p className="ai-upload-text">Haz clic para seleccionar audio</p>
+                            <span className="ai-upload-hint">MP3, WAV, OGG - Podrás recortarlo</span>
+                        </div>
+                    ) : (
+                        <div className="ai-audio-preview">
+                            <div className="ai-audio-info">
+                                <div className="ai-audio-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M9 18V5l12-2v13"/>
+                                        <circle cx="6" cy="18" r="3"/>
+                                        <circle cx="18" cy="16" r="3"/>
+                                    </svg>
+                                </div>
+                                <div className="ai-audio-details">
+                                    <span className="ai-audio-name">{audioName}</span>
+                                    {isUploadingAudio ? (
+                                        <span className="ai-audio-status uploading">
+                                            <svg className="ai-spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                                            </svg>
+                                            Subiendo...
+                                        </span>
+                                    ) : formData.audio_url ? (
+                                        <span className="ai-audio-status ready">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                            </svg>
+                                            Listo para usar
+                                        </span>
+                                    ) : null}
+                                </div>
+                            </div>
+                            <button 
+                                type="button" 
+                                className="ai-remove-audio-btn"
+                                onClick={removeAudio}
+                                disabled={status === 'LOADING' || status === 'PROCESSING' || isUploadingAudio}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"/>
+                                    <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Progress Bar */}
@@ -198,7 +451,7 @@ const AIVideoGenerator = () => {
                 {/* Submit Button */}
                 <button 
                     type="submit" 
-                    disabled={status === 'LOADING' || status === 'PROCESSING'}
+                    disabled={status === 'LOADING' || status === 'PROCESSING' || !formData.img_url || isUploadingImage || isUploadingAudio}
                     className="ai-submit-btn"
                 >
                     {status === 'LOADING' || status === 'PROCESSING' ? (
@@ -284,7 +537,7 @@ const AIVideoGenerator = () => {
                     <ul className="ai-tips-list">
                         <li>Usa imágenes de alta resolución (mínimo 720p)</li>
                         <li>Describe el movimiento deseado con detalle</li>
-                        <li>El audio debe ser MP3 o WAV</li>
+                        <li>Puedes recortar el audio al subirlo</li>
                         <li>La generación puede tomar entre 1-5 minutos</li>
                     </ul>
                 </div>
