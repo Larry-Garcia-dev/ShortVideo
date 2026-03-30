@@ -100,7 +100,6 @@ exports.generateVideo = async (req, res) => {
     try {
         const { prompt, img_url, audio_url } = req.body;
 
-        // Validaciones básicas
         if (!prompt || !img_url) {
             return res.status(400).json({ 
                 success: false, 
@@ -109,19 +108,21 @@ exports.generateVideo = async (req, res) => {
         }
 
         const payload = {
-            model: "wan2.1-i2v-turbo",
-            input: { prompt, img_url, audio_url },
+            model: "wan2.6-i2v", // O "wan2.6-i2v" según tu script
+            input: { 
+                prompt, 
+                img_url, 
+                audio_url 
+            },
             parameters: {
-                resolution: "720P",
+                resolution: "720P", // Configuración de crear_video.js
                 prompt_extend: true,
                 duration: 5,
+                audio: true,
                 shot_type: "multi"
             }
         };
-        // ==========================================
-        // PON EL CONSOLE.LOG AQUÍ:
-        // ==========================================
-        console.log("=== DEBUG URLS PARA DASHSCOPE ===");
+         console.log("=== DEBUG URLS PARA DASHSCOPE ===");
         console.log("IMG URL:", img_url);
         console.log("AUDIO URL:", audio_url);
         console.log("===================================");
@@ -136,17 +137,12 @@ exports.generateVideo = async (req, res) => {
         
         res.status(202).json({ 
             success: true, 
-            message: 'Tarea de generación de video iniciada con éxito', 
+            message: 'Tarea de generación iniciada', 
             task: response.data 
         });
 
     } catch (error) {
-        console.error('Error en generateVideo:', error.response?.data || error.message);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error al comunicarse con la API de IA', 
-            error: error.response?.data || error.message 
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
