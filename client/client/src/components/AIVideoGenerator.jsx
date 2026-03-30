@@ -8,7 +8,7 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
         prompt: '',
         img_url: '',
         audio_url: '',
-        quality: '720p',
+        quality: '720P',
         duration: 5
     });
     const [status, setStatus] = useState('IDLE');
@@ -197,7 +197,7 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
     }, [status, taskId]);
 
     const resetForm = () => {
-        setFormData({ prompt: '', img_url: '', audio_url: '', quality: '720p', duration: 5 });
+        setFormData({ prompt: '', img_url: '', audio_url: '', quality: '720P', duration: 5 });
         setStatus('IDLE');
         setTaskId(null);
         setVideoResult(null);
@@ -453,19 +453,19 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
                         <div className="ai-select-group">
                             <button
                                 type="button"
-                                className={`ai-select-btn ${formData.quality === '720p' ? 'active' : ''}`}
-                                onClick={() => setFormData(prev => ({ ...prev, quality: '720p' }))}
+                                className={`ai-select-btn ${formData.quality === '720P' ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, quality: '720P' }))}
                                 disabled={status === 'LOADING' || status === 'PROCESSING'}
                             >
-                                720p
+                                720P
                             </button>
                             <button
                                 type="button"
-                                className={`ai-select-btn ${formData.quality === '1080p' ? 'active' : ''}`}
-                                onClick={() => setFormData(prev => ({ ...prev, quality: '1080p' }))}
+                                className={`ai-select-btn ${formData.quality === '1080P' ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, quality: '1080P' }))}
                                 disabled={status === 'LOADING' || status === 'PROCESSING'}
                             >
-                                1080p
+                                1080P
                             </button>
                         </div>
                     </div>
