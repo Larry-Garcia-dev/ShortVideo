@@ -98,7 +98,7 @@ exports.uploadTrimmedAudio = async (req, res) => {
 // Controlador para iniciar la tarea de generación de video
 exports.generateVideo = async (req, res) => {
     try {
-        const { prompt, img_url, audio_url } = req.body;
+        const { prompt, img_url, audio_url, quality, duration } = req.body;
 
         if (!prompt || !img_url) {
             return res.status(400).json({ 
@@ -107,24 +107,38 @@ exports.generateVideo = async (req, res) => {
             });
         }
 
+        // Validar y normalizar quality (720p o 1080p)
+        const validQualities = ['720p', '1080p'];
+        const normalizedQuality = validQualities.includes(quality?.toLowerCase()) 
+            ? quality.toUpperCase() 
+            : '720P';
+
+        // Validar y normalizar duration (5, 10 o 15 segundos)
+        const validDurations = [5, 10, 15];
+        const normalizedDuration = validDurations.includes(Number(duration)) 
+            ? Number(duration) 
+            : 5;
+
         const payload = {
-            model: "wan2.6-i2v", // O "wan2.6-i2v" según tu script
+            model: "wan2.6-i2v",
             input: { 
                 prompt, 
                 img_url, 
                 audio_url 
             },
             parameters: {
-                resolution: "720P", // Configuración de crear_video.js
+                resolution: normalizedQuality,
                 prompt_extend: true,
-                duration: 5,
+                duration: normalizedDuration,
                 audio: true,
                 shot_type: "multi"
             }
         };
-         console.log("=== DEBUG URLS PARA DASHSCOPE ===");
+         console.log("=== DEBUG PARAMS PARA DASHSCOPE ===");
         console.log("IMG URL:", img_url);
         console.log("AUDIO URL:", audio_url);
+        console.log("QUALITY:", normalizedQuality);
+        console.log("DURATION:", normalizedDuration, "seconds");
         console.log("===================================");
 
         const response = await axios.post(`${BASE_URL}/services/aigc/video-generation/video-synthesis`, payload, {
