@@ -107,10 +107,10 @@ exports.generateVideo = async (req, res) => {
             });
         }
 
-        // Validar y normalizar quality (720p o 1080p)
-        const validQualities = ['720p', '1080p'];
-        const normalizedQuality = validQualities.includes(quality?.toLowerCase()) 
-            ? quality.toUpperCase() 
+        // Validar y normalizar quality (720P o 1080P)
+        const validQualities = ['720P', '1080P'];
+        const normalizedQuality = validQualities.includes(quality) 
+            ? quality 
             : '720P';
 
         // Validar y normalizar duration (5, 10 o 15 segundos)
