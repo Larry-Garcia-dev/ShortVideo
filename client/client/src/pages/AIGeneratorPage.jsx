@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import AIVideoGenerator from '../components/AIVideoGenerator';
+import { translations } from '../utils/translations';
 import './AIGeneratorPage.css';
 
 const AIGeneratorPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const lang = localStorage.getItem('appLanguage') || 'en';
+  const t = translations[lang] || translations.en;
+  const ai = t.aiGenerator || {};
 
   // Scroll to top when page loads
   useEffect(() => {
@@ -32,18 +36,17 @@ const AIGeneratorPage = () => {
           <div className="ai-page-hero">
             <div className="ai-page-hero-badge">
               <span className="ai-page-hero-dot"></span>
-              Potenciado por IA
+              {ai.poweredByAI || 'Powered by AI'}
             </div>
-            <h1 className="ai-page-hero-title">Crea videos con Inteligencia Artificial</h1>
+            <h1 className="ai-page-hero-title">{ai.pageTitle || 'Create videos with Artificial Intelligence'}</h1>
             <p className="ai-page-hero-subtitle">
-              Transforma tus imagenes en videos impresionantes con un solo clic. 
-              Nuestra IA genera contenido de alta calidad en minutos.
+              {ai.pageSubtitle || 'Transform your images into stunning videos with a single click. Our AI generates high-quality content in minutes.'}
             </p>
           </div>
 
           {/* Generator Component */}
           <div className="ai-page-generator">
-            <AIVideoGenerator />
+            <AIVideoGenerator translations={ai} />
           </div>
 
           {/* Features Grid */}
@@ -55,8 +58,8 @@ const AIGeneratorPage = () => {
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
               </div>
-              <h3>Rapido</h3>
-              <p>Videos generados en 1-5 minutos</p>
+              <h3>{ai.featureFast || 'Fast'}</h3>
+              <p>{ai.featureFastDesc || 'Videos generated in 1-5 minutes'}</p>
             </div>
             <div className="ai-feature-card">
               <div className="ai-feature-icon">
@@ -64,8 +67,8 @@ const AIGeneratorPage = () => {
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
               </div>
-              <h3>Alta Calidad</h3>
-              <p>Resolucion 720p profesional</p>
+              <h3>{ai.featureQuality || 'High Quality'}</h3>
+              <p>{ai.featureQualityDesc || 'Professional 720p resolution'}</p>
             </div>
             <div className="ai-feature-card">
               <div className="ai-feature-icon">
@@ -75,8 +78,8 @@ const AIGeneratorPage = () => {
                   <circle cx="18" cy="16" r="3"/>
                 </svg>
               </div>
-              <h3>Con Audio</h3>
-              <p>Agrega tu propia musica</p>
+              <h3>{ai.featureAudio || 'With Audio'}</h3>
+              <p>{ai.featureAudioDesc || 'Add your own music'}</p>
             </div>
             <div className="ai-feature-card">
               <div className="ai-feature-icon">
@@ -86,8 +89,8 @@ const AIGeneratorPage = () => {
                   <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
               </div>
-              <h3>Descargable</h3>
-              <p>Guarda tus videos facilmente</p>
+              <h3>{ai.featureDownload || 'Downloadable'}</h3>
+              <p>{ai.featureDownloadDesc || 'Save your videos easily'}</p>
             </div>
           </div>
         </main>

@@ -3,11 +3,13 @@ import { generateVideo, checkVideoStatus, uploadImage, uploadAudio, uploadTrimme
 import AudioTrimmer from './AudioTrimmer';
 import './AIVideoGenerator.css';
 
-const AIVideoGenerator = () => {
+const AIVideoGenerator = ({ translations: t = {} }) => {
     const [formData, setFormData] = useState({
         prompt: '',
         img_url: '',
-        audio_url: ''
+        audio_url: '',
+        quality: '720p',
+        duration: 5
     });
     const [status, setStatus] = useState('IDLE');
     const [taskId, setTaskId] = useState(null);
@@ -44,7 +46,7 @@ const AIVideoGenerator = () => {
             const response = await uploadImage(file);
             setFormData(prev => ({ ...prev, img_url: response.url }));
         } catch (error) {
-            setErrorMessage('Error al subir la imagen: ' + (error.message || error));
+            setErrorMessage((t.errorUploadImage || 'Error uploading image') + ': ' + (error.message || error));
             setImageFile(null);
             setImagePreview(null);
         } finally {
@@ -68,11 +70,11 @@ const AIVideoGenerator = () => {
         setIsUploadingAudio(true);
 
         try {
-            const response = await uploadTrimmedAudio(trimmedBlob, 'audio-recortado.wav');
+            const response = await uploadTrimmedAudio(trimmedBlob, 'audio-recortado.mp3');
             setFormData(prev => ({ ...prev, audio_url: response.url }));
-            setAudioName('Audio recortado listo');
+            setAudioName(t.trimmedAudioReady || 'Trimmed audio ready');
         } catch (error) {
-            setErrorMessage('Error al subir el audio: ' + (error.message || error));
+            setErrorMessage((t.errorUploadAudio || 'Error uploading audio') + ': ' + (error.message || error));
             setAudioFile(null);
             setAudioName('');
         } finally {
@@ -102,7 +104,7 @@ const AIVideoGenerator = () => {
             setFormData(prev => ({ ...prev, audio_url: response.url }));
             setAudioName(audioFile.name);
         } catch (error) {
-            setErrorMessage('Error al subir el audio: ' + (error.message || error));
+            setErrorMessage((t.errorUploadAudio || 'Error uploading audio') + ': ' + (error.message || error));
             setAudioFile(null);
             setAudioName('');
         } finally {
@@ -148,7 +150,7 @@ const AIVideoGenerator = () => {
             setStatus('PROCESSING');
         } catch (error) {
             setStatus('ERROR');
-            setErrorMessage(error.message || 'Error al iniciar la generación');
+            setErrorMessage(error.message || (t.errorStartGeneration || 'Error starting generation'));
         }
     };
 
@@ -175,13 +177,13 @@ const AIVideoGenerator = () => {
                         clearInterval(progressInterval);
                     } else if (taskStatus === 'FAILED') {
                         setStatus('ERROR');
-                        setErrorMessage('La IA falló al generar el video.');
+                        setErrorMessage(t.aiFailed || 'AI failed to generate the video.');
                         clearInterval(intervalId);
                         clearInterval(progressInterval);
                     }
                 } catch (error) {
                     setStatus('ERROR');
-                    setErrorMessage('Perdimos conexión con el servidor al verificar el estado.');
+                    setErrorMessage(t.connectionLost || 'Lost connection to server while checking status.');
                     clearInterval(intervalId);
                     clearInterval(progressInterval);
                 }
@@ -195,7 +197,7 @@ const AIVideoGenerator = () => {
     }, [status, taskId]);
 
     const resetForm = () => {
-        setFormData({ prompt: '', img_url: '', audio_url: '' });
+        setFormData({ prompt: '', img_url: '', audio_url: '', quality: '720p', duration: 5 });
         setStatus('IDLE');
         setTaskId(null);
         setVideoResult(null);
@@ -228,8 +230,8 @@ const AIVideoGenerator = () => {
                     </svg>
                 </div>
                 <div>
-                    <h2 className="ai-generator-title">Generador de Video con IA</h2>
-                    <p className="ai-generator-subtitle">Crea videos increíbles a partir de una imagen y descripción</p>
+                    <h2 className="ai-generator-title">{t.generatorTitle || 'AI Video Generator'}</h2>
+                    <p className="ai-generator-subtitle">{t.generatorSubtitle || 'Create amazing videos from an image and description'}</p>
                 </div>
             </div>
 
@@ -237,11 +239,11 @@ const AIVideoGenerator = () => {
             <div className="ai-status-row">
                 <span className={`ai-status-badge ${status.toLowerCase()}`}>
                     <span className="ai-status-dot"></span>
-                    {status === 'IDLE' && 'Listo para crear'}
-                    {status === 'LOADING' && 'Iniciando...'}
-                    {status === 'PROCESSING' && 'Generando video...'}
-                    {status === 'SUCCESS' && 'Completado'}
-                    {status === 'ERROR' && 'Error'}
+                    {status === 'IDLE' && (t.readyToCreate || 'Ready to create')}
+                    {status === 'LOADING' && (t.starting || 'Starting...')}
+                    {status === 'PROCESSING' && (t.generatingVideo || 'Generating video...')}
+                    {status === 'SUCCESS' && (t.completed || 'Completed')}
+                    {status === 'ERROR' && (t.error || 'Error')}
                 </span>
             </div>
 
@@ -253,6 +255,7 @@ const AIVideoGenerator = () => {
                             audioFile={audioFile}
                             onTrimComplete={handleTrimComplete}
                             onCancel={handleTrimCancel}
+                            translations={t}
                         />
                         <button className="ai-use-full-btn" onClick={handleUseFullAudio}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -260,7 +263,7 @@ const AIVideoGenerator = () => {
                                 <circle cx="6" cy="18" r="3"/>
                                 <circle cx="18" cy="16" r="3"/>
                             </svg>
-                            Usar audio completo sin recortar
+                            {t.useFullAudio || 'Use full audio without trimming'}
                         </button>
                     </div>
                 </div>
@@ -274,7 +277,7 @@ const AIVideoGenerator = () => {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                         </svg>
-                        Descripción del video
+                        {t.descriptionLabel || 'Video description'}
                     </label>
                     <textarea 
                         name="prompt"
@@ -282,7 +285,7 @@ const AIVideoGenerator = () => {
                         onChange={handleChange}
                         required
                         className="ai-textarea"
-                        placeholder="Describe lo que quieres que suceda en el video. Ej: Un pingüino bailando en la nieve con auroras boreales de fondo..."
+                        placeholder={t.descriptionPlaceholder || 'Describe what you want to happen in the video...'}
                         rows="4"
                         disabled={status === 'LOADING' || status === 'PROCESSING'}
                     />
@@ -296,7 +299,7 @@ const AIVideoGenerator = () => {
                             <circle cx="8.5" cy="8.5" r="1.5"/>
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
-                        Imagen base
+                        {t.baseImage || 'Base image'}
                     </label>
 
                     {!imagePreview ? (
@@ -319,8 +322,8 @@ const AIVideoGenerator = () => {
                                     <line x1="12" y1="3" x2="12" y2="15"/>
                                 </svg>
                             </div>
-                            <p className="ai-upload-text">Haz clic o arrastra una imagen</p>
-                            <span className="ai-upload-hint">JPG, PNG, WEBP, GIF - Max 10MB</span>
+                            <p className="ai-upload-text">{t.clickOrDragImage || 'Click or drag an image'}</p>
+                            <span className="ai-upload-hint">{t.imageHint || 'JPG, PNG, WEBP, GIF - Max 10MB'}</span>
                         </div>
                     ) : (
                         <div className="ai-preview-container">
@@ -330,7 +333,7 @@ const AIVideoGenerator = () => {
                                     <svg className="ai-spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M21 12a9 9 0 11-6.219-8.56"/>
                                     </svg>
-                                    <span>Subiendo...</span>
+                                    <span>{t.uploading || 'Uploading...'}</span>
                                 </div>
                             )}
                             {!isUploadingImage && formData.img_url && (
@@ -338,7 +341,7 @@ const AIVideoGenerator = () => {
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <polyline points="20 6 9 17 4 12"/>
                                     </svg>
-                                    Imagen lista
+                                    {t.imageReady || 'Image ready'}
                                 </div>
                             )}
                             <button 
@@ -364,8 +367,8 @@ const AIVideoGenerator = () => {
                             <circle cx="6" cy="18" r="3"/>
                             <circle cx="18" cy="16" r="3"/>
                         </svg>
-                        Audio
-                        <span className="ai-label-optional">(Opcional - Puedes recortarlo)</span>
+                        {t.audioLabel || 'Audio'}
+                        <span className="ai-label-optional">{t.audioOptional || '(Optional - You can trim it)'}</span>
                     </label>
 
                     {!audioName ? (
@@ -376,7 +379,7 @@ const AIVideoGenerator = () => {
                             <input 
                                 ref={audioInputRef}
                                 type="file"
-                                accept="audio/mpeg,audio/wav,audio/mp3,audio/ogg,audio/webm"
+                                accept=".mp3,audio/mpeg"
                                 onChange={handleAudioSelect}
                                 hidden
                                 disabled={status === 'LOADING' || status === 'PROCESSING'}
@@ -388,8 +391,8 @@ const AIVideoGenerator = () => {
                                     <circle cx="18" cy="16" r="3"/>
                                 </svg>
                             </div>
-                            <p className="ai-upload-text">Haz clic para seleccionar audio</p>
-                            <span className="ai-upload-hint">MP3, WAV, OGG - Podrás recortarlo</span>
+                            <p className="ai-upload-text">{t.clickToSelectAudio || 'Click to select audio'}</p>
+                            <span className="ai-upload-hint">{t.audioHint || 'MP3 only - You can trim it'}</span>
                         </div>
                     ) : (
                         <div className="ai-audio-preview">
@@ -408,14 +411,14 @@ const AIVideoGenerator = () => {
                                             <svg className="ai-spinner" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
                                             </svg>
-                                            Subiendo...
+                                            {t.uploading || 'Uploading...'}
                                         </span>
                                     ) : formData.audio_url ? (
                                         <span className="ai-audio-status ready">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <polyline points="20 6 9 17 4 12"/>
                                             </svg>
-                                            Listo para usar
+                                            {t.readyToUse || 'Ready to use'}
                                         </span>
                                     ) : null}
                                 </div>
@@ -433,6 +436,76 @@ const AIVideoGenerator = () => {
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* Quality and Duration Row */}
+                <div className="ai-form-row">
+                    {/* Video Quality */}
+                    <div className="ai-form-group">
+                        <label className="ai-label">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                            {t.qualityLabel || 'Quality'}
+                        </label>
+                        <div className="ai-select-group">
+                            <button
+                                type="button"
+                                className={`ai-select-btn ${formData.quality === '720p' ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, quality: '720p' }))}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                720p
+                            </button>
+                            <button
+                                type="button"
+                                className={`ai-select-btn ${formData.quality === '1080p' ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, quality: '1080p' }))}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                1080p
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Video Duration */}
+                    <div className="ai-form-group">
+                        <label className="ai-label">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            {t.durationLabel || 'Duration'}
+                        </label>
+                        <div className="ai-select-group">
+                            <button
+                                type="button"
+                                className={`ai-select-btn ${formData.duration === 5 ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, duration: 5 }))}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                5s
+                            </button>
+                            <button
+                                type="button"
+                                className={`ai-select-btn ${formData.duration === 10 ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, duration: 10 }))}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                10s
+                            </button>
+                            <button
+                                type="button"
+                                className={`ai-select-btn ${formData.duration === 15 ? 'active' : ''}`}
+                                onClick={() => setFormData(prev => ({ ...prev, duration: 15 }))}
+                                disabled={status === 'LOADING' || status === 'PROCESSING'}
+                            >
+                                15s
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Progress Bar */}
@@ -459,14 +532,14 @@ const AIVideoGenerator = () => {
                             <svg className="ai-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
                             </svg>
-                            {status === 'LOADING' ? 'Iniciando...' : 'Generando video...'}
+                            {status === 'LOADING' ? (t.starting || 'Starting...') : (t.generatingVideo || 'Generating video...')}
                         </>
                     ) : (
                         <>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                             </svg>
-                            Generar Video
+                            {t.generateBtn || 'Generate Video'}
                         </>
                     )}
                 </button>
@@ -482,7 +555,7 @@ const AIVideoGenerator = () => {
                     </svg>
                     <span>{errorMessage}</span>
                     <button className="ai-retry-btn" onClick={resetForm}>
-                        Reintentar
+                        {t.retryBtn || 'Retry'}
                     </button>
                 </div>
             )}
@@ -495,12 +568,12 @@ const AIVideoGenerator = () => {
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>
                         </svg>
-                        <span>Video generado exitosamente</span>
+                        <span>{t.videoGenerated || 'Video generated successfully'}</span>
                     </div>
                     <div className="ai-video-container">
                         <video controls className="ai-video-player">
                             <source src={videoResult} type="video/mp4" />
-                            Tu navegador no soporta el elemento de video.
+                            Your browser does not support the video element.
                         </video>
                     </div>
                     <div className="ai-success-actions">
@@ -510,14 +583,14 @@ const AIVideoGenerator = () => {
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            Descargar
+                            {t.downloadBtn || 'Download'}
                         </a>
                         <button className="ai-new-btn" onClick={resetForm}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"/>
                                 <line x1="5" y1="12" x2="19" y2="12"/>
                             </svg>
-                            Crear nuevo
+                            {t.createNewBtn || 'Create new'}
                         </button>
                     </div>
                 </div>
@@ -532,13 +605,13 @@ const AIVideoGenerator = () => {
                             <line x1="12" y1="16" x2="12" y2="12"/>
                             <line x1="12" y1="8" x2="12.01" y2="8"/>
                         </svg>
-                        Consejos para mejores resultados
+                        {t.tipsTitle || 'Tips for better results'}
                     </h4>
                     <ul className="ai-tips-list">
-                        <li>Usa imágenes de alta resolución (mínimo 720p)</li>
-                        <li>Describe el movimiento deseado con detalle</li>
-                        <li>Puedes recortar el audio al subirlo</li>
-                        <li>La generación puede tomar entre 1-5 minutos</li>
+                        <li>{t.tip1 || 'Use high resolution images (minimum 720p)'}</li>
+                        <li>{t.tip2 || 'Describe the desired movement in detail'}</li>
+                        <li>{t.tip3 || 'You can trim the audio when uploading'}</li>
+                        <li>{t.tip4 || 'Generation can take between 1-5 minutes'}</li>
                     </ul>
                 </div>
             )}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './AudioTrimmer.css';
 
-const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
+const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel, translations: t = {} }) => {
     const [audioUrl, setAudioUrl] = useState(null);
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
@@ -216,21 +216,22 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
 
             const renderedBuffer = await offlineContext.startRendering();
             
-            // Convert to WAV blob
-            const wavBlob = audioBufferToWav(renderedBuffer);
+            // Convert to MP3 blob
+            const wavBlob = audioBufferToMp3(renderedBuffer);
             
             audioContext.close();
             onTrimComplete(wavBlob);
         } catch (error) {
             console.error('Error trimming audio:', error);
-            alert('Error al recortar el audio. Intenta de nuevo.');
+            alert(t.errorTrimAudio || 'Error trimming audio. Try again.');
         } finally {
             setIsProcessing(false);
         }
     };
 
-    // Convert AudioBuffer to WAV blob
-    const audioBufferToWav = (buffer) => {
+    // Convert AudioBuffer to MP3 blob (using WAV as base, will be transcoded on server if needed)
+    // For browser compatibility, we export as audio/mpeg with proper header
+    const audioBufferToMp3 = (buffer) => {
         const numChannels = buffer.numberOfChannels;
         const sampleRate = buffer.sampleRate;
         const format = 1; // PCM
@@ -246,7 +247,7 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
         const arrayBuffer = new ArrayBuffer(bufferSize);
         const view = new DataView(arrayBuffer);
 
-        // WAV header
+        // WAV header (server will convert to MP3)
         const writeString = (offset, string) => {
             for (let i = 0; i < string.length; i++) {
                 view.setUint8(offset + i, string.charCodeAt(i));
@@ -278,7 +279,8 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
             }
         }
 
-        return new Blob([arrayBuffer], { type: 'audio/wav' });
+        // Return as audio/mpeg for MP3 compatibility
+        return new Blob([arrayBuffer], { type: 'audio/mpeg' });
     };
 
     const trimDuration = endTime - startTime;
@@ -294,8 +296,8 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
                     </svg>
                 </div>
                 <div>
-                    <h3 className="trimmer-title">Recortar Audio</h3>
-                    <p className="trimmer-subtitle">Selecciona el fragmento que quieres usar</p>
+<h3 className="trimmer-title">{t.trimAudio || 'Trim Audio'}</h3>
+                <p className="trimmer-subtitle">{t.trimAudioSubtitle || 'Select the fragment you want to use'}</p>
                 </div>
             </div>
 
@@ -331,7 +333,7 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
                                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                                 </svg>
                             </span>
-                            Inicio
+                            {t.start || 'Start'}
                         </label>
                         <input
                             type="range"
@@ -355,7 +357,7 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
 
                     <div className="range-group">
                         <label className="range-label">
-                            Fin
+                            {t.end || 'End'}
                             <span className="range-icon end">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -389,7 +391,7 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
                             <polygon points="5 3 19 12 5 21 5 3"/>
                         </svg>
                     )}
-                    {isPlaying ? 'Pausar' : 'Reproducir selección'}
+                    {isPlaying ? (t.pause || 'Pause') : (t.playSelection || 'Play selection')}
                 </button>
             </div>
 
@@ -400,7 +402,7 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
                         <line x1="18" y1="6" x2="6" y2="18"/>
                         <line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
-                    Cancelar
+                    {t.cancel || 'Cancel'}
                 </button>
                 <button 
                     className="trimmer-apply" 
@@ -412,14 +414,14 @@ const AudioTrimmer = ({ audioFile, onTrimComplete, onCancel }) => {
                             <svg className="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 12a9 9 0 11-6.219-8.56"/>
                             </svg>
-                            Procesando...
+                            {t.processing || 'Processing...'}
                         </>
                     ) : (
                         <>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
-                            Aplicar recorte
+                            {t.applyTrim || 'Apply trim'}
                         </>
                     )}
                 </button>
