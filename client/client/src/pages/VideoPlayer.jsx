@@ -62,9 +62,10 @@ function VideoPlayer() {
   const t = translations[lang] || translations.en;
   const vp = t.videoPlayer || {};
 
-  // Handle search from VideoPlayer - navigate to home with search query
-  const handleSearch = (query) => {
-    if (query && query.trim()) {
+  // Handle search from VideoPlayer - only navigate to home on form submit (Enter key)
+  // Video suggestions are handled directly by Header's handleSuggestionClick
+  const handleSearch = (query, isSubmit = false) => {
+    if (isSubmit && query && query.trim()) {
       navigate(`/?search=${encodeURIComponent(query.trim())}`);
     }
   };

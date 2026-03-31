@@ -178,14 +178,15 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
     setSearchQuery(value);
     setShowSuggestions(value.length > 0);
     setSelectedIndex(-1);
-    if (onSearch) onSearch(value);
+    // Don't trigger navigation on typing, just update suggestions
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setShowSuggestions(false);
     setSelectedIndex(-1);
-    if (onSearch) onSearch(searchQuery);
+    // Pass true as second param to indicate this is a form submit
+    if (onSearch) onSearch(searchQuery, true);
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -193,9 +194,9 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
       // Navigate directly to video
       navigate(`/watch/${suggestion.videoId}`);
     } else {
-      // Set search query to the suggestion text
+      // Set search query and navigate to home with filter
       setSearchQuery(suggestion.text);
-      if (onSearch) onSearch(suggestion.text);
+      navigate(`/?search=${encodeURIComponent(suggestion.text)}`);
     }
     setShowSuggestions(false);
     setSelectedIndex(-1);

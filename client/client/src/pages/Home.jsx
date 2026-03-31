@@ -225,14 +225,16 @@ function Home() {
     setFilteredVideos(list);
   };
 
-  const handleSearch = (query) => {
+  const handleSearch = (query, isSubmit = false) => {
     setSearchQuery(query);
     applyFilters(query);
-    // Update URL search params
-    if (query && query.trim()) {
-      setSearchParams({ search: query.trim() });
-    } else {
-      setSearchParams({});
+    // Update URL search params only on submit
+    if (isSubmit) {
+      if (query && query.trim()) {
+        setSearchParams({ search: query.trim() });
+      } else {
+        setSearchParams({});
+      }
     }
   };
 
