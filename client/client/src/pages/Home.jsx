@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
@@ -12,9 +12,13 @@ const ROTATE_MS = 6000;
 const ENDING_SOON_DAYS = 3; // campaigns ending within 3 days get special color
 
 function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  
   const [videos, setVideos] = useState([]);
   const [filteredVideos, setFilteredVideos] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '' });
   const [likedVideos, setLikedVideos] = useState({});
@@ -52,8 +56,15 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    applyFilters();
-  }, [activeCategory, videos]);
+    applyFilters(searchQuery);
+  }, [activeCategory, videos, searchQuery]);
+  
+  // Apply initial search from URL params when videos load
+  useEffect(() => {
+    if (initialSearch && videos.length > 0) {
+      applyFilters(initialSearch);
+    }
+  }, [videos.length]);
 
   /* ── Build system (static) announcements ── */
   const buildSystemAnnouncements = () => {
@@ -215,7 +226,14 @@ function Home() {
   };
 
   const handleSearch = (query) => {
+    setSearchQuery(query);
     applyFilters(query);
+    // Update URL search params
+    if (query && query.trim()) {
+      setSearchParams({ search: query.trim() });
+    } else {
+      setSearchParams({});
+    }
   };
 
   const handleShare = (e, video) => {
@@ -286,7 +304,7 @@ function Home() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header onSearch={handleSearch} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} videos={videos} />
+      <Header onSearch={handleSearch} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} videos={videos} initialQuery={searchQuery} />
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (

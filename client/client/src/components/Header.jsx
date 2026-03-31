@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
 
-function Header({ onSearch, onToggleSidebar, videos = [] }) {
-  const [searchQuery, setSearchQuery] = useState('');
+function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileSearchVisible, setMobileSearchVisible] = useState(true);

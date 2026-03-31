@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
@@ -56,10 +56,18 @@ function VideoPlayer() {
   const videoRef = useRef(null);
   const seekRef = useRef(null);
 
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const lang = localStorage.getItem('appLanguage') || 'en';
   const t = translations[lang] || translations.en;
   const vp = t.videoPlayer || {};
+
+  // Handle search from VideoPlayer - navigate to home with search query
+  const handleSearch = (query) => {
+    if (query && query.trim()) {
+      navigate(`/?search=${encodeURIComponent(query.trim())}`);
+    }
+  };
 
   useEffect(() => {
     setStatusLabel(vp.ready || 'Ready');
@@ -287,7 +295,7 @@ function VideoPlayer() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header onSearch={() => {}} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Header onSearch={handleSearch} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} videos={allVideos} />
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
