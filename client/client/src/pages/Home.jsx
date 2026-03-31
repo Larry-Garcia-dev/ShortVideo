@@ -276,8 +276,12 @@ function Home() {
     if (video.thumbnailUrl) {
       return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
     }
-    // fallback gradient placeholder
+    // No custom thumbnail - return null to trigger video fallback with poster frame
     return null;
+  };
+
+  const getVideoUrl = (video) => {
+    return `${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`;
   };
 
   return (
@@ -531,10 +535,16 @@ function Home() {
                       />
                     ) : (
                       <video
-                        src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
+                        src={`${getVideoUrl(video)}#t=1`}
                         preload="metadata"
                         muted
+                        playsInline
+                        crossOrigin="anonymous"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onLoadedData={(e) => {
+                          // Capture frame at 1 second and pause
+                          e.target.currentTime = 1;
+                        }}
                       />
                     )}
                     <div className="home-card-play">

@@ -45,13 +45,14 @@ function VideoPlayer() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [volume, setVolume] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(0.7);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [statusLabel, setStatusLabel] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
   const videoRef = useRef(null);
   const seekRef = useRef(null);
 
@@ -115,45 +116,73 @@ function VideoPlayer() {
   };
 
   const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => showToast(vp.autoplayBlocked || 'Autoplay blocked'));
+    const vid = videoRef.current;
+    if (!vid) return;
+    
+    if (vid.paused) {
+      // Immediately update UI for responsiveness
+      setIsPlaying(true);
+      setStatusLabel(vp.playing || 'Playing');
+      vid.play().catch(() => {
+        setIsPlaying(false);
+        setStatusLabel(vp.paused || 'Paused');
+        showToast(vp.autoplayBlocked || 'Autoplay blocked');
+      });
     } else {
-      videoRef.current.pause();
+      // Immediately update UI for responsiveness
+      setIsPlaying(false);
+      setStatusLabel(vp.paused || 'Paused');
+      vid.pause();
     }
   };
 
   const jump = (seconds) => {
-    if (!videoRef.current) return;
-    videoRef.current.currentTime = Math.max(0, Math.min(videoRef.current.duration || Infinity, videoRef.current.currentTime + seconds));
+    const vid = videoRef.current;
+    if (!vid) return;
+    const newTime = Math.max(0, Math.min(vid.duration || Infinity, vid.currentTime + seconds));
+    vid.currentTime = newTime;
+    // Immediately update UI for responsiveness
+    setCurrentTime(newTime);
     showToast(`${seconds > 0 ? '+' : ''}${seconds}s`);
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    if (!videoRef.current.muted && videoRef.current.volume === 0) {
-      videoRef.current.volume = 0.6;
+    const vid = videoRef.current;
+    if (!vid) return;
+    
+    const newMuted = !vid.muted;
+    vid.muted = newMuted;
+    
+    if (!newMuted && vid.volume === 0) {
+      vid.volume = 0.7;
     }
-    setIsMuted(videoRef.current.muted);
-    setVolume(videoRef.current.muted ? 0 : videoRef.current.volume);
-    showToast(videoRef.current.muted ? (vp.muted || 'Muted') : (vp.soundOn || 'Sound on'));
+    
+    // Immediately update UI for responsiveness
+    setIsMuted(newMuted);
+    setVolume(newMuted ? 0 : vid.volume);
+    showToast(newMuted ? (vp.muted || 'Muted') : (vp.soundOn || 'Sound on'));
   };
 
   const handleVolumeChange = (e) => {
     const v = parseFloat(e.target.value);
-    if (videoRef.current) {
-      videoRef.current.volume = v;
-      videoRef.current.muted = v === 0;
-      setVolume(v);
-      setIsMuted(v === 0);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.volume = v;
+      vid.muted = v === 0;
     }
+    // Immediately update UI for responsiveness
+    setVolume(v);
+    setIsMuted(v === 0);
   };
 
   const handleSeek = (e) => {
     const pct = parseFloat(e.target.value);
-    if (videoRef.current && videoRef.current.duration) {
-      videoRef.current.currentTime = (pct / 100) * videoRef.current.duration;
+    const vid = videoRef.current;
+    if (vid && vid.duration) {
+      const newTime = (pct / 100) * vid.duration;
+      vid.currentTime = newTime;
+      // Immediately update UI for responsiveness
+      setCurrentTime(newTime);
     }
   };
 
@@ -288,13 +317,33 @@ function VideoPlayer() {
                     <video
                       ref={videoRef}
                       playsInline
-                      preload="metadata"
+                      preload="auto"
+                      crossOrigin="anonymous"
                       // CORRECCIÓN: Usamos BASE_URL en lugar de localhost para que Nginx sirva el video
                       src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
+                      poster={video.thumbnailUrl ? `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}` : undefined}
                       style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                       onLoadedMetadata={() => {
                         setDuration(videoRef.current?.duration || 0);
                         setStatusLabel(vp.loaded || 'Loaded');
+                        // Auto-play video when it loads
+                        if (!hasAutoPlayed && videoRef.current) {
+                          videoRef.current.volume = volume;
+                          videoRef.current.muted = false;
+                          videoRef.current.play()
+                            .then(() => setHasAutoPlayed(true))
+                            .catch(() => {
+                              // Autoplay blocked - try muted autoplay
+                              if (videoRef.current) {
+                                videoRef.current.muted = true;
+                                setIsMuted(true);
+                                setVolume(0);
+                                videoRef.current.play()
+                                  .then(() => setHasAutoPlayed(true))
+                                  .catch(() => {});
+                              }
+                            });
+                        }
                       }}
                       onTimeUpdate={() => {
                         if (videoRef.current) setCurrentTime(videoRef.current.currentTime);
