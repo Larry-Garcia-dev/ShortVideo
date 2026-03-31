@@ -205,7 +205,20 @@ function Home() {
     
     axios.get(`${API_URL}/videos?page=${pageNum}&limit=6`)
       .then(response => {
-        const { videos: newVideos, hasMore: more, currentPage } = response.data;
+        // Handle both old format (array) and new format (object with pagination)
+        let newVideos, more, currentPageNum;
+        
+        if (Array.isArray(response.data)) {
+          // Old format: API returns array directly
+          newVideos = response.data;
+          more = false;
+          currentPageNum = 1;
+        } else {
+          // New format: API returns object with videos and pagination info
+          newVideos = response.data.videos || [];
+          more = response.data.hasMore || false;
+          currentPageNum = response.data.currentPage || pageNum;
+        }
         
         if (append && pageNum > 1) {
           // Append new videos to existing list
@@ -217,7 +230,7 @@ function Home() {
           setFilteredVideos(newVideos);
         }
         
-        setPage(currentPage);
+        setPage(currentPageNum);
         setHasMore(more);
 
         // Initialize liked state from existing likes for the current user
