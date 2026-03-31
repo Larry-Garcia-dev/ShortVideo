@@ -1009,6 +1009,109 @@ input[type="range"] {
   box-shadow: 0 0 0 3px rgba(124,92,255,0.12);
 }
 
+/* ── Search Suggestions Dropdown ── */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  background: rgba(18, 22, 32, 0.98);
+  border: 1px solid rgba(234,240,255,0.14);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  overflow: hidden;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  animation: suggestionsFadeIn 0.15s ease;
+}
+
+@keyframes suggestionsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.search-suggestion-item:hover,
+.search-suggestion-item.selected {
+  background: rgba(124,92,255,0.12);
+}
+
+.search-suggestion-item:not(:last-child) {
+  border-bottom: 1px solid rgba(234,240,255,0.06);
+}
+
+.suggestion-icon {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.search-suggestion-item:hover .suggestion-icon,
+.search-suggestion-item.selected .suggestion-icon {
+  color: var(--brand2);
+}
+
+.suggestion-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-text {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.suggestion-arrow {
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.search-suggestion-item:hover .suggestion-arrow,
+.search-suggestion-item.selected .suggestion-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Mobile suggestions */
+.search-suggestions.mobile {
+  position: relative;
+  margin-top: 10px;
+  border-radius: 12px;
+}
+
 /* ── Mobile search bar (below header) ── */
 .header-mobile-search {
   display: none; /* Hidden on desktop by default */
@@ -1876,6 +1979,43 @@ input[type="range"] {
 .vp-seek {
   width: 100%;
   accent-color: var(--brand2);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: rgba(234,240,255,0.15);
+  border-radius: 4px;
+  outline: none;
+  transition: height 0.15s ease;
+}
+
+.vp-seek:hover {
+  height: 10px;
+}
+
+.vp-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand2);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.vp-seek::-webkit-slider-thumb:hover,
+.vp-seek::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+
+.vp-seek::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brand2);
+  cursor: pointer;
+  border: none;
 }
 
 .vp-controls-row {
@@ -1890,6 +2030,12 @@ input[type="range"] {
   height: 38px;
   border-radius: 12px;
   flex-shrink: 0;
+  transition: transform 0.08s ease, background 0.08s ease;
+}
+
+.vp-icon-btn:active {
+  transform: scale(0.92);
+  background: rgba(124, 92, 255, 0.25);
 }
 
 .vp-time {
@@ -1916,8 +2062,40 @@ input[type="range"] {
 }
 
 .vp-vol-slider {
+  width: 80px;
   max-width: 100px;
   accent-color: var(--brand2);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(234,240,255,0.15);
+  border-radius: 3px;
+  outline: none;
+  transition: height 0.15s ease;
+}
+
+.vp-vol-slider:hover {
+  height: 8px;
+}
+
+.vp-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand2);
+  cursor: pointer;
+}
+
+.vp-vol-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand2);
+  cursor: pointer;
+  border: none;
 }
 
 .vp-shortcuts-row {
