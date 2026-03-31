@@ -1879,10 +1879,15 @@ input[type="range"] {
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
+  height: 8px;
   background: rgba(234,240,255,0.15);
-  border-radius: 3px;
+  border-radius: 4px;
   outline: none;
+  transition: height 0.15s ease;
+}
+
+.vp-seek:hover {
+  height: 10px;
 }
 
 .vp-seek::-webkit-slider-thumb {
@@ -1954,15 +1959,21 @@ input[type="range"] {
 }
 
 .vp-vol-slider {
+  width: 80px;
   max-width: 100px;
   accent-color: var(--brand2);
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  height: 6px;
   background: rgba(234,240,255,0.15);
-  border-radius: 2px;
+  border-radius: 3px;
   outline: none;
+  transition: height 0.15s ease;
+}
+
+.vp-vol-slider:hover {
+  height: 8px;
 }
 
 .vp-vol-slider::-webkit-slider-thumb {

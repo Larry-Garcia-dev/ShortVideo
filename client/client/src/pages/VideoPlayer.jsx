@@ -365,6 +365,9 @@ function VideoPlayer() {
                       onChange={handleSeek}
                       className="vp-seek"
                       aria-label="Seek"
+                      style={{
+                        background: `linear-gradient(to right, var(--brand2) 0%, var(--brand2) ${duration ? (currentTime / duration) * 100 : 0}%, rgba(234,240,255,0.15) ${duration ? (currentTime / duration) * 100 : 0}%, rgba(234,240,255,0.15) 100%)`
+                      }}
                     />
 
                     {/* Controls Row */}
@@ -412,6 +415,9 @@ function VideoPlayer() {
                         value={volume}
                         onChange={handleVolumeChange}
                         className="vp-vol-slider"
+                        style={{
+                          background: `linear-gradient(to right, var(--brand2) 0%, var(--brand2) ${volume * 100}%, rgba(234,240,255,0.15) ${volume * 100}%, rgba(234,240,255,0.15) 100%)`
+                        }}
                       />
 
                       <button onClick={handleFullscreen} className="iconBtn vp-icon-btn" title="Fullscreen (F)" aria-label="Fullscreen">
