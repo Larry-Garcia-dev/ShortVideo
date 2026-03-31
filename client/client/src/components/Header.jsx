@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
 
-function Header({ onSearch, onToggleSidebar }) {
+function Header({ onSearch, onToggleSidebar, videos = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileSearchVisible, setMobileSearchVisible] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const user = JSON.parse(localStorage.getItem('user'));
   const storedLang = localStorage.getItem('appLanguage') || (user?.language) || 'en';
 
@@ -15,9 +17,112 @@ function Header({ onSearch, onToggleSidebar }) {
   const navigate = useNavigate();
   const langRef = useRef(null);
   const userMenuRef = useRef(null);
+  const searchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const lastScrollY = useRef(0);
 
   const t = translations[currentLang] || translations.en;
+
+  // Generate search suggestions based on videos and query
+  const suggestions = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 1) return [];
+    
+    const q = searchQuery.toLowerCase();
+    const seen = new Set();
+    const results = [];
+    
+    // Search through videos for matching titles, descriptions, tags, and creators
+    videos.forEach(video => {
+      // Match by title
+      if (video.title?.toLowerCase().includes(q)) {
+        const key = `title:${video.title}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            type: 'video',
+            text: video.title,
+            videoId: video.id,
+            thumbnail: video.thumbnailUrl,
+            creator: video.User?.email?.split('@')[0] || 'creator'
+          });
+        }
+      }
+      
+      // Match by tags
+      if (Array.isArray(video.tags)) {
+        video.tags.forEach(tag => {
+          if (tag.toLowerCase().includes(q)) {
+            const key = `tag:${tag.toLowerCase()}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              results.push({
+                type: 'tag',
+                text: tag,
+                count: videos.filter(v => v.tags?.some(t => t.toLowerCase() === tag.toLowerCase())).length
+              });
+            }
+          }
+        });
+      }
+      
+      // Match by category
+      if (video.category?.toLowerCase().includes(q)) {
+        const key = `category:${video.category}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            type: 'category',
+            text: video.category,
+            count: videos.filter(v => v.category === video.category).length
+          });
+        }
+      }
+      
+      // Match by creator
+      const creator = video.User?.email?.split('@')[0];
+      if (creator?.toLowerCase().includes(q)) {
+        const key = `creator:${creator}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({
+            type: 'creator',
+            text: creator,
+            count: videos.filter(v => v.User?.email?.split('@')[0] === creator).length
+          });
+        }
+      }
+    });
+    
+    // Sort: videos first, then by relevance (starts with query first)
+    results.sort((a, b) => {
+      // Videos first
+      if (a.type === 'video' && b.type !== 'video') return -1;
+      if (b.type === 'video' && a.type !== 'video') return 1;
+      
+      // Then by starts with query
+      const aStarts = a.text.toLowerCase().startsWith(q);
+      const bStarts = b.text.toLowerCase().startsWith(q);
+      if (aStarts && !bStarts) return -1;
+      if (bStarts && !aStarts) return 1;
+      
+      return a.text.localeCompare(b.text);
+    });
+    
+    return results.slice(0, 8); // Limit to 8 suggestions
+  }, [searchQuery, videos]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target) &&
+          mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Dynamic scroll show/hide for mobile search bar
   // Listens on both window and any <main> element (which may have its own overflow scroll)
@@ -69,13 +174,55 @@ function Header({ onSearch, onToggleSidebar }) {
   };
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    if (onSearch) onSearch(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSuggestions(value.length > 0);
+    setSelectedIndex(-1);
+    if (onSearch) onSearch(value);
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+    setShowSuggestions(false);
+    setSelectedIndex(-1);
     if (onSearch) onSearch(searchQuery);
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    if (suggestion.type === 'video') {
+      // Navigate directly to video
+      navigate(`/watch/${suggestion.videoId}`);
+    } else {
+      // Set search query to the suggestion text
+      setSearchQuery(suggestion.text);
+      if (onSearch) onSearch(suggestion.text);
+    }
+    setShowSuggestions(false);
+    setSelectedIndex(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[selectedIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedIndex(-1);
+    }
+  };
+
+  const handleSearchFocus = () => {
+    if (searchQuery.length > 0) {
+      setShowSuggestions(true);
+    }
   };
 
   const handleLanguageSelect = async (newLang) => {
@@ -169,7 +316,7 @@ function Header({ onSearch, onToggleSidebar }) {
         </Link>
 
         {/* Desktop search - hidden on mobile via CSS */}
-        <div className="header-search-wrapper header-search-desktop">
+        <div className="header-search-wrapper header-search-desktop" ref={searchRef}>
           <span className="header-search-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -178,8 +325,73 @@ function Header({ onSearch, onToggleSidebar }) {
           <input
             type="text" className="header-search-input"
             placeholder={t.header.searchPlaceholder}
-            value={searchQuery} onChange={handleSearchChange}
+            value={searchQuery} 
+            onChange={handleSearchChange}
+            onFocus={handleSearchFocus}
+            onKeyDown={handleKeyDown}
+            autoComplete="off"
           />
+          
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="search-suggestions">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.type}-${suggestion.text}-${index}`}
+                  className={`search-suggestion-item${selectedIndex === index ? ' selected' : ''}`}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                >
+                  {suggestion.type === 'video' ? (
+                    <>
+                      <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                      <div className="suggestion-content">
+                        <span className="suggestion-text">{suggestion.text}</span>
+                        <span className="suggestion-meta">Video by {suggestion.creator}</span>
+                      </div>
+                    </>
+                  ) : suggestion.type === 'tag' ? (
+                    <>
+                      <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                        <line x1="7" y1="7" x2="7.01" y2="7"/>
+                      </svg>
+                      <div className="suggestion-content">
+                        <span className="suggestion-text">#{suggestion.text}</span>
+                        <span className="suggestion-meta">{suggestion.count} videos</span>
+                      </div>
+                    </>
+                  ) : suggestion.type === 'category' ? (
+                    <>
+                      <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                      </svg>
+                      <div className="suggestion-content">
+                        <span className="suggestion-text">{suggestion.text}</span>
+                        <span className="suggestion-meta">{suggestion.count} videos in category</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      <div className="suggestion-content">
+                        <span className="suggestion-text">@{suggestion.text}</span>
+                        <span className="suggestion-meta">{suggestion.count} videos</span>
+                      </div>
+                    </>
+                  )}
+                  <svg className="suggestion-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="header-actions">
@@ -276,7 +488,7 @@ function Header({ onSearch, onToggleSidebar }) {
     </header>
 
     {/* Mobile search bar - visible only on mobile, hides on scroll down, shows on scroll up */}
-    <div className={`header-mobile-search${mobileSearchVisible ? '' : ' hidden'}`}>
+    <div className={`header-mobile-search${mobileSearchVisible ? '' : ' hidden'}`} ref={mobileSearchRef}>
       <form className="header-mobile-search-form" onSubmit={handleSearchSubmit}>
         <span className="header-search-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -289,11 +501,71 @@ function Header({ onSearch, onToggleSidebar }) {
           placeholder={t.header.searchPlaceholder}
           value={searchQuery}
           onChange={handleSearchChange}
+          onFocus={handleSearchFocus}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
         />
         <button type="submit" className="header-mobile-search-btn">
           {t.header.searchBtn || 'Search'}
         </button>
       </form>
+      
+      {/* Mobile Search Suggestions */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="search-suggestions mobile">
+          {suggestions.map((suggestion, index) => (
+            <button
+              key={`mobile-${suggestion.type}-${suggestion.text}-${index}`}
+              className={`search-suggestion-item${selectedIndex === index ? ' selected' : ''}`}
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              {suggestion.type === 'video' ? (
+                <>
+                  <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  <div className="suggestion-content">
+                    <span className="suggestion-text">{suggestion.text}</span>
+                    <span className="suggestion-meta">Video</span>
+                  </div>
+                </>
+              ) : suggestion.type === 'tag' ? (
+                <>
+                  <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                  </svg>
+                  <div className="suggestion-content">
+                    <span className="suggestion-text">#{suggestion.text}</span>
+                    <span className="suggestion-meta">{suggestion.count} videos</span>
+                  </div>
+                </>
+              ) : suggestion.type === 'category' ? (
+                <>
+                  <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  <div className="suggestion-content">
+                    <span className="suggestion-text">{suggestion.text}</span>
+                    <span className="suggestion-meta">Category</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <svg className="suggestion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <div className="suggestion-content">
+                    <span className="suggestion-text">@{suggestion.text}</span>
+                    <span className="suggestion-meta">{suggestion.count} videos</span>
+                  </div>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
     </>
   );
