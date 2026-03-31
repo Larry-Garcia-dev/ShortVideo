@@ -1,29 +1,7 @@
 const { Video, User, Comment, Like } = require('../models'); // Importar todos los modelos
 const { getVideoDurationInSeconds } = require('get-video-duration');
 const ffprobe = require('ffprobe-static');
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegStatic = require('ffmpeg-static');
-const path = require('path');
 const fs = require('fs');
-
-// Set ffmpeg and ffprobe paths
-ffmpeg.setFfmpegPath(ffmpegStatic);
-ffmpeg.setFfprobePath(ffprobe.path);
-
-// Helper function to generate thumbnail from video
-const generateThumbnail = (videoPath, outputPath) => {
-    return new Promise((resolve, reject) => {
-        ffmpeg(videoPath)
-            .screenshots({
-                timestamps: ['00:00:01'], // Capture at 1 second
-                filename: path.basename(outputPath),
-                folder: path.dirname(outputPath),
-                size: '640x360'
-            })
-            .on('end', () => resolve(outputPath))
-            .on('error', (err) => reject(err));
-    });
-};
 
 // ... (Mantén aquí tu función uploadVideo tal cual como estaba) ...
 // Para ahorrar espacio, solo pongo el código nuevo abajo, 
@@ -53,27 +31,11 @@ exports.uploadVideo = async (req, res) => {
             } catch { tags = []; }
         }
 
-        // Determine thumbnail path
-        let thumbnailPath = thumbnailFile ? thumbnailFile.path : null;
-        
-        // Auto-generate thumbnail if none provided
-        if (!thumbnailPath) {
-            try {
-                const videoBasename = path.basename(videoPath, path.extname(videoPath));
-                const autoThumbPath = path.join('uploads/thumbnails', `auto-${videoBasename}.png`);
-                await generateThumbnail(videoPath, autoThumbPath);
-                thumbnailPath = autoThumbPath;
-            } catch (thumbErr) {
-                console.log('Auto-thumbnail generation failed:', thumbErr.message);
-                // Continue without thumbnail - not critical
-            }
-        }
-
         const newVideo = await Video.create({
             title: req.body.title,
             description: req.body.description,
             videoUrl: videoPath,
-            thumbnailUrl: thumbnailPath,
+            thumbnailUrl: thumbnailFile ? thumbnailFile.path : null,
             category: req.body.category || 'General',
             tags: tags,
             duration: duration,
