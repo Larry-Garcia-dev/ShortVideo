@@ -91,6 +91,8 @@ export const translations = {
       likeRemoved: 'Like removed',
       alreadyLiked: 'Already liked',
       unfollowed: 'Unfollowed',
+      noMoreVideos: 'No more videos to load',
+      loadingMore: 'Loading more...',
     },
     login: {
       title: 'Welcome back',
@@ -559,6 +561,8 @@ export const translations = {
       likeRemoved: 'Me gusta eliminado',
       alreadyLiked: 'Ya te gusta',
       unfollowed: 'Dejaste de seguir',
+      noMoreVideos: 'No hay mas videos para cargar',
+      loadingMore: 'Cargando mas...',
     },
     login: {
       title: 'Bienvenido de nuevo',
@@ -1029,6 +1033,8 @@ export const translations = {
       likeRemoved: '取消点赞',
       alreadyLiked: '已点赞',
       unfollowed: '取消关注',
+      noMoreVideos: '没有更多视频了',
+      loadingMore: '加载更多...',
     },
     login: {
       title: '欢迎回来',
@@ -1238,7 +1244,7 @@ export const translations = {
       subtitle: '参与挑战，让你的视频登上排行��。',
       newCampaign: '+ 新活动',
       activeCampaigns: '活跃活动',
-      realtimeRanking: '排名更新',
+      realtimeRanking: '排名��新',
       realtime: '实时',
       loadingCampaigns: '加载活动中...',
       noCampaigns: '目前没有活跃的活动。',
@@ -1250,7 +1256,7 @@ export const translations = {
     campaignDetail: {
       campaignLive: '活动进行中',
       howItWorks: '如何参与:',
-      howItWorksDesc: '点击排行榜中任何视频的点赞按钮。我们按总点赞数排名（平局由最近的点赞决定）。排名实时更新。',
+      howItWorksDesc: '点击排行榜中���何视频的点赞按钮。我们按总点赞数排名（平局由最近的点赞决定）。排名实时更新。',
       totalLikes: '总点赞数（活动）',
       videosInCompetition: '参赛视频数',
       lastUpdated: '最后更新',

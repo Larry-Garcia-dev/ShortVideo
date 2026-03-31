@@ -109,14 +109,33 @@ exports.deleteVideo = async (req, res) => {
 
 exports.getAllVideos = async (req, res) => {
     try {
-        const videos = await Video.findAll({
+        // Pagination parameters from query string
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 6;
+        const offset = (page - 1) * limit;
+
+        // Use findAndCountAll for pagination with total count
+        const { count, rows } = await Video.findAndCountAll({
             include: [
                 { model: User, attributes: ['email'] },
                 { model: Like }
             ],
-            order: [['createdAt', 'DESC']]
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset,
+            distinct: true // Important when using include to avoid incorrect count
         });
-        res.status(200).json(videos);
+
+        const totalPages = Math.ceil(count / limit);
+        const hasMore = page < totalPages;
+
+        res.status(200).json({
+            videos: rows,
+            currentPage: page,
+            totalPages,
+            totalVideos: count,
+            hasMore
+        });
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener videos', error });
     }

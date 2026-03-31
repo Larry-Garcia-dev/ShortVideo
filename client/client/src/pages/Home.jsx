@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useInView } from 'react-intersection-observer';
 import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
@@ -20,10 +21,19 @@ function Home() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '' });
   const [likedVideos, setLikedVideos] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareModal, setShareModal] = useState({ open: false, url: '', title: '' });
+  
+  // Intersection observer for infinite scroll
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '100px',
+  });
 
   // Announcements: open by default, user can close
   const [announceOpen, setAnnounceOpen] = useState(true);
@@ -186,28 +196,55 @@ function Home() {
     });
   };
 
-  const loadVideos = () => {
-    setLoading(true);
-    axios.get(`${API_URL}/videos`)
+  const loadVideos = useCallback((pageNum = 1, append = false) => {
+    if (pageNum === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    
+    axios.get(`${API_URL}/videos?page=${pageNum}&limit=6`)
       .then(response => {
-        const sorted = response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setVideos(sorted);
-        setFilteredVideos(sorted);
+        const { videos: newVideos, hasMore: more, currentPage } = response.data;
+        
+        if (append && pageNum > 1) {
+          // Append new videos to existing list
+          setVideos(prev => [...prev, ...newVideos]);
+          setFilteredVideos(prev => [...prev, ...newVideos]);
+        } else {
+          // Replace videos (first page load)
+          setVideos(newVideos);
+          setFilteredVideos(newVideos);
+        }
+        
+        setPage(currentPage);
+        setHasMore(more);
 
         // Initialize liked state from existing likes for the current user
         if (user) {
           const liked = {};
-          sorted.forEach(v => {
+          const allVideos = append ? [...videos, ...newVideos] : newVideos;
+          allVideos.forEach(v => {
             if (v.Likes && v.Likes.some(l => l.userId === user.id)) {
               liked[v.id] = true;
             }
           });
-          setLikedVideos(liked);
+          setLikedVideos(prev => append ? { ...prev, ...liked } : liked);
         }
       })
       .catch(error => console.error(error))
-      .finally(() => setLoading(false));
-  };
+      .finally(() => {
+        setLoading(false);
+        setLoadingMore(false);
+      });
+  }, [user, videos]);
+
+  // Load more when scrolling to the bottom
+  useEffect(() => {
+    if (inView && hasMore && !loading && !loadingMore) {
+      loadVideos(page + 1, true);
+    }
+  }, [inView, hasMore, loading, loadingMore, page]);
 
   const applyFilters = (query = '') => {
     let list = videos;
@@ -617,6 +654,38 @@ function Home() {
                   </div>
                 </Link>
               ))}
+              
+              {/* Infinite scroll sentinel */}
+              {hasMore && (
+                <div 
+                  ref={loadMoreRef} 
+                  style={{ 
+                    gridColumn: '1 / -1', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    padding: '20px' 
+                  }}
+                >
+                  {loadingMore && (
+                    <div className="loading-spinner" style={{ width: '32px', height: '32px' }} />
+                  )}
+                </div>
+              )}
+              
+              {/* End of videos message */}
+              {!hasMore && videos.length > 0 && (
+                <div 
+                  style={{ 
+                    gridColumn: '1 / -1', 
+                    textAlign: 'center', 
+                    padding: '20px', 
+                    color: 'var(--muted)',
+                    fontSize: '14px'
+                  }}
+                >
+                  {t.home.noMoreVideos || 'No more videos to load'}
+                </div>
+              )}
             </div>
           )}
         </main>
