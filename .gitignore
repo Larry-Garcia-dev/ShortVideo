@@ -1,5 +1,4 @@
 client/client/.env
 temporal.js
 node_modules
-package-lock.json
-package.json
+
