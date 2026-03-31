@@ -70,6 +70,14 @@ function VideoPlayer() {
     }
   };
 
+  // Reset autoplay state when video ID changes (navigating to new video)
+  useEffect(() => {
+    setHasAutoPlayed(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+  }, [id]);
+
   useEffect(() => {
     setStatusLabel(vp.ready || 'Ready');
   }, [lang]);
