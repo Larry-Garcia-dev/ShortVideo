@@ -17,6 +17,10 @@ function AdminPanel() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Estados para edición de coins
+  const [editingCoins, setEditingCoins] = useState(null);
+  const [coinInputValue, setCoinInputValue] = useState('');
 
   // 1. Barrera de Seguridad (Frontend)
   useEffect(() => {
@@ -77,6 +81,71 @@ function AdminPanel() {
     }
   };
 
+  // 4. Actualizar WAi Coins de un usuario
+  const handleUpdateCoins = async (userId) => {
+    const newCoins = parseInt(coinInputValue, 10);
+    if (isNaN(newCoins) || newCoins < 0) {
+      setError('El número de WAi Coins debe ser un número positivo');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`${API_URL}/admin/users/${userId}/coins`, { waiCoins: newCoins }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage(res.data.message);
+      
+      // Actualizamos la tabla visualmente
+      setSearchResults(searchResults.map(u => 
+        u.id === userId ? { ...u, waiCoins: newCoins } : u
+      ));
+      
+      setEditingCoins(null);
+      setCoinInputValue('');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al actualizar WAi Coins');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // 5. Toggle freeze/unfreeze de WAi Coins
+  const handleToggleFreeze = async (userId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`${API_URL}/admin/users/${userId}/freeze`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage(res.data.message);
+      
+      // Actualizamos la tabla visualmente
+      setSearchResults(searchResults.map(u => 
+        u.id === userId ? { ...u, coinsFrozen: res.data.user.coinsFrozen } : u
+      ));
+      
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al cambiar estado de congelación');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // Start editing coins for a user
+  const startEditingCoins = (userId, currentCoins) => {
+    setEditingCoins(userId);
+    setCoinInputValue(String(currentCoins ?? 0));
+  };
+
+  // Cancel editing coins
+  const cancelEditingCoins = () => {
+    setEditingCoins(null);
+    setCoinInputValue('');
+  };
+
   if (!currentUser) return null; // Evita parpadeos de UI antes de expulsar
 
   return (
@@ -133,15 +202,16 @@ function AdminPanel() {
             </form>
 
             {/* Tabla de Resultados */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--line)', overflow: 'auto' }}>
               {searchResults.length > 0 && (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
                   <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--line)' }}>
                     <tr>
                       <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>USUARIO</th>
                       <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>ESTADO</th>
-                      <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>ROL ACTUAL</th>
-                      <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>ASIGNAR NUEVO ROL</th>
+                      <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>ROL</th>
+                      <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>WAi COINS</th>
+                      <th style={{ padding: '16px', fontSize: '13px', color: 'var(--muted)' }}>ACCIONES</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -154,27 +224,95 @@ function AdminPanel() {
                           </span>
                         </td>
                         <td style={{ padding: '16px' }}>
-                          <span style={{ 
-                            padding: '4px 8px', 
-                            borderRadius: '6px', 
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            background: u.role === 'admin' ? 'rgba(255, 77, 109, 0.2)' : 'rgba(255,255,255,0.1)',
-                            color: u.role === 'admin' ? '#FF4D6D' : '#fff'
-                          }}>
-                            {u.role.toUpperCase()}
-                          </span>
-                        </td>
-                        <td style={{ padding: '16px' }}>
                           <select 
                             className="input" 
-                            style={{ padding: '8px', fontSize: '13px', width: '100%', cursor: 'pointer' }}
+                            style={{ padding: '8px', fontSize: '13px', cursor: 'pointer', minWidth: '140px' }}
                             value={u.role}
                             onChange={(e) => handleUpdateRole(u.id, e.target.value)}
                           >
-                            <option value="user">Espectador (User)</option>
-                            <option value="admin">Administrador (Admin)</option>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
                           </select>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          {editingCoins === u.id ? (
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                              <input
+                                type="number"
+                                min="0"
+                                className="input"
+                                style={{ width: '100px', padding: '8px', fontSize: '13px' }}
+                                value={coinInputValue}
+                                onChange={(e) => setCoinInputValue(e.target.value)}
+                                autoFocus
+                              />
+                              <button 
+                                className="btn primary" 
+                                style={{ padding: '6px 12px', fontSize: '12px' }}
+                                onClick={() => handleUpdateCoins(u.id)}
+                              >
+                                Save
+                              </button>
+                              <button 
+                                className="btn" 
+                                style={{ padding: '6px 12px', fontSize: '12px' }}
+                                onClick={cancelEditingCoins}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ 
+                                fontWeight: 700, 
+                                color: u.coinsFrozen ? 'var(--bad)' : 'var(--brand2)',
+                                fontSize: '14px'
+                              }}>
+                                {u.waiCoins ?? 0}
+                              </span>
+                              {u.coinsFrozen && (
+                                <span style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  fontWeight: 600,
+                                  background: 'rgba(255, 77, 109, 0.2)',
+                                  color: 'var(--bad)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                  </svg>
+                                  FROZEN
+                                </span>
+                              )}
+                              <button
+                                className="btn"
+                                style={{ padding: '4px 8px', fontSize: '11px', marginLeft: '4px' }}
+                                onClick={() => startEditingCoins(u.id, u.waiCoins)}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <button
+                            className="btn"
+                            style={{ 
+                              padding: '6px 12px', 
+                              fontSize: '12px',
+                              background: u.coinsFrozen ? 'rgba(70, 230, 165, 0.15)' : 'rgba(255, 77, 109, 0.15)',
+                              color: u.coinsFrozen ? 'var(--good)' : 'var(--bad)',
+                              border: u.coinsFrozen ? '1px solid rgba(70, 230, 165, 0.3)' : '1px solid rgba(255, 77, 109, 0.3)'
+                            }}
+                            onClick={() => handleToggleFreeze(u.id)}
+                          >
+                            {u.coinsFrozen ? 'Unfreeze Coins' : 'Freeze Coins'}
+                          </button>
                         </td>
                       </tr>
                     ))}

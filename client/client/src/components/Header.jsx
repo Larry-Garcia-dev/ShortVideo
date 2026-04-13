@@ -291,6 +291,13 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
       <polyline points="20 6 9 17 4 12"/>
     </svg>
   );
+  const IconCoin = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 6v12"/>
+      <path d="M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5 1.5 2 3 2.5 3 1 3 2.5-1.5 2.5-3 2.5-3-1-3-2.5"/>
+    </svg>
+  );
 
   const username = user?.email?.split('@')[0] || '';
 
@@ -467,6 +474,29 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
                       {IconVideo}
                       <span>{t.header.myVideos || 'My Videos'}</span>
                     </button>
+
+                    <div className="header-user-dd-sep"/>
+
+                    {/* WAi Coins Balance */}
+                    <div className="header-user-dd-coins">
+                      {IconCoin}
+                      <span style={{ flex: 1 }}>{t.header?.waiCoins || 'WAi Coins'}</span>
+                      <span style={{ 
+                        fontWeight: 600, 
+                        color: user.coinsFrozen ? 'var(--error)' : 'var(--brand2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        {user.waiCoins ?? 0}
+                        {user.coinsFrozen && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" title="Account frozen">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        )}
+                      </span>
+                    </div>
 
                     <div className="header-user-dd-sep"/>
 

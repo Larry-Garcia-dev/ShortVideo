@@ -272,6 +272,96 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* WAi Coins Cost Display */
+.ai-coin-cost-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    border-radius: var(--r14);
+    border: 1px solid var(--line);
+    background: rgba(0, 0, 0, 0.20);
+}
+
+.ai-coin-cost {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.ai-coin-cost svg {
+    color: var(--brand2);
+}
+
+.ai-coin-label {
+    color: var(--muted);
+}
+
+.ai-coin-value {
+    font-weight: 700;
+    color: var(--brand2);
+    margin-left: auto;
+}
+
+.ai-coin-value.insufficient {
+    color: var(--bad);
+}
+
+.ai-coin-balance {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+}
+
+.ai-coin-balance.frozen {
+    opacity: 0.7;
+}
+
+.ai-balance-value {
+    font-weight: 600;
+    color: var(--text);
+    margin-left: auto;
+}
+
+.ai-balance-value.low {
+    color: var(--bad);
+}
+
+.ai-frozen-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 77, 109, 0.15);
+    border: 1px solid rgba(255, 77, 109, 0.30);
+    color: var(--bad);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ai-coin-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--r10);
+    background: rgba(255, 77, 109, 0.10);
+    border: 1px solid rgba(255, 77, 109, 0.25);
+    color: var(--bad);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.ai-coin-warning svg {
+    flex-shrink: 0;
+}
+
 /* Submit Button */
 .ai-submit-btn {
     display: flex;

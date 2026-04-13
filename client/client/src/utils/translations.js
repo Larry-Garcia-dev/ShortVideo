@@ -26,6 +26,7 @@ export const translations = {
       logout: 'Logout',
       myProfile: 'My Profile',
       myVideos: 'My Videos',
+      waiCoins: 'WAi Coins',
     },
     profile: {
       title: 'My Profile',
@@ -467,6 +468,13 @@ export const translations = {
       errorStartGeneration: 'Error starting generation',
       aiFailed: 'AI failed to generate the video.',
       connectionLost: 'Lost connection to server while checking status.',
+      coinCost: 'Cost',
+      yourBalance: 'Your balance',
+      frozen: 'Frozen',
+      notEnoughCoins: 'Not enough coins to generate this video',
+      insufficientCoins: 'Insufficient WAi Coins. You need {required} but have {available}.',
+      accountFrozen: 'Your WAi Coins account is frozen. Contact administrator.',
+      loginRequired: 'Please log in to generate videos',
     }
   },
   es: {
@@ -496,6 +504,7 @@ export const translations = {
       logout: 'Salir',
       myProfile: 'Mi Perfil',
       myVideos: 'Mis Videos',
+      waiCoins: 'WAi Coins',
     },
     profile: {
       title: 'Mi Perfil',
@@ -939,6 +948,13 @@ export const translations = {
       errorStartGeneration: 'Error al iniciar la generacion',
       aiFailed: 'La IA fallo al generar el video.',
       connectionLost: 'Perdimos conexion con el servidor al verificar el estado.',
+      coinCost: 'Costo',
+      yourBalance: 'Tu saldo',
+      frozen: 'Congelado',
+      notEnoughCoins: 'No tienes suficientes coins para generar este video',
+      insufficientCoins: 'WAi Coins insuficientes. Necesitas {required} pero tienes {available}.',
+      accountFrozen: 'Tu cuenta de WAi Coins esta congelada. Contacta al administrador.',
+      loginRequired: 'Inicia sesion para generar videos',
     }
   },
   zh: {
@@ -968,10 +984,11 @@ export const translations = {
       logout: '退出',
       myProfile: '我的资料',
       myVideos: '我的视频',
+      waiCoins: 'WAi Coins',
     },
     profile: {
       title: '我的资料',
-      subtitle: '编辑您的账���信息和头像。',
+      subtitle: '编辑您的账户信息和头像。',
       usernameLabel: '用户名',
       emailLabel: '邮箱',
       languageLabel: '语言',
@@ -1409,6 +1426,13 @@ export const translations = {
       errorStartGeneration: '启动生成时出错',
       aiFailed: 'AI生成视频失败。',
       connectionLost: '检查状态时与服务器断开连接。',
+      coinCost: '费用',
+      yourBalance: '您的余额',
+      frozen: '已冻结',
+      notEnoughCoins: '没有足够的coins来生成此视频',
+      insufficientCoins: 'WAi Coins不足。需要{required}，但只有{available}。',
+      accountFrozen: '您的WAi Coins账户已被冻结。请联系管理员。',
+      loginRequired: '请登录以生成视频',
     }
   }
 };

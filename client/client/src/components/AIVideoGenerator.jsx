@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { generateVideo, checkVideoStatus, uploadImage, uploadAudio, uploadTrimmedAudio } from '../services/aiService';
 import AudioTrimmer from './AudioTrimmer';
 import './AIVideoGenerator.css';
 
+// WAi Coins pricing chart
+const COIN_PRICING = {
+    '720P': { 5: 10, 10: 20, 15: 30 },
+    '1080P': { 5: 15, 10: 30, 15: 45 }
+};
+
 const AIVideoGenerator = ({ translations: t = {} }) => {
+    // Get user from localStorage
+    const [user, setUser] = useState(() => {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored) : null;
+    });
     const [formData, setFormData] = useState({
         prompt: '',
         img_url: '',
@@ -29,6 +40,15 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
     // Refs
     const imageInputRef = useRef(null);
     const audioInputRef = useRef(null);
+
+    // Calculate coin cost based on quality and duration
+    const coinCost = useMemo(() => {
+        return COIN_PRICING[formData.quality]?.[formData.duration] || 10;
+    }, [formData.quality, formData.duration]);
+
+    // Check if user has enough coins
+    const hasEnoughCoins = user ? user.waiCoins >= coinCost : false;
+    const isAccountFrozen = user?.coinsFrozen || false;
 
     // Handle image file selection
     const handleImageSelect = async (e) => {
@@ -138,19 +158,67 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Check if user is logged in
+        if (!user) {
+            setErrorMessage(t.loginRequired || 'Please log in to generate videos');
+            setStatus('ERROR');
+            return;
+        }
+
+        // Check if account is frozen
+        if (isAccountFrozen) {
+            setErrorMessage(t.accountFrozen || 'Your WAi Coins account is frozen. Contact administrator.');
+            setStatus('ERROR');
+            return;
+        }
+
+        // Check if user has enough coins
+        if (!hasEnoughCoins) {
+            setErrorMessage(
+                (t.insufficientCoins || 'Insufficient WAi Coins. You need {required} but have {available}.')
+                    .replace('{required}', coinCost)
+                    .replace('{available}', user.waiCoins || 0)
+            );
+            setStatus('ERROR');
+            return;
+        }
+
         setStatus('LOADING');
         setErrorMessage('');
         setVideoResult(null);
         setProgress(0);
 
         try {
-            const data = await generateVideo(formData);
+            // Include userId in the request for coin deduction
+            const data = await generateVideo({
+                ...formData,
+                userId: user.id
+            });
             const newTaskId = data.task.output.task_id; 
             setTaskId(newTaskId);
             setStatus('PROCESSING');
+
+            // Update user's coin balance in localStorage
+            if (data.remainingCoins !== undefined && data.remainingCoins !== null) {
+                const updatedUser = { ...user, waiCoins: data.remainingCoins };
+                setUser(updatedUser);
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
         } catch (error) {
             setStatus('ERROR');
-            setErrorMessage(error.message || (t.errorStartGeneration || 'Error starting generation'));
+            // Handle specific error codes
+            if (error.code === 'COINS_FROZEN') {
+                setErrorMessage(t.accountFrozen || 'Your WAi Coins account is frozen. Contact administrator.');
+            } else if (error.code === 'INSUFFICIENT_COINS') {
+                setErrorMessage(
+                    (t.insufficientCoins || 'Insufficient WAi Coins. You need {required} but have {available}.')
+                        .replace('{required}', error.required || coinCost)
+                        .replace('{available}', error.available || 0)
+                );
+            } else {
+                setErrorMessage(error.message || (t.errorStartGeneration || 'Error starting generation'));
+            }
         }
     };
 
@@ -521,10 +589,52 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
                     </div>
                 )}
 
+                {/* WAi Coins Cost Display */}
+                <div className="ai-coin-cost-container">
+                    <div className="ai-coin-cost">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v12"/>
+                            <path d="M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5 1.5 2 3 2.5 3 1 3 2.5-1.5 2.5-3 2.5-3-1-3-2.5"/>
+                        </svg>
+                        <span className="ai-coin-label">{t.coinCost || 'Cost'}:</span>
+                        <span className={`ai-coin-value ${!hasEnoughCoins ? 'insufficient' : ''}`}>
+                            {coinCost} WAi Coins
+                        </span>
+                    </div>
+                    {user && (
+                        <div className={`ai-coin-balance ${isAccountFrozen ? 'frozen' : ''}`}>
+                            <span>{t.yourBalance || 'Your balance'}:</span>
+                            <span className={`ai-balance-value ${!hasEnoughCoins ? 'low' : ''}`}>
+                                {user.waiCoins ?? 0} WAi Coins
+                            </span>
+                            {isAccountFrozen && (
+                                <span className="ai-frozen-badge">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                    </svg>
+                                    {t.frozen || 'Frozen'}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    {!hasEnoughCoins && user && !isAccountFrozen && (
+                        <div className="ai-coin-warning">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            {t.notEnoughCoins || 'Not enough coins to generate this video'}
+                        </div>
+                    )}
+                </div>
+
                 {/* Submit Button */}
                 <button 
                     type="submit" 
-                    disabled={status === 'LOADING' || status === 'PROCESSING' || !formData.img_url || isUploadingImage || isUploadingAudio}
+                    disabled={status === 'LOADING' || status === 'PROCESSING' || !formData.img_url || isUploadingImage || isUploadingAudio || !hasEnoughCoins || isAccountFrozen || !user}
                     className="ai-submit-btn"
                 >
                     {status === 'LOADING' || status === 'PROCESSING' ? (

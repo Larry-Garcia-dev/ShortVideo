@@ -1,8 +1,24 @@
 const axios = require('axios');
+const User = require('../models/User');
 
 // Recuerda agregar DASHSCOPE_API_KEY a tu archivo .env
 const API_KEY = process.env.DASHSCOPE_API_KEY || 'sk-fc565dd26b854621bf394d123456';
 const BASE_URL = 'https://dashscope-intl.aliyuncs.com/api/v1';
+
+// WAi Coins pricing chart
+// Quality: 720P -> 5s: 10, 10s: 20, 15s: 30
+// Quality: 1080P -> 5s: 15, 10s: 30, 15s: 45
+const COIN_PRICING = {
+    '720P': { 5: 10, 10: 20, 15: 30 },
+    '1080P': { 5: 15, 10: 30, 15: 45 }
+};
+
+// Helper to calculate coin cost
+const calculateCoinCost = (quality, duration) => {
+    const normalizedQuality = ['720P', '1080P'].includes(quality) ? quality : '720P';
+    const normalizedDuration = [5, 10, 15].includes(Number(duration)) ? Number(duration) : 5;
+    return COIN_PRICING[normalizedQuality][normalizedDuration];
+};
 
 // Helper para construir URL pública de archivos
 const getPublicUrl = (req, filePath) => {
@@ -95,10 +111,38 @@ exports.uploadTrimmedAudio = async (req, res) => {
     }
 };
 
+// Controlador para obtener el costo de monedas
+exports.getCoinCost = async (req, res) => {
+    try {
+        const { quality, duration } = req.query;
+        const cost = calculateCoinCost(quality, duration);
+        res.status(200).json({ 
+            success: true, 
+            cost,
+            quality: ['720P', '1080P'].includes(quality) ? quality : '720P',
+            duration: [5, 10, 15].includes(Number(duration)) ? Number(duration) : 5
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Controlador para obtener la tabla de precios completa
+exports.getPricingTable = async (req, res) => {
+    try {
+        res.status(200).json({ 
+            success: true, 
+            pricing: COIN_PRICING
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 // Controlador para iniciar la tarea de generación de video
 exports.generateVideo = async (req, res) => {
     try {
-        const { prompt, img_url, audio_url, quality, duration } = req.body;
+        const { prompt, img_url, audio_url, quality, duration, userId } = req.body;
 
         if (!prompt || !img_url) {
             return res.status(400).json({ 
@@ -118,6 +162,44 @@ exports.generateVideo = async (req, res) => {
         const normalizedDuration = validDurations.includes(Number(duration)) 
             ? Number(duration) 
             : 5;
+
+        // Calculate coin cost
+        const coinCost = calculateCoinCost(normalizedQuality, normalizedDuration);
+
+        // If userId is provided, validate and deduct coins
+        if (userId) {
+            const user = await User.findByPk(userId);
+            
+            if (!user) {
+                return res.status(404).json({ 
+                    success: false, 
+                    message: 'Usuario no encontrado.' 
+                });
+            }
+
+            // Check if account is frozen
+            if (user.coinsFrozen) {
+                return res.status(403).json({ 
+                    success: false, 
+                    message: 'Tu cuenta de WAi Coins está congelada. Contacta al administrador.',
+                    code: 'COINS_FROZEN'
+                });
+            }
+
+            // Check if user has enough coins
+            if (user.waiCoins < coinCost) {
+                return res.status(402).json({ 
+                    success: false, 
+                    message: `No tienes suficientes WAi Coins. Necesitas ${coinCost} pero tienes ${user.waiCoins}.`,
+                    code: 'INSUFFICIENT_COINS',
+                    required: coinCost,
+                    available: user.waiCoins
+                });
+            }
+
+            // Deduct coins
+            await user.update({ waiCoins: user.waiCoins - coinCost });
+        }
 
         const payload = {
             model: "wan2.6-i2v",
@@ -139,6 +221,8 @@ exports.generateVideo = async (req, res) => {
         console.log("AUDIO URL:", audio_url);
         console.log("QUALITY:", normalizedQuality);
         console.log("DURATION:", normalizedDuration, "seconds");
+        console.log("COIN COST:", coinCost);
+        console.log("USER ID:", userId || 'N/A');
         console.log("===================================");
 
         const response = await axios.post(`${BASE_URL}/services/aigc/video-generation/video-synthesis`, payload, {
@@ -148,11 +232,20 @@ exports.generateVideo = async (req, res) => {
                 'Content-Type': 'application/json'
             }
         });
+
+        // Get updated user coins if userId provided
+        let updatedCoins = null;
+        if (userId) {
+            const updatedUser = await User.findByPk(userId);
+            updatedCoins = updatedUser?.waiCoins;
+        }
         
         res.status(202).json({ 
             success: true, 
             message: 'Tarea de generación iniciada', 
-            task: response.data 
+            task: response.data,
+            coinsDeducted: coinCost,
+            remainingCoins: updatedCoins
         });
 
     } catch (error) {

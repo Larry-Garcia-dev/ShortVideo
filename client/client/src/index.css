@@ -1912,6 +1912,19 @@ input[type="range"] {
   background: rgba(255, 77, 109, 0.10);
 }
 
+.header-user-dd-coins {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--panel);
+  border-radius: 6px;
+}
+
 .header-hamburger {
   display: none;
   width: 40px;
