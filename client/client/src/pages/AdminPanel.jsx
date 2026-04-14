@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config';
 import Header from '../components/Header';
@@ -21,6 +21,10 @@ function AdminPanel() {
   // Estados para edición de coins
   const [editingCoins, setEditingCoins] = useState(null);
   const [coinInputValue, setCoinInputValue] = useState('');
+
+  // Estados para campañas/anuncios
+  const [campaigns, setCampaigns] = useState([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
 
   // 1. Barrera de Seguridad (Frontend)
   useEffect(() => {
@@ -146,6 +150,65 @@ function AdminPanel() {
     setCoinInputValue('');
   };
 
+  // 6. Cargar campañas/anuncios
+  const loadCampaigns = async () => {
+    setCampaignsLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/campaigns`);
+      setCampaigns(res.data);
+    } catch (err) {
+      console.error('Error loading campaigns:', err);
+    } finally {
+      setCampaignsLoading(false);
+    }
+  };
+
+  // Cargar campañas cuando se cambia a esa tab
+  useEffect(() => {
+    if (activeTab === 'announcements') {
+      loadCampaigns();
+    }
+  }, [activeTab]);
+
+  // 7. Cambiar estado de una campaña
+  const handleToggleCampaignStatus = async (campaignId, currentStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+      await axios.put(`${API_URL}/campaigns/${campaignId}`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage(`Campaña ${newStatus === 'Active' ? 'activada' : 'desactivada'} correctamente.`);
+      setCampaigns(campaigns.map(c => 
+        c.id === campaignId ? { ...c, status: newStatus } : c
+      ));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al cambiar estado de la campaña');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  // 8. Eliminar campaña
+  const handleDeleteCampaign = async (campaignId) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta campaña/anuncio?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/campaigns/${campaignId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setMessage('Campaña eliminada correctamente.');
+      setCampaigns(campaigns.filter(c => c.id !== campaignId));
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al eliminar la campaña');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
   if (!currentUser) return null; // Evita parpadeos de UI antes de expulsar
 
   return (
@@ -166,18 +229,31 @@ function AdminPanel() {
             </div>
 
             {/* Pestañas de Navegación */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
               <button 
                 className={`btn ${activeTab === 'users' ? 'primary' : ''}`} 
                 onClick={() => setActiveTab('users')}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                Usuarios y Roles
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Usuarios y Creditos
               </button>
               <button 
-                className="btn" 
-                onClick={() => navigate('/create-campaign')}
+                className={`btn ${activeTab === 'announcements' ? 'primary' : ''}`} 
+                onClick={() => setActiveTab('announcements')}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                Crear Campaña Anuncio ↗
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 4v16"/>
+                  <path d="M3 8l4-4 4 4"/>
+                  <path d="M7 4v16"/>
+                  <path d="M15 20l4-4 4 4"/>
+                  <path d="M19 20V4"/>
+                </svg>
+                Anuncios y Campanas
               </button>
             </div>
 
@@ -185,25 +261,28 @@ function AdminPanel() {
             {message && <div style={{ background: 'rgba(70,230,165,0.1)', color: 'var(--good)', padding: '12px', borderRadius: '12px', marginBottom: '20px' }}>{message}</div>}
             {error && <div style={{ background: 'rgba(255,77,109,0.1)', color: 'var(--bad)', padding: '12px', borderRadius: '12px', marginBottom: '20px' }}>{error}</div>}
 
-            {/* Buscador */}
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Busca el correo de un usuario (ej: juan@gmail.com)" 
-                value={searchEmail}
-                onChange={(e) => setSearchEmail(e.target.value)}
-                style={{ flex: 1 }}
-                required
-              />
-              <button type="submit" className="btn primary" disabled={loading}>
-                {loading ? 'Buscando...' : 'Buscar Usuario'}
-              </button>
-            </form>
+            {/* ========== TAB: USUARIOS Y CREDITOS ========== */}
+            {activeTab === 'users' && (
+              <>
+                {/* Buscador */}
+                <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="Busca el correo de un usuario (ej: juan@gmail.com)" 
+                    value={searchEmail}
+                    onChange={(e) => setSearchEmail(e.target.value)}
+                    style={{ flex: 1 }}
+                    required
+                  />
+                  <button type="submit" className="btn primary" disabled={loading}>
+                    {loading ? 'Buscando...' : 'Buscar Usuario'}
+                  </button>
+                </form>
 
-            {/* Tabla de Resultados */}
-            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--line)', overflow: 'auto' }}>
-              {searchResults.length > 0 && (
+                {/* Tabla de Resultados */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--line)', overflow: 'auto' }}>
+                  {searchResults.length > 0 && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
                   <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--line)' }}>
                     <tr>
@@ -318,9 +397,111 @@ function AdminPanel() {
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
+)}
+                </div>
+              </>
+            )}
 
+            {/* ========== TAB: ANUNCIOS Y CAMPANAS ========== */}
+            {activeTab === 'announcements' && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <p className="muted" style={{ margin: 0, fontSize: '14px' }}>
+                    Gestiona los anuncios y campanas que se muestran a los usuarios.
+                  </p>
+                  <Link to="/create-campaign" className="btn primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Crear Nuevo Anuncio
+                  </Link>
+                </div>
+
+                {campaignsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <span className="muted">Cargando anuncios...</span>
+                  </div>
+                ) : campaigns.length === 0 ? (
+                  <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid var(--line)', padding: '40px', textAlign: 'center' }}>
+                    <span className="muted">No hay anuncios o campanas creadas.</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {campaigns.map((campaign) => (
+                      <div key={campaign.id} style={{ 
+                        background: 'rgba(0,0,0,0.2)', 
+                        borderRadius: '16px', 
+                        border: '1px solid var(--line)', 
+                        padding: '20px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '16px'
+                      }}>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>{campaign.name}</h3>
+                            <span style={{ 
+                              padding: '3px 8px', 
+                              borderRadius: '6px', 
+                              fontSize: '11px', 
+                              fontWeight: 600,
+                              background: campaign.status === 'Active' ? 'rgba(70, 230, 165, 0.15)' : 'rgba(255, 77, 109, 0.15)',
+                              color: campaign.status === 'Active' ? 'var(--good)' : 'var(--bad)',
+                              border: campaign.status === 'Active' ? '1px solid rgba(70, 230, 165, 0.3)' : '1px solid rgba(255, 77, 109, 0.3)'
+                            }}>
+                              {campaign.status === 'Active' ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>
+                            {campaign.description?.substring(0, 100)}{campaign.description?.length > 100 ? '...' : ''}
+                          </p>
+                          <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--muted)' }}>
+                            <span>Inicio: {new Date(campaign.startDate).toLocaleDateString()}</span>
+                            <span style={{ margin: '0 8px' }}>|</span>
+                            <span>Fin: {new Date(campaign.endDate).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button
+                            className="btn"
+                            style={{ 
+                              padding: '8px 14px', 
+                              fontSize: '12px',
+                              background: campaign.status === 'Active' ? 'rgba(255, 77, 109, 0.15)' : 'rgba(70, 230, 165, 0.15)',
+                              color: campaign.status === 'Active' ? 'var(--bad)' : 'var(--good)',
+                              border: campaign.status === 'Active' ? '1px solid rgba(255, 77, 109, 0.3)' : '1px solid rgba(70, 230, 165, 0.3)'
+                            }}
+                            onClick={() => handleToggleCampaignStatus(campaign.id, campaign.status)}
+                          >
+                            {campaign.status === 'Active' ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <Link to={`/campaign/${campaign.id}`} className="btn" style={{ padding: '8px 14px', fontSize: '12px' }}>
+                            Ver Detalles
+                          </Link>
+                          <button
+                            className="btn"
+                            style={{ 
+                              padding: '8px 14px', 
+                              fontSize: '12px',
+                              background: 'rgba(255, 77, 109, 0.1)',
+                              color: 'var(--bad)',
+                              border: '1px solid rgba(255, 77, 109, 0.2)'
+                            }}
+                            onClick={() => handleDeleteCampaign(campaign.id)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          
           </div>
         </main>
       </div>

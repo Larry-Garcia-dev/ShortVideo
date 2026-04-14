@@ -80,3 +80,45 @@ exports.joinCampaign = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// 5. Actualizar Campaña (Admin)
+exports.updateCampaign = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, startDate, endDate, status } = req.body;
+
+        const campaign = await Campaign.findByPk(id);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaña no encontrada' });
+        }
+
+        // Actualizar solo los campos proporcionados
+        if (name !== undefined) campaign.name = name;
+        if (description !== undefined) campaign.description = description;
+        if (startDate !== undefined) campaign.startDate = startDate;
+        if (endDate !== undefined) campaign.endDate = endDate;
+        if (status !== undefined) campaign.status = status;
+
+        await campaign.save();
+        res.json({ message: 'Campaña actualizada correctamente', campaign });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// 6. Eliminar Campaña (Admin)
+exports.deleteCampaign = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const campaign = await Campaign.findByPk(id);
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaña no encontrada' });
+        }
+
+        await campaign.destroy();
+        res.json({ message: 'Campaña eliminada correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
