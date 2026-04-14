@@ -79,6 +79,7 @@ function Home() {
   /* ── Build system (static) announcements ── */
   const buildSystemAnnouncements = () => {
     return [
+      { _sys: true, type: 'feature', sysKey: 'aiVideoGeneration' },
       { _sys: true, type: 'feature', sysKey: 'customThumbnails' },
       { _sys: true, type: 'improvement', sysKey: 'cdnPerformance' },
       { _sys: true, type: 'maintenance', sysKey: 'maintenance' },
