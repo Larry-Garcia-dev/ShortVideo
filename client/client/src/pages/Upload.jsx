@@ -214,8 +214,12 @@ function Upload() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       await axios.post(`${API_URL}/videos/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.lengthComputable) {
             const pct = (progressEvent.loaded / progressEvent.total) * 100;

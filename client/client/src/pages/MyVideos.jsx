@@ -104,8 +104,12 @@ function MyVideos() {
       fd.append('description', editDesc);
       if (editThumbFile) fd.append('thumbnail', editThumbFile);
 
+      const token = localStorage.getItem('token');
       const res = await axios.put(`${API}/videos/${videoId}`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
       });
 
       const updated = res.data.video || res.data;
@@ -123,8 +127,10 @@ function MyVideos() {
   const handleDelete = async (videoId) => {
     setDeletingId(videoId);
     try {
+      const token = localStorage.getItem('token');
       await axios.delete(`${API}/videos/${videoId}`, {
-        data: { userId: user.id }
+        data: { userId: user.id },
+        headers: { Authorization: `Bearer ${token}` }
       });
       setVideos(prev => prev.filter(v => v.id !== videoId));
       setDeleteConfirmId(null);

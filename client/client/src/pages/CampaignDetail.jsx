@@ -67,10 +67,10 @@ function CampaignDetail() {
     }
 
     try {
-      // CORRECCIÓN: Uso de API_URL dinámica
+      const token = localStorage.getItem('token');
       await axios.post(`${API_URL}/campaigns/${id}/join`, {
         videoId: selectedVideoId
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       showToast(cd.joinedSuccess || 'Successfully joined the campaign!');
       loadCampaignData();
       setSelectedVideoId('');
@@ -86,8 +86,10 @@ function CampaignDetail() {
       return;
     }
     try {
-      // CORRECCIÓN: Uso de API_URL dinámica
-      await axios.post(`${API_URL}/videos/${videoId}/like`, { userId: user.id });
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/videos/${videoId}/like`, { userId: user.id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       loadCampaignData();
       showToast(cd.likedLabel || 'Liked!');
     } catch (error) {

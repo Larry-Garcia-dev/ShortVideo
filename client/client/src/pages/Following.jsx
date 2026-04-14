@@ -18,22 +18,24 @@ function Following() {
   const t = translations[lang] || translations.en;
   const ft = t.followingPage || {};
 
-  useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    // CORRECCIÓN: Usamos API_URL
-    axios.get(`${API_URL}/users/${user.id}/following-feed`)
-      .then(res => setFeed(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+useEffect(() => {
+  if (!user) { setLoading(false); return; }
+  const token = localStorage.getItem('token');
+  axios.get(`${API_URL}/users/${user.id}/following-feed`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(res => setFeed(res.data))
+  .catch(err => console.error(err))
+  .finally(() => setLoading(false));
   }, []);
 
   const handleUnfollow = async (creatorId) => {
     try {
-      // CORRECCIÓN: Usamos API_URL
+      const token = localStorage.getItem('token');
       await axios.post(`${API_URL}/users/toggle-follow`, {
         followerId: user.id,
         followingId: creatorId,
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       setFeed(prev => prev.filter(f => f.id !== creatorId));
       showToast(ft.unfollowed || 'Unfollowed');
     } catch (err) {

@@ -95,10 +95,11 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const res = await axios.post(`${API}/users/toggle-follow`, {
         followerId: user.id,
         followingId: creatorId
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
       setTopCreators(prev => prev.map(c => {
         if (c.id === creatorId) {
