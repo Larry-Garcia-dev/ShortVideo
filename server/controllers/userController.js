@@ -2,6 +2,28 @@ const { User, Video, Comment, Like, Follow } = require('../models');
 const { Sequelize } = require('sequelize');
 const sequelize = require('../config/db');
 
+// Get current user data (for refreshing user info)
+exports.getMe = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'No autenticado' });
+        }
+
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'email', 'avatar', 'language', 'role', 'status', 'waiCoins', 'coinsFrozen']
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Req 7.2: Permitir al usuario seleccionar idioma
 exports.updateLanguage = async (req, res) => {
     try {
