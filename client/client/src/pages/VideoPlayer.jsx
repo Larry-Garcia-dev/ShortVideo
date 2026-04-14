@@ -222,14 +222,16 @@ function VideoPlayer() {
       return;
     }
     try {
-      // CORRECCIÓN: Usamos API_URL en lugar de localhost
+      const token = localStorage.getItem('token');
+      const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+      
       if (isLiked) {
-        await axios.delete(`${API_URL}/videos/${id}/like`, { data: { userId: user.id } });
+        await axios.delete(`${API_URL}/videos/${id}/like`, { data: { userId: user.id }, ...authHeaders });
         setLikes(likes - 1);
         setIsLiked(false);
         showToast(vp.unliked || 'Unliked');
       } else {
-        await axios.post(`${API_URL}/videos/${id}/like`, { userId: user.id });
+        await axios.post(`${API_URL}/videos/${id}/like`, { userId: user.id }, authHeaders);
         setLikes(likes + 1);
         setIsLiked(true);
         showToast(vp.liked || 'Liked!');
@@ -245,11 +247,11 @@ function VideoPlayer() {
     if (!commentText.trim()) { showToast(vp.writeComment || 'Write a comment first'); return; }
 
     try {
-      // CORRECCIÓN: Usamos API_URL en lugar de localhost
+      const token = localStorage.getItem('token');
       const res = await axios.post(`${API_URL}/videos/${id}/comment`, {
         userId: user.id,
         text: commentText
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       setComments([res.data, ...comments]);
       setCommentText('');
       showToast(vp.commentPosted || 'Comment posted');

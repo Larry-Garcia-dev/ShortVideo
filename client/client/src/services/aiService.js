@@ -5,6 +5,14 @@ import { API_URL as BASE_API_URL } from '../config';
 const API_URL = `${BASE_API_URL}/ai`; 
 
 /**
+ * Obtiene el header de autorización con el token actual
+ */
+const getAuthHeader = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+/**
  * Sube una imagen local para la IA
  */
 export const uploadImage = async (file) => {
@@ -14,7 +22,8 @@ export const uploadImage = async (file) => {
 
         const response = await axios.post(`${API_URL}/upload-image`, formData, {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
+                ...getAuthHeader()
             }
         });
         return response.data;
@@ -33,7 +42,8 @@ export const uploadAudio = async (file) => {
 
         const response = await axios.post(`${API_URL}/upload-audio`, formData, {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
+                ...getAuthHeader()
             }
         });
         return response.data;
@@ -52,7 +62,8 @@ export const uploadTrimmedAudio = async (blob, filename = 'trimmed-audio.webm') 
 
         const response = await axios.post(`${API_URL}/upload-trimmed-audio`, formData, {
             headers: {
-                'Content-Type': 'multipart/form-data'
+                'Content-Type': 'multipart/form-data',
+                ...getAuthHeader()
             }
         });
         return response.data;
@@ -66,7 +77,9 @@ export const uploadTrimmedAudio = async (blob, filename = 'trimmed-audio.webm') 
  */
 export const generateVideo = async (videoData) => {
     try {
-        const response = await axios.post(`${API_URL}/generate`, videoData);
+        const response = await axios.post(`${API_URL}/generate`, videoData, {
+            headers: getAuthHeader()
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
@@ -78,7 +91,9 @@ export const generateVideo = async (videoData) => {
  */
 export const checkVideoStatus = async (taskId) => {
     try {
-        const response = await axios.get(`${API_URL}/task/${taskId}`);
+        const response = await axios.get(`${API_URL}/task/${taskId}`, {
+            headers: getAuthHeader()
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

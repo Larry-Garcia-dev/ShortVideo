@@ -20,19 +20,23 @@ function Favorites() {
   const t = translations[lang] || translations.en;
   const fv = t.favoritesPage || {};
 
-  useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    // CORRECCIÓN: Usamos API_URL para pedir la lista de favoritos
-    axios.get(`${API_URL}/users/${user.id}/favorites`)
-      .then(res => setVideos(res.data))
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
+useEffect(() => {
+  if (!user) { setLoading(false); return; }
+  const token = localStorage.getItem('token');
+  axios.get(`${API_URL}/users/${user.id}/favorites`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  .then(res => setVideos(res.data))
+  .catch(err => console.error(err))
+  .finally(() => setLoading(false));
   }, []);
 
   const handleUnlike = async (videoId) => {
     try {
-      // CORRECCIÓN: Usamos API_URL para mandar el unlike
-      await axios.post(`${API_URL}/videos/${videoId}/toggle-like`, { userId: user.id });
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/videos/${videoId}/toggle-like`, { userId: user.id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setVideos(prev => prev.filter(v => v.id !== videoId));
       showToast(fv.removed || 'Removed from favorites');
     } catch (err) {

@@ -2,28 +2,35 @@ const express = require('express');
 const router = express.Router();
 const videoController = require('../controllers/videoController');
 const upload = require('../config/multer');
+const { verifyToken } = require('../middleware/authMiddleware');
 
-router.post('/upload', upload.fields([
-    { name: 'videoFile', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 }
-]), videoController.uploadVideo);
+// ========== RUTAS PUBLICAS (sin autenticacion) ==========
 router.get('/', videoController.getAllVideos);
 router.get('/top', videoController.getTopVideos);
 router.get('/trending', videoController.getTrendingVideos);
 router.get('/trending-hashtags', videoController.getTrendingHashtags);
+router.get('/:id', videoController.getVideoById);
+
+// ========== RUTAS PROTEGIDAS (requieren token) ==========
+// Upload video
+router.post('/upload', verifyToken, upload.fields([
+    { name: 'videoFile', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 }
+]), videoController.uploadVideo);
 
 // Update video (title, description, thumbnail)
-router.put('/:id', upload.fields([{ name: 'thumbnail', maxCount: 1 }]), videoController.updateVideo);
+router.put('/:id', verifyToken, upload.fields([{ name: 'thumbnail', maxCount: 1 }]), videoController.updateVideo);
 
 // Delete video
-router.delete('/:id', videoController.deleteVideo);
+router.delete('/:id', verifyToken, videoController.deleteVideo);
 
-// NUEVAS RUTAS
-router.get('/:id', videoController.getVideoById);           // Ver video individual
-router.post('/:id/like', videoController.likeVideo);        // Dar like
-router.delete('/:id/like', videoController.unlikeVideo);    // Quitar like
-router.post('/:id/toggle-like', videoController.toggleLike); // Toggle like
-router.post('/:id/comment', videoController.commentVideo);   // Comentar
-router.delete('/:id/comment/:commentId', videoController.deleteComment); // Eliminar comentario
+// Likes
+router.post('/:id/like', verifyToken, videoController.likeVideo);
+router.delete('/:id/like', verifyToken, videoController.unlikeVideo);
+router.post('/:id/toggle-like', verifyToken, videoController.toggleLike);
+
+// Comments
+router.post('/:id/comment', verifyToken, videoController.commentVideo);
+router.delete('/:id/comment/:commentId', verifyToken, videoController.deleteComment);
 
 module.exports = router;

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
+import { API_URL } from '../config';
 
 function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -233,10 +234,11 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
     localStorage.setItem('appLanguage', newLang);
     if (user) {
       try {
-        await axios.put('http://localhost:5000/api/users/language', {
+        const token = localStorage.getItem('token');
+        await axios.put(`${API_URL}/users/language`, {
           userId: user.id,
           language: newLang
-        });
+        }, { headers: { Authorization: `Bearer ${token}` } });
         user.language = newLang;
         localStorage.setItem('user', JSON.stringify(user));
       } catch (err) { /* ignore */ }

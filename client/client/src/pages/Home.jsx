@@ -291,7 +291,10 @@ function Home() {
       return;
     }
     try {
-      const res = await axios.post(`${API_URL}/videos/${video.id}/toggle-like`, { userId: user.id });
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API_URL}/videos/${video.id}/toggle-like`, { userId: user.id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const nowLiked = res.data?.liked ?? !likedVideos[video.id];
       setLikedVideos(prev => ({ ...prev, [video.id]: nowLiked }));
 

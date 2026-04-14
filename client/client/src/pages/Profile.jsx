@@ -63,8 +63,12 @@ function Profile() {
       formData.append('language', language);
       if (avatarFile) formData.append('avatar', avatarFile);
 
+      const token = localStorage.getItem('token');
       const res = await axios.put(`${API}/users/profile`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
       });
 
       const updatedUser = { ...user, ...res.data.user };
