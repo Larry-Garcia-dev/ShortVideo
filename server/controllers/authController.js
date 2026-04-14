@@ -40,7 +40,7 @@ exports.register = async (req, res) => {
         });
         res.status(201).json({
             message: 'Usuario creado exitosamente',
-            user: { id: newUser.id, email: newUser.email, language: newUser.language, role: newUser.role }
+            user: { id: newUser.id, email: newUser.email, language: newUser.language, role: newUser.role, waiCoins: newUser.waiCoins, coinsFrozen: newUser.coinsFrozen }
         });
     } catch (error) {
         console.error(error);
@@ -83,7 +83,7 @@ exports.login = async (req, res) => {
         res.status(200).json({
             message: 'Login exitoso',
             token,
-            user: { id: user.id, email: user.email, status: user.status, language: user.language, role: user.role }
+            user: { id: user.id, email: user.email, status: user.status, language: user.language, role: user.role, waiCoins: user.waiCoins, coinsFrozen: user.coinsFrozen }
         });
     } catch (error) {
         res.status(500).json({ message: 'Error en el login', error: error.message });
@@ -222,7 +222,7 @@ exports.googleLogin = async (req, res) => {
         res.status(200).json({
             message: 'Google login exitoso',
             token,
-            user: { id: user.id, email: user.email, role: user.role, language: user.language, avatar: user.avatar }
+            user: { id: user.id, email: user.email, role: user.role, language: user.language, avatar: user.avatar, waiCoins: user.waiCoins, coinsFrozen: user.coinsFrozen }
         });
     } catch (error) {
         console.error("Google Auth Error:", error.response?.data || error.message);

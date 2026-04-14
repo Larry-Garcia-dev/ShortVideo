@@ -11,4 +11,8 @@ router.get('/', campaignController.getActiveCampaigns);    // Pública: Listar a
 router.get('/:id', campaignController.getCampaignDetails); // Pública: Ver ranking
 router.post('/:id/join', campaignController.joinCampaign); // Pública (o requerir login si prefieres)
 
+// Rutas de administración de campañas
+router.put('/:id', verifyToken, isAdmin, campaignController.updateCampaign);    // Actualizar campaña
+router.delete('/:id', verifyToken, isAdmin, campaignController.deleteCampaign); // Eliminar campaña
+
 module.exports = router;

@@ -248,6 +248,8 @@ exports.updateProfile = async (req, res) => {
                 avatar: user.avatar,
                 language: user.language,
                 role: user.role,
+                waiCoins: user.waiCoins,
+                coinsFrozen: user.coinsFrozen,
             }
         });
     } catch (error) {

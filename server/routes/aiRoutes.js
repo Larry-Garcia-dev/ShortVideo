@@ -13,6 +13,12 @@ router.post('/upload-audio', upload.single('ai_audio'), aiController.uploadAudio
 // POST /api/ai/upload-trimmed-audio - Subir audio recortado (blob) para IA
 router.post('/upload-trimmed-audio', upload.single('ai_audio'), aiController.uploadTrimmedAudio);
 
+// GET /api/ai/coin-cost - Obtener costo de monedas para una configuración
+router.get('/coin-cost', aiController.getCoinCost);
+
+// GET /api/ai/pricing - Obtener tabla de precios completa
+router.get('/pricing', aiController.getPricingTable);
+
 // POST /api/ai/generate - Iniciar generación de video
 router.post('/generate', aiController.generateVideo);
 
