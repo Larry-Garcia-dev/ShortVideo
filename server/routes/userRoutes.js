@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../config/multer');
+const { verifyToken } = require('../middleware/authMiddleware');
+
+// Get current user data (requires authentication)
+router.get('/me', verifyToken, userController.getMe);
 
 // Profile update (with avatar upload)
 router.put('/profile', upload.fields([{ name: 'avatar', maxCount: 1 }]), userController.updateProfile);

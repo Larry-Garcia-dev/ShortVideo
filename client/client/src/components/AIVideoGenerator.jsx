@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import axios from 'axios';
 import { generateVideo, checkVideoStatus, uploadImage, uploadAudio, uploadTrimmedAudio } from '../services/aiService';
+import { API_URL } from '../config';
 import AudioTrimmer from './AudioTrimmer';
 import './AIVideoGenerator.css';
 
@@ -10,11 +12,36 @@ const COIN_PRICING = {
 };
 
 const AIVideoGenerator = ({ translations: t = {} }) => {
-    // Get user from localStorage
+    // Get user from localStorage initially
     const [user, setUser] = useState(() => {
         const stored = localStorage.getItem('user');
         return stored ? JSON.parse(stored) : null;
     });
+    const [loadingUser, setLoadingUser] = useState(false);
+
+    // Fetch fresh user data from server on mount
+    useEffect(() => {
+        const fetchUserData = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            setLoadingUser(true);
+            try {
+                const response = await axios.get(`${API_URL}/users/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const freshUser = response.data;
+                setUser(freshUser);
+                localStorage.setItem('user', JSON.stringify(freshUser));
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            } finally {
+                setLoadingUser(false);
+            }
+        };
+
+        fetchUserData();
+    }, []);
     const [formData, setFormData] = useState({
         prompt: '',
         img_url: '',
