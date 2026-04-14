@@ -291,11 +291,7 @@ const AIVideoGenerator = ({ translations: t = {} }) => {
             {/* Header */}
             <div className="ai-generator-header">
                 <div className="ai-generator-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
+                    <img src="/ai-logo.png" alt="AI" width="36" height="36" style={{ objectFit: 'contain' }} />
                 </div>
                 <div>
                     <h2 className="ai-generator-title">{t.generatorTitle || 'AI Video Generator'}</h2>
