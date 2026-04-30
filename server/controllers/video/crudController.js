@@ -86,14 +86,22 @@ exports.updateVideo = async (req, res) => {
 
         if (title !== undefined) video.title = title;
         if (description !== undefined) video.description = description;
+        
+        // Si hay nueva miniatura, subirla a OSS
         if (thumbnailFile) {
-            video.thumbnailUrl = thumbnailFile.path;
+            const ossThumbName = `thumbnails/${thumbnailFile.filename}`;
+            const finalThumbUrl = await uploadToOSS(thumbnailFile.path, ossThumbName, thumbnailFile.mimetype);
+            video.thumbnailUrl = finalThumbUrl;
         }
 
         await video.save();
 
         res.json({ message: 'Video updated', video: video.toJSON() });
     } catch (error) {
+        // Limpieza de seguridad si falla
+        if (req.files?.thumbnail?.[0]?.path && fs.existsSync(req.files.thumbnail[0].path)) {
+            fs.unlinkSync(req.files.thumbnail[0].path);
+        }
         res.status(500).json({ error: error.message });
     }
 };
