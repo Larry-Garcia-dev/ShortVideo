@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
 import { API_URL } from '../config';
+import { getAvatarUrl } from '../utils/mediaUtils';
 
 function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -444,7 +445,7 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
                   aria-label="User menu"
                 >
                   {user.avatar ? (
-                    <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000${user.avatar}`} alt="" className="header-user-avatar-img"/>
+                    <img src={getAvatarUrl(user.avatar)} alt="" className="header-user-avatar-img"/>
                   ) : IconUser}
                 </button>
 
@@ -454,7 +455,7 @@ function Header({ onSearch, onToggleSidebar, videos = [], initialQuery = '' }) {
                     <div className="header-user-dd-info">
                       <div className="header-user-dd-avatar">
                         {user.avatar ? (
-                          <img src={user.avatar.startsWith('http') ? user.avatar : `http://localhost:5000${user.avatar}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}/>
+                          <img src={getAvatarUrl(user.avatar)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}/>
                         ) : IconUser}
                       </div>
                       <div style={{ minWidth: 0 }}>

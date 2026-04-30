@@ -8,8 +8,8 @@ export const API_URL = `${BASE_URL}/api`;
 // 🚀 CONFIGURACIÓN DE ALIBABA CLOUD CDN
 // ==========================================
 
-// Reemplaza esto con el dominio CDN real que configuraste en Alibaba
-export const CDN_DOMAIN = 'https://hurammy.com';
+// Dominio CDN de Alibaba Cloud para archivos media (videos, imágenes, thumbnails)
+export const CDN_DOMAIN = 'https://media.hurammy.com';
 
 /**
  * Genera la URL completa para imágenes y videos.

@@ -4,8 +4,8 @@ import axios from 'axios';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
-// NUEVO: Importamos nuestras variables dinámicas
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getThumbnailUrl, getAvatarUrl } from '../utils/mediaUtils';
 
 function Following() {
   const [feed, setFeed] = useState([]);
@@ -56,9 +56,7 @@ useEffect(() => {
   };
 
   const getThumb = (video) => {
-    // CORRECCIÓN: Usamos BASE_URL para la imagen miniatura
-    if (video?.thumbnailUrl) return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
-    return null;
+    return getThumbnailUrl(video?.thumbnailUrl);
   };
 
   return (
@@ -105,8 +103,7 @@ useEffect(() => {
                       border: '2px solid var(--line)',
                     }}>
                       {creator.avatar ? (
-                        // CORRECCIÓN: Usamos BASE_URL para el avatar
-                        <img src={`${BASE_URL}${creator.avatar}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={getAvatarUrl(creator.avatar)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <span style={{ color: '#fff', fontWeight: 800, fontSize: '18px' }}>
                           {creator.email?.charAt(0).toUpperCase()}
