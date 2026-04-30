@@ -196,13 +196,35 @@ function Upload() {
 
   // --- Upload handler ---
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file) {
+      console.warn('[Upload] Intento de subida sin archivo de video.');
+      return;
+    }
+
+    // 1. Logs de inicio
+    console.log(`[Upload] 🚀 Iniciando preparación de subida...`);
+    console.log(`[Upload] Video: ${file.name} (${fmtMB(file.size)})`);
+    if (thumbnail) {
+      console.log(`[Upload] Miniatura: ${thumbnail.name} (${fmtMB(thumbnail.size)})`);
+    }
 
     setShowProgress(true);
     setIsUploading(true);
     setStatusText(u.uploading || 'Uploading...');
 
-    // Try real upload first, fall back to mock
+    // 2. Validación temprana del Token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('[Upload] ❌ Error: No hay token en localStorage. El usuario no está autenticado.');
+      setIsUploading(false);
+      setShowProgress(false);
+      showToastMsg('No estás autenticado. Por favor, inicia sesión de nuevo.');
+      // Opcional: Redirigir al login
+      // navigate('/login');
+      return;
+    }
+
+    // 3. Preparar FormData
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
@@ -214,8 +236,9 @@ function Upload() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/videos/upload`, formData, {
+      console.log(`[Upload] 📡 Enviando petición a: ${API_URL}/videos/upload`);
+      
+      const response = await axios.post(`${API_URL}/videos/upload`, formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`
@@ -229,9 +252,19 @@ function Upload() {
               total: progressEvent.total,
               speed: progressEvent.rate || 0,
             });
+            
+            // Log opcional cada 25% para no saturar la consola
+            if (pct === 25 || pct === 50 || pct === 75 || pct === 100) {
+              console.log(`[Upload] Progreso: ${Math.round(pct)}%`);
+            }
           }
         },
       });
+
+      // 4. Éxito
+      console.log('[Upload] ✅ Subida completada exitosamente del lado del servidor.');
+      console.log('[Upload] Respuesta del servidor:', response.data);
+
       setProgress((prev) => ({ ...prev, pct: 100, sent: prev.total }));
       setStatusText(
         thumbnail
@@ -241,9 +274,37 @@ function Upload() {
       setIsUploading(false);
       showToastMsg(u.success || 'Video uploaded successfully!');
       setTimeout(() => navigate('/'), 1500);
-    } catch {
-      // If backend is not available, fall back to mock upload
-      mockUpload(file);
+
+    } catch (error) {
+      // 5. MANEJO DE ERRORES ROBUSTO
+      setIsUploading(false);
+      setShowProgress(false);
+
+      if (error.response) {
+        // El servidor respondió con un código fuera del rango 2xx (400, 401, 500, etc)
+        console.error(`[Upload] ❌ Error del servidor (${error.response.status}):`, error.response.data);
+        
+        if (error.response.status === 401) {
+          showToastMsg('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        } else if (error.response.status === 413) {
+          // Captura el error de configuración de Nginx (Payload Too Large)
+          showToastMsg('El archivo es demasiado grande. Revisa la configuración de Nginx.');
+        } else {
+          showToastMsg(error.response.data?.message || error.response.data?.error || 'Error al subir el video.');
+        }
+      } else if (error.request) {
+        // La petición se hizo pero no se recibió respuesta (Servidor apagado, caída de internet)
+        console.error('[Upload] ❌ No se recibió respuesta del servidor:', error.request);
+        showToastMsg('No se pudo conectar con el servidor. Verificando red...');
+        
+        // SOLO si el servidor está inaccesible ejecutamos el mock para propósitos de demostración en frontend
+        console.log('[Upload] Iniciando simulación (MockUpload) por falta de red...');
+        mockUpload(file);
+      } else {
+        // Algo pasó al configurar la petición en Axios
+        console.error('[Upload] ❌ Error al configurar la petición:', error.message);
+        showToastMsg('Ocurrió un error inesperado en la aplicación.');
+      }
     }
   };
 
