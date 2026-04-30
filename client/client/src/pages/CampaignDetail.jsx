@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../components/Header';
 import { translations } from '../utils/translations';
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getVideoUrl } from '../utils/mediaUtils';
 
 function CampaignDetail() {
   const { id } = useParams();
@@ -542,8 +543,7 @@ function CampaignDetail() {
                     controls
                     preload="metadata"
                     muted={globalMuted}
-                    // CORRECCIÓN: Uso de BASE_URL dinámica para la reproducción del video
-                    src={`${BASE_URL}/${previewVideo.videoUrl?.replace(/\\/g, '/')}`}
+                    src={getVideoUrl(previewVideo.videoUrl)}
                     style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                   />
                 </div>

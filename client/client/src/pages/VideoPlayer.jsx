@@ -6,8 +6,8 @@ import Sidebar from '../components/Sidebar';
 import RightPanel from '../components/RightPanel';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
-// IMPORTANTE: Importamos las variables dinámicas de entorno
-import { API_URL, BASE_URL } from '../config'; 
+import { API_URL } from '../config';
+import { getVideoUrl, getThumbnailUrl } from '../utils/mediaUtils'; 
 
 /* ── SVG icon helpers ──────────────────────────────── */
 const Ico = ({ children, size = 16, ...p }) => (
@@ -338,9 +338,8 @@ function VideoPlayer() {
                       playsInline
                       preload="auto"
                       crossOrigin="anonymous"
-                      // CORRECCIÓN: Usamos BASE_URL en lugar de localhost para que Nginx sirva el video
-                      src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
-                      poster={video.thumbnailUrl ? `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}` : undefined}
+                      src={getVideoUrl(video.videoUrl)}
+                      poster={getThumbnailUrl(video.thumbnailUrl) || undefined}
                       style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
                       onLoadedMetadata={() => {
                         setDuration(videoRef.current?.duration || 0);

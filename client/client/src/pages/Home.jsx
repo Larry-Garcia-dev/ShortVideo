@@ -7,7 +7,8 @@ import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getVideoUrl, getThumbnailUrl } from '../utils/mediaUtils';
 
 const ROTATE_MS = 6000;
 const ENDING_SOON_DAYS = 3; // campaigns ending within 3 days get special color
@@ -333,16 +334,12 @@ function Home() {
     return video.User?.email?.split('@')[0] || 'creator';
   };
 
-  const getThumbnailUrl = (video) => {
-    if (video.thumbnailUrl) {
-      return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
-    }
-    // No custom thumbnail - return null to trigger video fallback with poster frame
-    return null;
+  const getVideoThumbnail = (video) => {
+    return getThumbnailUrl(video.thumbnailUrl);
   };
 
-  const getVideoUrl = (video) => {
-    return `${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`;
+  const getVideoSrc = (video) => {
+    return getVideoUrl(video.videoUrl);
   };
 
   return (
@@ -588,15 +585,15 @@ function Home() {
                 >
                   {/* Thumbnail */}
                   <div className="home-card-thumb">
-                    {getThumbnailUrl(video) ? (
+                    {getVideoThumbnail(video) ? (
                       <img
-                        src={getThumbnailUrl(video)}
+                        src={getVideoThumbnail(video)}
                         alt={video.title || 'Video'}
                         loading="lazy"
                       />
                     ) : (
                       <video
-                        src={`${getVideoUrl(video)}#t=1`}
+                        src={`${getVideoSrc(video)}#t=1`}
                         preload="metadata"
                         muted
                         playsInline

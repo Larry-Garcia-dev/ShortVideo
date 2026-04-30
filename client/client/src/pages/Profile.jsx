@@ -4,8 +4,8 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { translations } from '../utils/translations';
-// NUEVO: Importamos nuestras variables dinámicas
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getAvatarUrl } from '../utils/mediaUtils';
 
 // CORRECCIÓN: Asignamos API a nuestra variable dinámica
 const API = API_URL;
@@ -21,9 +21,8 @@ function Profile() {
   const [email, setEmail] = useState(user?.email || '');
   const [language, setLanguage] = useState(user?.language || 'en');
   
-  // CORRECCIÓN: Usamos BASE_URL para cargar el avatar actual correctamente en producción
   const [avatarPreview, setAvatarPreview] = useState(
-    user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${BASE_URL}${user.avatar}`) : null
+    user?.avatar ? getAvatarUrl(user.avatar) : null
   );
   
   const [avatarFile, setAvatarFile] = useState(null);

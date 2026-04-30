@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { translations } from '../utils/translations';
 import { API_URL } from '../config';
+import { getThumbnailUrl } from '../utils/mediaUtils';
 
 const API = API_URL;
 
@@ -135,7 +136,7 @@ function RightPanel({ videos = [], currentVideoIndex = 0 }) {
                 <div className="rp-queue-rank">{index + 1}</div>
                 <div className="rp-queue-thumb">
                   {video.thumbnailUrl ? (
-                    <img src={`${API.replace('/api', '')}/${video.thumbnailUrl}`} alt="" />
+                    <img src={getThumbnailUrl(video.thumbnailUrl)} alt="" />
                   ) : (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="5 3 19 12 5 21 5 3"/>

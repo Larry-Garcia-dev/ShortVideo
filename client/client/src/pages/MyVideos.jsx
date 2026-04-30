@@ -4,10 +4,9 @@ import axios from 'axios';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { translations } from '../utils/translations';
-// NUEVO: Importamos nuestras variables dinámicas
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getThumbnailUrl } from '../utils/mediaUtils';
 
-// CORRECCIÓN: Asignamos API a nuestra variable dinámica
 const API = API_URL;
 
 function MyVideos() {
@@ -39,11 +38,7 @@ function MyVideos() {
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
   const thumbUrl = (video) => {
-    if (!video.thumbnailUrl) return null;
-    return video.thumbnailUrl.startsWith('http')
-      ? video.thumbnailUrl
-      // CORRECCIÓN: Usamos BASE_URL para las miniaturas
-      : `${BASE_URL}/${video.thumbnailUrl.replace(/^\//, '').replace(/\\/g, '/')}`; 
+    return getThumbnailUrl(video.thumbnailUrl);
   };
 
   useEffect(() => {

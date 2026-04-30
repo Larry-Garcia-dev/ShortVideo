@@ -6,8 +6,8 @@ import RightPanel from '../components/RightPanel';
 import Header from '../components/Header';
 import ShareModal from '../components/ShareModal';
 import { translations } from '../utils/translations';
-// IMPORTANTE: Importamos las variables dinámicas
-import { API_URL, BASE_URL } from '../config';
+import { API_URL } from '../config';
+import { getVideoUrl, getThumbnailUrl } from '../utils/mediaUtils';
 
 function Trending() {
   const [videos, setVideos] = useState([]);
@@ -82,11 +82,8 @@ function Trending() {
     return n;
   };
 
-  const getThumbnailUrl = (video) => {
-    if (!video.thumbnailUrl) return null;
-    if (video.thumbnailUrl.startsWith('http')) return video.thumbnailUrl;
-    // CORRECCIÓN: Uso de BASE_URL dinámica
-    return `${BASE_URL}/${video.thumbnailUrl.replace(/\\/g, '/')}`;
+  const getVideoThumbnail = (video) => {
+    return getThumbnailUrl(video.thumbnailUrl);
   };
 
   const getCreatorName = (video) => {
@@ -156,12 +153,11 @@ function Trending() {
 
                     {/* Thumbnail */}
                     <div className="home-card-thumb">
-                      {getThumbnailUrl(video) ? (
-                        <img src={getThumbnailUrl(video)} alt={video.title || 'Video'} loading="lazy" />
+                      {getVideoThumbnail(video) ? (
+                        <img src={getVideoThumbnail(video)} alt={video.title || 'Video'} loading="lazy" />
                       ) : (
                         <video
-                          // CORRECCIÓN: Uso de BASE_URL dinámica para la reproducción del video
-                          src={`${BASE_URL}/${video.videoUrl.replace(/\\/g, '/')}`}
+                          src={getVideoUrl(video.videoUrl)}
                           preload="metadata" muted
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
