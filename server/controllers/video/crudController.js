@@ -1,7 +1,10 @@
 const { Video, User, Comment, Like } = require('../../models');
 const { getVideoDurationInSeconds } = require('get-video-duration');
 const ffprobe = require('ffprobe-static');
+const { uploadToOSS } = require('../../utils/ossUploader');
 const fs = require('fs');
+
+
 
 exports.uploadVideo = async (req, res) => {
     try {
@@ -11,6 +14,7 @@ exports.uploadVideo = async (req, res) => {
         if (!videoFile) return res.status(400).json({ message: 'No video file provided' });
         
         const videoPath = videoFile.path;
+        // Asumiendo que 'getVideoDurationInSeconds' y 'ffprobe' ya están importados
         const duration = await getVideoDurationInSeconds(videoPath, ffprobe.path);
         
         if (duration > 600) {
@@ -19,6 +23,22 @@ exports.uploadVideo = async (req, res) => {
             return res.status(400).json({ message: 'Video exceeds 10 minutes limit.' });
         }
 
+        // ==========================================
+        // 🚀 SUBIDA A ALIBABA CLOUD OSS
+        // ==========================================
+        
+        // 1. Definir nombre destino y subir el video
+        const ossVideoName = `videos/${videoFile.filename}`;
+        const finalVideoUrl = await uploadToOSS(videoPath, ossVideoName, videoFile.mimetype);
+
+        // 2. Definir nombre destino y subir la miniatura (si existe)
+        let finalThumbUrl = null;
+        if (thumbnailFile) {
+            const ossThumbName = `thumbnails/${thumbnailFile.filename}`;
+            finalThumbUrl = await uploadToOSS(thumbnailFile.path, ossThumbName, thumbnailFile.mimetype);
+        }
+        // ==========================================
+
         let tags = [];
         if (req.body.tags) {
             try {
@@ -26,19 +46,32 @@ exports.uploadVideo = async (req, res) => {
             } catch { tags = []; }
         }
 
+        // 3. Guardar en la Base de Datos usando las rutas de OSS
         const newVideo = await Video.create({
             title: req.body.title,
             description: req.body.description,
-            videoUrl: videoPath,
-            thumbnailUrl: thumbnailFile ? thumbnailFile.path : null,
+            videoUrl: finalVideoUrl,      // 👈 Usamos la ruta devuelta por OSS
+            thumbnailUrl: finalThumbUrl,  // 👈 Usamos la ruta devuelta por OSS
             category: req.body.category || 'General',
             tags: tags,
             duration: duration,
             userId: req.body.userId
         });
+        
         res.status(201).json({ message: 'Video uploaded successfully', video: newVideo });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        console.error('Error al procesar el video:', e);
+        
+        // Limpieza de seguridad: si el proceso falló antes o durante la subida, 
+        // nos aseguramos de borrar los archivos temporales para no llenar el disco duro.
+        if (req.files?.videoFile?.[0]?.path && fs.existsSync(req.files.videoFile[0].path)) {
+            fs.unlinkSync(req.files.videoFile[0].path);
+        }
+        if (req.files?.thumbnail?.[0]?.path && fs.existsSync(req.files.thumbnail[0].path)) {
+            fs.unlinkSync(req.files.thumbnail[0].path);
+        }
+
+        res.status(500).json({ error: e.message || 'Internal server error during video upload' });
     }
 };
 
