@@ -615,24 +615,11 @@ function VideoPlayer() {
 
                           {/* Controls Row */}
                           <div className="fs-controls-row">
-                            {/* Left Controls */}
+                            {/* Left Controls - Order: Play/Pause, -10s, +10s, Prev Video, Next Video */}
                             <div className="fs-controls-left">
-                              {/* Video Navigation */}
-                              {canNavigate() && (
-                                <button onClick={goToPrevVideo} className="fs-btn fs-nav-btn" aria-label={vp.prevVideo || 'Previous video'}>
-                                  <PrevVideoIcon />
-                                </button>
-                              )}
-                              
                               <button onClick={togglePlay} className="fs-btn" aria-label={isPlaying ? 'Pause' : 'Play'}>
                                 {isPlaying ? <PauseIcon /> : <PlayIcon />}
                               </button>
-                              
-                              {canNavigate() && (
-                                <button onClick={goToNextVideo} className="fs-btn fs-nav-btn" aria-label={vp.nextVideo || 'Next video'}>
-                                  <NextVideoIcon />
-                                </button>
-                              )}
                               
                               <button onClick={() => jump(-10)} className="fs-btn" aria-label="Back 10s">
                                 <SkipBackIcon />
@@ -640,6 +627,18 @@ function VideoPlayer() {
                               <button onClick={() => jump(10)} className="fs-btn" aria-label="Forward 10s">
                                 <SkipFwdIcon />
                               </button>
+                              
+                              {/* Video Navigation */}
+                              {canNavigate() && (
+                                <button onClick={goToPrevVideo} className="fs-btn fs-nav-btn" aria-label={vp.prevVideo || 'Previous video'}>
+                                  <PrevVideoIcon />
+                                </button>
+                              )}
+                              {canNavigate() && (
+                                <button onClick={goToNextVideo} className="fs-btn fs-nav-btn" aria-label={vp.nextVideo || 'Next video'}>
+                                  <NextVideoIcon />
+                                </button>
+                              )}
 
                               {/* Volume Controls */}
                               <div className="fs-volume-group">
@@ -697,14 +696,18 @@ function VideoPlayer() {
                                   </div>
                                 )}
                               </div>
-
-                              {/* Fullscreen Toggle */}
-                              <button onClick={handleFullscreen} className="fs-btn" aria-label="Exit Fullscreen">
-                                <MinIcon />
-                              </button>
                             </div>
                           </div>
                         </div>
+                        
+                        {/* Fullscreen Exit Button - Bottom Right Corner */}
+                        <button 
+                          onClick={handleFullscreen} 
+                          className="fs-fullscreen-corner-btn" 
+                          aria-label="Exit Fullscreen"
+                        >
+                          <MinIcon />
+                        </button>
 
                         {/* Bottom gradient */}
                         <div className="fs-gradient-bottom" />
@@ -731,22 +734,10 @@ function VideoPlayer() {
 
                     {/* Controls Row */}
                     <div className="vp-controls-row">
-                      {/* Video Navigation */}
-                      {canNavigate() && (
-                        <button onClick={goToPrevVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.prevVideo || 'Previous video'} aria-label={vp.prevVideo || 'Previous video'}>
-                          <PrevVideoIcon />
-                        </button>
-                      )}
-                      
+                      {/* Order: Play/Pause, -10s, +10s, Prev Video, Next Video */}
                       <button onClick={togglePlay} className="iconBtn vp-icon-btn" title="Play/Pause (Space)" aria-label={isPlaying ? 'Pause' : 'Play'}>
                         {isPlaying ? <PauseIcon /> : <PlayIcon />}
                       </button>
-                      
-                      {canNavigate() && (
-                        <button onClick={goToNextVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.nextVideo || 'Next video'} aria-label={vp.nextVideo || 'Next video'}>
-                          <NextVideoIcon />
-                        </button>
-                      )}
                       
                       <button onClick={() => jump(-10)} className="iconBtn vp-icon-btn" title="Back 10s (J)" aria-label="Back 10 seconds">
                         <SkipBackIcon />
@@ -754,6 +745,19 @@ function VideoPlayer() {
                       <button onClick={() => jump(10)} className="iconBtn vp-icon-btn" title="Forward 10s (K)" aria-label="Forward 10 seconds">
                         <SkipFwdIcon />
                       </button>
+                      
+                      {/* Video Navigation */}
+                      {canNavigate() && (
+                        <button onClick={goToPrevVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.prevVideo || 'Previous video'} aria-label={vp.prevVideo || 'Previous video'}>
+                          <PrevVideoIcon />
+                        </button>
+                      )}
+                      {canNavigate() && (
+                        <button onClick={goToNextVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.nextVideo || 'Next video'} aria-label={vp.nextVideo || 'Next video'}>
+                          <NextVideoIcon />
+                        </button>
+                      )}
+                      
                       <button onClick={toggleMute} className="iconBtn vp-icon-btn" title="Mute (M)" aria-label={isMuted ? 'Unmute' : 'Mute'}>
                         {isMuted ? <VolXIcon /> : <Vol2Icon />}
                       </button>
@@ -792,11 +796,17 @@ function VideoPlayer() {
                           background: `linear-gradient(to right, var(--brand2) 0%, var(--brand2) ${volume * 100}%, rgba(234,240,255,0.15) ${volume * 100}%, rgba(234,240,255,0.15) 100%)`
                         }}
                       />
-
-                      <button onClick={handleFullscreen} className="iconBtn vp-icon-btn" title="Fullscreen (F)" aria-label="Fullscreen">
-                        <MaxIcon />
-                      </button>
                     </div>
+                    
+                    {/* Fullscreen Button - Bottom Right Corner */}
+                    <button 
+                      onClick={handleFullscreen} 
+                      className="vp-fullscreen-corner-btn" 
+                      title="Fullscreen (F)" 
+                      aria-label="Fullscreen"
+                    >
+                      <MaxIcon />
+                    </button>
 
                     {/* Shortcuts Row */}
                     <div className="vp-shortcuts-row">

@@ -2064,6 +2064,44 @@ input[type="range"] {
   background: rgba(124, 92, 255, 0.25);
 }
 
+/* Fullscreen Button - Bottom Right Corner */
+.vp-fullscreen-corner-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.vp-fullscreen-corner-btn:hover {
+  background: rgba(124, 92, 255, 0.5);
+  border-color: rgba(124, 92, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.vp-fullscreen-corner-btn:active {
+  transform: scale(0.95);
+}
+
+.vp-fullscreen-corner-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .vp-time {
   font-variant-numeric: tabular-nums;
   color: rgba(234,240,255,0.78);
@@ -2343,9 +2381,47 @@ input[type="range"] {
 .fs-btn svg {
   width: 20px;
   height: 20px;
+  }
+  
+/* Fullscreen Exit Button - Bottom Right Corner (in fullscreen mode) */
+.fs-fullscreen-corner-btn {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 30;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-/* Navigation Buttons - Video Prev/Next */
+.fs-fullscreen-corner-btn:hover {
+  background: rgba(124, 92, 255, 0.6);
+  border-color: rgba(124, 92, 255, 0.7);
+  transform: scale(1.08);
+}
+
+.fs-fullscreen-corner-btn:active {
+  transform: scale(0.95);
+}
+
+.fs-fullscreen-corner-btn svg {
+  width: 24px;
+  height: 24px;
+}
+  
+  /* Navigation Buttons - Video Prev/Next */
 .fs-nav-btn {
   background: rgba(124, 92, 255, 0.25);
   border: 1px solid rgba(124, 92, 255, 0.3);
@@ -2540,6 +2616,32 @@ input[type="range"] {
   .fs-volume-group .fs-vol-slider {
     display: none;
   }
+  
+  /* Fullscreen corner button - mobile */
+  .fs-fullscreen-corner-btn {
+    bottom: 16px;
+    right: 16px;
+    width: 46px;
+    height: 46px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .fs-fullscreen-corner-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  
+  .vp-fullscreen-corner-btn {
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .vp-fullscreen-corner-btn svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2583,6 +2685,31 @@ input[type="range"] {
     padding: 0 10px;
     font-size: 12px;
     height: 40px;
+  }
+  
+  /* Fullscreen corner button - small mobile */
+  .fs-fullscreen-corner-btn {
+    bottom: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+  }
+  
+  .fs-fullscreen-corner-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .vp-fullscreen-corner-btn {
+    bottom: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
+  }
+  
+  .vp-fullscreen-corner-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
