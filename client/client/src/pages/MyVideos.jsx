@@ -43,13 +43,56 @@ function MyVideos() {
 
   useEffect(() => {
     if (!user) return;
-    axios.get(`${API}/videos`)
-      .then(res => {
-        const mine = res.data.filter(v => v.userId === user.id);
+    
+    // Cargar todos los videos del usuario con paginacion
+    const fetchAllUserVideos = async () => {
+      try {
+        let allVideos = [];
+        let page = 1;
+        let hasMore = true;
+        
+        // Obtener todos los videos paginados
+        while (hasMore) {
+          const res = await axios.get(`${API}/videos?page=${page}&limit=50`);
+          console.log('[v0] API Response page', page, ':', res.data);
+          
+          // El API devuelve { videos: [...], currentPage, totalPages, hasMore }
+          const videosArray = res.data.videos || res.data;
+          
+          if (Array.isArray(videosArray)) {
+            allVideos = [...allVideos, ...videosArray];
+          }
+          
+          hasMore = res.data.hasMore || false;
+          page++;
+          
+          // Seguridad: maximo 10 paginas
+          if (page > 10) break;
+        }
+        
+        console.log('[v0] All videos fetched:', allVideos.length);
+        console.log('[v0] Current user ID:', user.id, 'Type:', typeof user.id);
+        
+        // Filtrar solo los videos del usuario actual
+        const mine = allVideos.filter(v => {
+          const match = String(v.userId) === String(user.id);
+          if (match) {
+            console.log('[v0] Found user video:', v.id, v.title);
+          }
+          return match;
+        });
+        
+        console.log('[v0] User videos found:', mine.length);
         setVideos(mine);
-      })
-      .catch(() => setVideos([]))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.log('[v0] Error fetching videos:', err);
+        setVideos([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAllUserVideos();
   }, []);
 
   /* ── Sign-in wall ── */
