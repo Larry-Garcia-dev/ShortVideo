@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { translations } from '../utils/translations';
 
-function DisclaimerModal({ isOpen, onClose }) {
+function DisclaimerModal({ isOpen, onClose, language = 'en' }) {
   const modalRef = useRef(null);
+  const u = translations[language]?.upload || translations.en.upload;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,7 +35,7 @@ function DisclaimerModal({ isOpen, onClose }) {
                 <path d="m9 12 2 2 4-4"/>
               </svg>
             </div>
-            <h3 className="disclaimer-modal-title">Hurammy Creator Content Disclaimer</h3>
+            <h3 className="disclaimer-modal-title">{u.disclaimerModalTitle}</h3>
           </div>
           <button className="iconBtn" onClick={onClose} aria-label="Close">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -45,7 +47,7 @@ function DisclaimerModal({ isOpen, onClose }) {
         {/* Body */}
         <div className="disclaimer-modal-body">
           <p className="disclaimer-intro">
-            By uploading or publishing content on Hurammy, you agree to the following:
+            {u.disclaimerModalIntro}
           </p>
 
           <div className="disclaimer-sections">
@@ -55,9 +57,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
                   <circle cx="12" cy="12" r="4"/>
                 </svg>
-                <h4>Ownership & Rights</h4>
+                <h4>{u.disclaimerOwnership}</h4>
               </div>
-              <p>You confirm that you own or have obtained all necessary rights, licenses, and permissions for the content you upload, including but not limited to music, video, images, and any third-party materials.</p>
+              <p>{u.disclaimerOwnershipText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -66,9 +68,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
                 </svg>
-                <h4>No Infringement</h4>
+                <h4>{u.disclaimerNoInfringement}</h4>
               </div>
-              <p>Your content does not infringe upon any copyright, trademark, privacy, publicity, or other legal rights of any third party.</p>
+              <p>{u.disclaimerNoInfringementText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -77,9 +79,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <h4>Content Responsibility</h4>
+                <h4>{u.disclaimerResponsibility}</h4>
               </div>
-              <p>You are solely responsible for the content you publish. Hurammy is not liable for any claims, damages, or disputes arising from your content.</p>
+              <p>{u.disclaimerResponsibilityText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -89,9 +91,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <path d="M12 8v8"/>
                   <path d="M8 12h8"/>
                 </svg>
-                <h4>Platform Usage Rights</h4>
+                <h4>{u.disclaimerUsageRights}</h4>
               </div>
-              <p>By uploading content, you grant Hurammy a worldwide, non-exclusive, royalty-free license to host, display, distribute, and promote your content on the platform.</p>
+              <p>{u.disclaimerUsageRightsText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -100,9 +102,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
                   <line x1="12" y1="2" x2="12" y2="12"/>
                 </svg>
-                <h4>Prohibited Content</h4>
+                <h4>{u.disclaimerProhibited}</h4>
               </div>
-              <p>You agree not to upload content that is illegal, harmful, abusive, defamatory, or otherwise violates applicable laws or platform policies.</p>
+              <p>{u.disclaimerProhibitedText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -112,9 +114,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                 </svg>
-                <h4>Content Removal</h4>
+                <h4>{u.disclaimerRemoval}</h4>
               </div>
-              <p>Hurammy reserves the right to remove or restrict content that violates these terms or applicable laws without prior notice.</p>
+              <p>{u.disclaimerRemovalText}</p>
             </div>
 
             <div className="disclaimer-section">
@@ -122,9 +124,9 @@ function DisclaimerModal({ isOpen, onClose }) {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                <h4>Indemnification</h4>
+                <h4>{u.disclaimerIndemnification}</h4>
               </div>
-              <p>You agree to indemnify and hold Hurammy harmless from any claims, losses, or liabilities arising from your content.</p>
+              <p>{u.disclaimerIndemnificationText}</p>
             </div>
           </div>
         </div>
@@ -132,7 +134,7 @@ function DisclaimerModal({ isOpen, onClose }) {
         {/* Footer */}
         <div className="disclaimer-modal-footer">
           <button className="btn primary" onClick={onClose}>
-            I Understand
+            {u.disclaimerUnderstand}
           </button>
         </div>
       </div>
