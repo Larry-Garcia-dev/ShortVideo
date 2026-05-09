@@ -648,6 +648,7 @@ function Upload() {
       <DisclaimerModal
         isOpen={showDisclaimerModal}
         onClose={() => setShowDisclaimerModal(false)}
+        onAccept={() => setDisclaimerAccepted(true)}
         language={lang}
       />
     </div>

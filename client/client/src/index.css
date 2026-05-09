@@ -104,6 +104,19 @@ a {
   box-shadow: 0 22px 65px rgba(124, 92, 255, 0.25);
 }
 
+.btn.primary:disabled {
+  background: rgba(124, 92, 255, 0.25);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn.primary:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .btn.danger {
   border-color: rgba(255, 77, 109, 0.22);
   background: rgba(255, 77, 109, 0.08);

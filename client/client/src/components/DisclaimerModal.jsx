@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { translations } from '../utils/translations';
 
-function DisclaimerModal({ isOpen, onClose, language = 'en' }) {
+function DisclaimerModal({ isOpen, onClose, onAccept, language = 'en' }) {
   const modalRef = useRef(null);
   const u = translations[language]?.upload || translations.en.upload;
 
@@ -133,7 +133,7 @@ function DisclaimerModal({ isOpen, onClose, language = 'en' }) {
 
         {/* Footer */}
         <div className="disclaimer-modal-footer">
-          <button className="btn primary" onClick={onClose}>
+          <button className="btn primary" onClick={() => { if (onAccept) onAccept(); onClose(); }}>
             {u.disclaimerUnderstand}
           </button>
         </div>
