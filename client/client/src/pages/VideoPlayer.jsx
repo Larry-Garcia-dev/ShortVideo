@@ -575,6 +575,18 @@ function VideoPlayer() {
                       onPause={() => { setIsPlaying(false); setStatusLabel(vp.paused || 'Paused'); }}
                       onDoubleClick={handleFullscreen}
                     />
+                    
+                    {/* Fullscreen Button - Bottom Right Corner of Video */}
+                    {!isFullscreen && (
+                      <button 
+                        onClick={handleFullscreen} 
+                        className="vp-fullscreen-corner-btn" 
+                        title="Fullscreen (F)" 
+                        aria-label="Fullscreen"
+                      >
+                        <MaxIcon />
+                      </button>
+                    )}
 
                     {/* Fullscreen Overlay Controls */}
                     {isFullscreen && (
@@ -797,16 +809,6 @@ function VideoPlayer() {
                         }}
                       />
                     </div>
-                    
-                    {/* Fullscreen Button - Bottom Right Corner */}
-                    <button 
-                      onClick={handleFullscreen} 
-                      className="vp-fullscreen-corner-btn" 
-                      title="Fullscreen (F)" 
-                      aria-label="Fullscreen"
-                    >
-                      <MaxIcon />
-                    </button>
 
                     {/* Shortcuts Row */}
                     <div className="vp-shortcuts-row">
