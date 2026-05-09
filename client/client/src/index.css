@@ -2446,6 +2446,13 @@ input[type="range"] {
   border-color: rgba(124, 92, 255, 0.4) !important;
 }
 
+.vp-nav-btn:disabled,
+.fs-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Volume Group */
 .fs-volume-group {
   display: flex;
