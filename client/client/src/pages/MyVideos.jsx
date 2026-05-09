@@ -5,7 +5,7 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { translations } from '../utils/translations';
 import { API_URL } from '../config';
-import { getThumbnailUrl } from '../utils/mediaUtils';
+import { getVideoUrl, getThumbnailUrl } from '../utils/mediaUtils';
 
 const API = API_URL;
 
