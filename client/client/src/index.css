@@ -2345,6 +2345,31 @@ input[type="range"] {
   height: 20px;
 }
 
+/* Navigation Buttons - Video Prev/Next */
+.fs-nav-btn {
+  background: rgba(124, 92, 255, 0.25);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+}
+
+.fs-nav-btn:hover {
+  background: rgba(124, 92, 255, 0.45);
+  border-color: rgba(124, 92, 255, 0.5);
+}
+
+.fs-nav-btn:active {
+  background: rgba(124, 92, 255, 0.6);
+}
+
+.vp-nav-btn {
+  background: rgba(124, 92, 255, 0.15) !important;
+  border: 1px solid rgba(124, 92, 255, 0.25) !important;
+}
+
+.vp-nav-btn:hover {
+  background: rgba(124, 92, 255, 0.3) !important;
+  border-color: rgba(124, 92, 255, 0.4) !important;
+}
+
 /* Volume Group */
 .fs-volume-group {
   display: flex;

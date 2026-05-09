@@ -20,6 +20,8 @@ const PlayIcon = () => (<Ico><polygon points="5 3 19 12 5 21 5 3" /></Ico>);
 const PauseIcon = () => (<Ico><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></Ico>);
 const SkipBackIcon = () => (<Ico><polygon points="11 19 2 12 11 5 11 19" /><line x1="22" y1="12" x2="11" y2="12" /></Ico>);
 const SkipFwdIcon = () => (<Ico><polygon points="13 19 22 12 13 5 13 19" /><line x1="2" y1="12" x2="13" y2="12" /></Ico>);
+const PrevVideoIcon = () => (<Ico><polygon points="19 20 9 12 19 4 19 20" /><line x1="5" y1="19" x2="5" y2="5" /></Ico>);
+const NextVideoIcon = () => (<Ico><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></Ico>);
 const VolXIcon = () => (<Ico><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></Ico>);
 const Vol2Icon = () => (<Ico><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></Ico>);
 const MaxIcon = () => (<Ico><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></Ico>);
@@ -137,8 +139,58 @@ function VideoPlayer() {
   const loadAllVideos = () => {
     // CORRECCIÓN: Usamos API_URL en lugar de localhost
     axios.get(`${API_URL}/videos`)
-      .then(res => setAllVideos(res.data))
+      .then(res => {
+        // Handle paginated response
+        const videos = res.data.videos || res.data;
+        setAllVideos(Array.isArray(videos) ? videos : []);
+      })
       .catch(() => {});
+  };
+
+  // Get video list for navigation (excluding current video)
+  const getVideoList = () => {
+    const videos = Array.isArray(allVideos) ? allVideos : [];
+    return videos.filter(v => String(v.id) !== String(id));
+  };
+
+  // Get current video index in the list
+  const getCurrentVideoIndex = () => {
+    const videos = Array.isArray(allVideos) ? allVideos : [];
+    return videos.findIndex(v => String(v.id) === String(id));
+  };
+
+  // Navigate to previous video
+  const goToPrevVideo = () => {
+    const videos = Array.isArray(allVideos) ? allVideos : [];
+    const currentIndex = getCurrentVideoIndex();
+    if (currentIndex > 0) {
+      const prevVideo = videos[currentIndex - 1];
+      navigate(`/watch/${prevVideo.id}`);
+    } else if (videos.length > 1) {
+      // Loop to last video
+      const lastVideo = videos[videos.length - 1];
+      navigate(`/watch/${lastVideo.id}`);
+    }
+  };
+
+  // Navigate to next video
+  const goToNextVideo = () => {
+    const videos = Array.isArray(allVideos) ? allVideos : [];
+    const currentIndex = getCurrentVideoIndex();
+    if (currentIndex < videos.length - 1 && currentIndex !== -1) {
+      const nextVideo = videos[currentIndex + 1];
+      navigate(`/watch/${nextVideo.id}`);
+    } else if (videos.length > 1) {
+      // Loop to first video
+      const firstVideo = videos[0];
+      navigate(`/watch/${firstVideo.id}`);
+    }
+  };
+
+  // Check if navigation is available
+  const canNavigate = () => {
+    const videos = Array.isArray(allVideos) ? allVideos : [];
+    return videos.length > 1;
   };
 
   const togglePlay = () => {
@@ -565,9 +617,23 @@ function VideoPlayer() {
                           <div className="fs-controls-row">
                             {/* Left Controls */}
                             <div className="fs-controls-left">
+                              {/* Video Navigation */}
+                              {canNavigate() && (
+                                <button onClick={goToPrevVideo} className="fs-btn fs-nav-btn" aria-label={vp.prevVideo || 'Previous video'}>
+                                  <PrevVideoIcon />
+                                </button>
+                              )}
+                              
                               <button onClick={togglePlay} className="fs-btn" aria-label={isPlaying ? 'Pause' : 'Play'}>
                                 {isPlaying ? <PauseIcon /> : <PlayIcon />}
                               </button>
+                              
+                              {canNavigate() && (
+                                <button onClick={goToNextVideo} className="fs-btn fs-nav-btn" aria-label={vp.nextVideo || 'Next video'}>
+                                  <NextVideoIcon />
+                                </button>
+                              )}
+                              
                               <button onClick={() => jump(-10)} className="fs-btn" aria-label="Back 10s">
                                 <SkipBackIcon />
                               </button>
@@ -665,9 +731,23 @@ function VideoPlayer() {
 
                     {/* Controls Row */}
                     <div className="vp-controls-row">
+                      {/* Video Navigation */}
+                      {canNavigate() && (
+                        <button onClick={goToPrevVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.prevVideo || 'Previous video'} aria-label={vp.prevVideo || 'Previous video'}>
+                          <PrevVideoIcon />
+                        </button>
+                      )}
+                      
                       <button onClick={togglePlay} className="iconBtn vp-icon-btn" title="Play/Pause (Space)" aria-label={isPlaying ? 'Pause' : 'Play'}>
                         {isPlaying ? <PauseIcon /> : <PlayIcon />}
                       </button>
+                      
+                      {canNavigate() && (
+                        <button onClick={goToNextVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.nextVideo || 'Next video'} aria-label={vp.nextVideo || 'Next video'}>
+                          <NextVideoIcon />
+                        </button>
+                      )}
+                      
                       <button onClick={() => jump(-10)} className="iconBtn vp-icon-btn" title="Back 10s (J)" aria-label="Back 10 seconds">
                         <SkipBackIcon />
                       </button>
