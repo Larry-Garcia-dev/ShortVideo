@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
+import DisclaimerModal from '../components/DisclaimerModal';
 import { translations } from '../utils/translations';
 import { API_URL } from '../config';
 
@@ -52,6 +53,10 @@ function Upload() {
   // Drag state
   const [videoDragActive, setVideoDragActive] = useState(false);
   const [thumbDragActive, setThumbDragActive] = useState(false);
+
+  // Disclaimer state
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
 
   const fileInputRef = useRef(null);
   const thumbInputRef = useRef(null);
@@ -496,6 +501,39 @@ function Upload() {
               </select>
             </div>
 
+            {/* Disclaimer Agreement */}
+            <div className="upload-field-group">
+              <div className="upload-disclaimer-row">
+                <input
+                  type="checkbox"
+                  id="disclaimer-checkbox"
+                  className="upload-disclaimer-checkbox"
+                  checked={disclaimerAccepted}
+                  onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+                />
+                <label htmlFor="disclaimer-checkbox" className="upload-disclaimer-text">
+                  {u.disclaimerAgree || 'I agree to the'}{' '}
+                  <span
+                    className="upload-disclaimer-link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowDisclaimerModal(true);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowDisclaimerModal(true);
+                      }
+                    }}
+                  >
+                    {u.disclaimerClickHere || 'Creator Content Disclaimer (click here to read)'}
+                  </span>
+                </label>
+              </div>
+            </div>
+
             {/* Progress bar */}
             {showProgress && (
               <div className="upload-progress-wrap" aria-label="Upload progress">
@@ -547,7 +585,7 @@ function Upload() {
                 className="btn primary"
                 type="button"
                 onClick={handleUpload}
-                disabled={isUploading || !file}
+                disabled={isUploading || !file || !disclaimerAccepted}
               >
                 {isUploading ? (u.uploading || 'Uploading...') : (u.publish || 'Upload')}
               </button>
@@ -605,6 +643,13 @@ function Upload() {
       <div className={`toast ${toast.show ? 'show' : ''}`}>
         {toast.message}
       </div>
+
+      {/* Disclaimer Modal */}
+      <DisclaimerModal
+        isOpen={showDisclaimerModal}
+        onClose={() => setShowDisclaimerModal(false)}
+        language={lang}
+      />
     </div>
   );
 }

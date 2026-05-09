@@ -23,6 +23,8 @@ const SkipFwdIcon = () => (<Ico><polygon points="13 19 22 12 13 5 13 19" /><line
 const VolXIcon = () => (<Ico><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></Ico>);
 const Vol2Icon = () => (<Ico><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></Ico>);
 const MaxIcon = () => (<Ico><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /><line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" /></Ico>);
+const MinIcon = () => (<Ico><polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" /><line x1="14" y1="10" x2="21" y2="3" /><line x1="3" y1="21" x2="10" y2="14" /></Ico>);
+const SettingsIcon = () => (<Ico><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></Ico>);
 const HeartIcon = ({ filled }) => (
   <Ico size={15}>
     <path
@@ -53,8 +55,15 @@ function VideoPlayer() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFsControls, setShowFsControls] = useState(true);
+  const [isDraggingSeek, setIsDraggingSeek] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const videoRef = useRef(null);
   const seekRef = useRef(null);
+  const playerRef = useRef(null);
+  const fsControlsTimeout = useRef(null);
+  const speedMenuRef = useRef(null);
 
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
@@ -205,15 +214,77 @@ function VideoPlayer() {
 
   const handleFullscreen = async () => {
     try {
-      const player = document.querySelector('.player');
+      const player = playerRef.current;
       if (!document.fullscreenElement) {
         await player?.requestFullscreen();
+        setIsFullscreen(true);
+        setShowFsControls(true);
+        resetFsControlsTimeout();
       } else {
         await document.exitFullscreen();
+        setIsFullscreen(false);
       }
     } catch {
       showToast(vp.fullscreenNA || 'Fullscreen not available');
     }
+  };
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFsChange = () => {
+      const inFs = !!document.fullscreenElement;
+      setIsFullscreen(inFs);
+      if (!inFs) {
+        setShowSpeedMenu(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  // Hide fullscreen controls after inactivity
+  const resetFsControlsTimeout = () => {
+    if (fsControlsTimeout.current) clearTimeout(fsControlsTimeout.current);
+    setShowFsControls(true);
+    fsControlsTimeout.current = setTimeout(() => {
+      if (isFullscreen && isPlaying && !isDraggingSeek && !showSpeedMenu) {
+        setShowFsControls(false);
+      }
+    }, 3000);
+  };
+
+  const handlePlayerMouseMove = () => {
+    if (isFullscreen) {
+      resetFsControlsTimeout();
+    }
+  };
+
+  const handlePlayerClick = (e) => {
+    // Only toggle play if clicking directly on video, not on controls
+    if (e.target.tagName === 'VIDEO') {
+      togglePlay();
+    }
+  };
+
+  // Close speed menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target)) {
+        setShowSpeedMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fullscreen seek bar drag handlers
+  const handleSeekMouseDown = () => {
+    setIsDraggingSeek(true);
+  };
+
+  const handleSeekMouseUp = () => {
+    setIsDraggingSeek(false);
+    resetFsControlsTimeout();
   };
 
   const handleLike = async () => {
@@ -324,15 +395,23 @@ function VideoPlayer() {
               <section className="panel">
                 <div className="videoWrap" style={{ padding: '12px' }}>
                   {/* Video Player */}
-                  <div className="player" style={{
-                    position: 'relative',
-                    borderRadius: '20px',
-                    overflow: 'hidden',
-                    border: '1px solid var(--line)',
-                    background: 'rgba(0,0,0,0.35)',
-                    boxShadow: '0 26px 90px rgba(0,0,0,0.35)',
-                    aspectRatio: '16/9',
-                  }}>
+                  <div 
+                    ref={playerRef}
+                    className={`player ${isFullscreen ? 'fs-active' : ''}`}
+                    style={{
+                      position: 'relative',
+                      borderRadius: isFullscreen ? '0' : '20px',
+                      overflow: 'hidden',
+                      border: isFullscreen ? 'none' : '1px solid var(--line)',
+                      background: 'rgba(0,0,0,0.35)',
+                      boxShadow: isFullscreen ? 'none' : '0 26px 90px rgba(0,0,0,0.35)',
+                      aspectRatio: isFullscreen ? 'auto' : '16/9',
+                      width: isFullscreen ? '100%' : undefined,
+                      height: isFullscreen ? '100%' : undefined,
+                    }}
+                    onMouseMove={handlePlayerMouseMove}
+                    onClick={handlePlayerClick}
+                  >
                     <video
                       ref={videoRef}
                       playsInline
@@ -340,7 +419,7 @@ function VideoPlayer() {
                       crossOrigin="anonymous"
                       src={getVideoUrl(video.videoUrl)}
                       poster={getThumbnailUrl(video.thumbnailUrl) || undefined}
-                      style={{ width: '100%', height: '100%', display: 'block', background: '#000' }}
+                      style={{ width: '100%', height: '100%', display: 'block', background: '#000', cursor: 'pointer' }}
                       onLoadedMetadata={() => {
                         setDuration(videoRef.current?.duration || 0);
                         setStatusLabel(vp.loaded || 'Loaded');
@@ -368,7 +447,129 @@ function VideoPlayer() {
                       }}
                       onPlay={() => { setIsPlaying(true); setStatusLabel(vp.playing || 'Playing'); }}
                       onPause={() => { setIsPlaying(false); setStatusLabel(vp.paused || 'Paused'); }}
+                      onDoubleClick={handleFullscreen}
                     />
+
+                    {/* Fullscreen Overlay Controls */}
+                    {isFullscreen && (
+                      <div className={`fs-controls-overlay ${showFsControls ? 'visible' : 'hidden'}`}>
+                        {/* Top gradient */}
+                        <div className="fs-gradient-top" />
+
+                        {/* Center Play Button (large) */}
+                        {!isPlaying && (
+                          <div className="fs-center-play" onClick={togglePlay}>
+                            <PlayIcon />
+                          </div>
+                        )}
+
+                        {/* Bottom Controls */}
+                        <div className="fs-bottom-controls">
+                          {/* Progress Bar */}
+                          <div className="fs-progress-container">
+                            <span className="fs-time-current">{formatTime(currentTime)}</span>
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              value={duration ? (currentTime / duration) * 100 : 0}
+                              onChange={handleSeek}
+                              onMouseDown={handleSeekMouseDown}
+                              onMouseUp={handleSeekMouseUp}
+                              onTouchStart={handleSeekMouseDown}
+                              onTouchEnd={handleSeekMouseUp}
+                              className="fs-seek"
+                              aria-label="Seek"
+                              style={{
+                                background: `linear-gradient(to right, var(--brand2) 0%, var(--brand2) ${duration ? (currentTime / duration) * 100 : 0}%, rgba(255,255,255,0.3) ${duration ? (currentTime / duration) * 100 : 0}%, rgba(255,255,255,0.3) 100%)`
+                              }}
+                            />
+                            <span className="fs-time-duration">{formatTime(duration)}</span>
+                          </div>
+
+                          {/* Controls Row */}
+                          <div className="fs-controls-row">
+                            {/* Left Controls */}
+                            <div className="fs-controls-left">
+                              <button onClick={togglePlay} className="fs-btn" aria-label={isPlaying ? 'Pause' : 'Play'}>
+                                {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                              </button>
+                              <button onClick={() => jump(-10)} className="fs-btn" aria-label="Back 10s">
+                                <SkipBackIcon />
+                              </button>
+                              <button onClick={() => jump(10)} className="fs-btn" aria-label="Forward 10s">
+                                <SkipFwdIcon />
+                              </button>
+
+                              {/* Volume Controls */}
+                              <div className="fs-volume-group">
+                                <button onClick={toggleMute} className="fs-btn" aria-label={isMuted ? 'Unmute' : 'Mute'}>
+                                  {isMuted ? <VolXIcon /> : <Vol2Icon />}
+                                </button>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="1"
+                                  step="0.01"
+                                  value={volume}
+                                  onChange={handleVolumeChange}
+                                  className="fs-vol-slider"
+                                  aria-label="Volume"
+                                  style={{
+                                    background: `linear-gradient(to right, #fff 0%, #fff ${volume * 100}%, rgba(255,255,255,0.3) ${volume * 100}%, rgba(255,255,255,0.3) 100%)`
+                                  }}
+                                />
+                              </div>
+
+                              <span className="fs-time-display">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                              </span>
+                            </div>
+
+                            {/* Right Controls */}
+                            <div className="fs-controls-right">
+                              {/* Speed Menu */}
+                              <div className="fs-speed-wrapper" ref={speedMenuRef}>
+                                <button 
+                                  onClick={() => setShowSpeedMenu(!showSpeedMenu)} 
+                                  className="fs-btn fs-speed-btn"
+                                  aria-label="Playback Speed"
+                                >
+                                  {playbackSpeed}x
+                                </button>
+                                {showSpeedMenu && (
+                                  <div className="fs-speed-menu">
+                                    {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(speed => (
+                                      <button
+                                        key={speed}
+                                        className={`fs-speed-option ${playbackSpeed === speed ? 'active' : ''}`}
+                                        onClick={() => {
+                                          const newSpeed = speed;
+                                          setPlaybackSpeed(newSpeed);
+                                          if (videoRef.current) videoRef.current.playbackRate = newSpeed;
+                                          setShowSpeedMenu(false);
+                                          showToast(`${vp.speed || 'Speed'}: ${newSpeed}x`);
+                                        }}
+                                      >
+                                        {speed === 1 ? (vp.normal || 'Normal') : `${speed}x`}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Fullscreen Toggle */}
+                              <button onClick={handleFullscreen} className="fs-btn" aria-label="Exit Fullscreen">
+                                <MinIcon />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bottom gradient */}
+                        <div className="fs-gradient-bottom" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Custom Controls */}
