@@ -640,17 +640,23 @@ function VideoPlayer() {
                                 <SkipFwdIcon />
                               </button>
                               
-                              {/* Video Navigation */}
-                              {canNavigate() && (
-                                <button onClick={goToPrevVideo} className="fs-btn fs-nav-btn" aria-label={vp.prevVideo || 'Previous video'}>
-                                  <PrevVideoIcon />
-                                </button>
-                              )}
-                              {canNavigate() && (
-                                <button onClick={goToNextVideo} className="fs-btn fs-nav-btn" aria-label={vp.nextVideo || 'Next video'}>
-                                  <NextVideoIcon />
-                                </button>
-                              )}
+                              {/* Video Navigation - Always visible */}
+                              <button 
+                                onClick={goToPrevVideo} 
+                                className="fs-btn fs-nav-btn" 
+                                aria-label={vp.prevVideo || 'Previous video'}
+                                disabled={!canNavigate()}
+                              >
+                                <PrevVideoIcon />
+                              </button>
+                              <button 
+                                onClick={goToNextVideo} 
+                                className="fs-btn fs-nav-btn" 
+                                aria-label={vp.nextVideo || 'Next video'}
+                                disabled={!canNavigate()}
+                              >
+                                <NextVideoIcon />
+                              </button>
 
                               {/* Volume Controls */}
                               <div className="fs-volume-group">
@@ -758,17 +764,25 @@ function VideoPlayer() {
                         <SkipFwdIcon />
                       </button>
                       
-                      {/* Video Navigation */}
-                      {canNavigate() && (
-                        <button onClick={goToPrevVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.prevVideo || 'Previous video'} aria-label={vp.prevVideo || 'Previous video'}>
-                          <PrevVideoIcon />
-                        </button>
-                      )}
-                      {canNavigate() && (
-                        <button onClick={goToNextVideo} className="iconBtn vp-icon-btn vp-nav-btn" title={vp.nextVideo || 'Next video'} aria-label={vp.nextVideo || 'Next video'}>
-                          <NextVideoIcon />
-                        </button>
-                      )}
+                      {/* Video Navigation - Always visible */}
+                      <button 
+                        onClick={goToPrevVideo} 
+                        className="iconBtn vp-icon-btn vp-nav-btn" 
+                        title={vp.prevVideo || 'Previous video'} 
+                        aria-label={vp.prevVideo || 'Previous video'}
+                        disabled={!canNavigate()}
+                      >
+                        <PrevVideoIcon />
+                      </button>
+                      <button 
+                        onClick={goToNextVideo} 
+                        className="iconBtn vp-icon-btn vp-nav-btn" 
+                        title={vp.nextVideo || 'Next video'} 
+                        aria-label={vp.nextVideo || 'Next video'}
+                        disabled={!canNavigate()}
+                      >
+                        <NextVideoIcon />
+                      </button>
                       
                       <button onClick={toggleMute} className="iconBtn vp-icon-btn" title="Mute (M)" aria-label={isMuted ? 'Unmute' : 'Mute'}>
                         {isMuted ? <VolXIcon /> : <Vol2Icon />}
