@@ -2064,42 +2064,42 @@ input[type="range"] {
   background: rgba(124, 92, 255, 0.25);
 }
 
-/* Fullscreen Button - Bottom Right Corner */
+/* Fullscreen Button - Bottom Right Corner of Video Container */
 .vp-fullscreen-corner-btn {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  bottom: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.15s ease;
-  z-index: 20;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 15;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-
+  
 .vp-fullscreen-corner-btn:hover {
-  background: rgba(124, 92, 255, 0.5);
-  border-color: rgba(124, 92, 255, 0.6);
-  transform: scale(1.05);
+  background: rgba(124, 92, 255, 0.6);
+  border-color: rgba(124, 92, 255, 0.7);
+  transform: scale(1.08);
 }
-
+  
 .vp-fullscreen-corner-btn:active {
   transform: scale(0.95);
 }
-
+  
 .vp-fullscreen-corner-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .vp-time {
@@ -2631,16 +2631,16 @@ input[type="range"] {
     height: 22px;
   }
   
-  .vp-fullscreen-corner-btn {
-    bottom: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
+.vp-fullscreen-corner-btn {
+    bottom: 8px;
+    right: 8px;
+    width: 36px;
+    height: 36px;
   }
   
   .vp-fullscreen-corner-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -2700,16 +2700,16 @@ input[type="range"] {
     height: 20px;
   }
   
-  .vp-fullscreen-corner-btn {
-    bottom: 8px;
-    right: 8px;
-    width: 36px;
-    height: 36px;
+.vp-fullscreen-corner-btn {
+    bottom: 6px;
+    right: 6px;
+    width: 32px;
+    height: 32px;
   }
   
   .vp-fullscreen-corner-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
   }
 }
 
