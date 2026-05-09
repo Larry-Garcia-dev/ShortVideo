@@ -213,33 +213,107 @@ function VideoPlayer() {
   };
 
   const handleFullscreen = async () => {
+    const vid = videoRef.current;
+    const player = playerRef.current;
+    
+    // Check if we're already in fullscreen
+    const isCurrentlyFullscreen = document.fullscreenElement || 
+      document.webkitFullscreenElement || 
+      document.mozFullScreenElement ||
+      document.msFullscreenElement;
+    
     try {
-      const player = playerRef.current;
-      if (!document.fullscreenElement) {
-        await player?.requestFullscreen();
-        setIsFullscreen(true);
-        setShowFsControls(true);
-        resetFsControlsTimeout();
+      if (!isCurrentlyFullscreen) {
+        // Try standard fullscreen API first (works on desktop and Android)
+        if (player?.requestFullscreen) {
+          await player.requestFullscreen();
+          setIsFullscreen(true);
+          setShowFsControls(true);
+          resetFsControlsTimeout();
+        } 
+        // Safari desktop
+        else if (player?.webkitRequestFullscreen) {
+          await player.webkitRequestFullscreen();
+          setIsFullscreen(true);
+          setShowFsControls(true);
+          resetFsControlsTimeout();
+        }
+        // iOS Safari - use native video fullscreen (only option on iOS)
+        else if (vid?.webkitEnterFullscreen) {
+          vid.webkitEnterFullscreen();
+          // iOS uses native controls, no need to set our custom state
+        }
+        // iOS alternative
+        else if (vid?.webkitSupportsFullscreen && vid?.webkitEnterFullScreen) {
+          vid.webkitEnterFullScreen();
+        }
+        // Firefox
+        else if (player?.mozRequestFullScreen) {
+          await player.mozRequestFullScreen();
+          setIsFullscreen(true);
+        }
+        // IE/Edge
+        else if (player?.msRequestFullscreen) {
+          await player.msRequestFullscreen();
+          setIsFullscreen(true);
+        }
+        else {
+          showToast(vp.fullscreenNA || 'Fullscreen not available');
+        }
       } else {
-        await document.exitFullscreen();
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          await document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
+        }
         setIsFullscreen(false);
       }
     } catch {
-      showToast(vp.fullscreenNA || 'Fullscreen not available');
+      // Fallback for iOS - try video element directly
+      if (vid?.webkitEnterFullscreen) {
+        try {
+          vid.webkitEnterFullscreen();
+        } catch {
+          showToast(vp.fullscreenNA || 'Fullscreen not available');
+        }
+      } else {
+        showToast(vp.fullscreenNA || 'Fullscreen not available');
+      }
     }
   };
 
-  // Fullscreen change listener
+  // Fullscreen change listener (cross-browser)
   useEffect(() => {
     const handleFsChange = () => {
-      const inFs = !!document.fullscreenElement;
+      const inFs = !!(
+        document.fullscreenElement || 
+        document.webkitFullscreenElement || 
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
       setIsFullscreen(inFs);
       if (!inFs) {
         setShowSpeedMenu(false);
       }
     };
+    
+    // Add all browser-specific fullscreen change listeners
     document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    document.addEventListener('mozfullscreenchange', handleFsChange);
+    document.addEventListener('MSFullscreenChange', handleFsChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+      document.removeEventListener('mozfullscreenchange', handleFsChange);
+      document.removeEventListener('MSFullscreenChange', handleFsChange);
+    };
   }, []);
 
   // Hide fullscreen controls after inactivity

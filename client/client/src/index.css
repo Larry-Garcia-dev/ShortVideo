@@ -2449,6 +2449,7 @@ input[type="range"] {
 @media (max-width: 768px) {
   .fs-bottom-controls {
     padding: 0 12px 14px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
     gap: 10px;
   }
 
@@ -2463,14 +2464,84 @@ input[type="range"] {
   }
 
   .fs-btn {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .fs-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .fs-center-play {
+    width: 72px;
+    height: 72px;
+  }
+
+  .fs-center-play svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .fs-vol-slider {
+    width: 60px;
+    height: 6px;
+  }
+
+  .fs-time-display {
+    display: none;
+  }
+
+  .fs-speed-btn {
+    padding: 0 12px;
+    font-size: 13px;
+    height: 44px;
+  }
+
+  .fs-speed-menu {
+    min-width: 110px;
+    bottom: 54px;
+  }
+
+  .fs-speed-option {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  /* Hide volume slider on mobile - use device controls */
+  .fs-volume-group .fs-vol-slider {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .fs-bottom-controls {
+    padding: 0 10px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .fs-controls-left,
+  .fs-controls-right {
+    gap: 6px;
+  }
+
+  .fs-btn {
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
   }
 
   .fs-btn svg {
     width: 18px;
     height: 18px;
+  }
+
+  .fs-vol-slider {
+    display: none;
   }
 
   .fs-center-play {
@@ -2483,58 +2554,10 @@ input[type="range"] {
     height: 28px;
   }
 
-  .fs-vol-slider {
-    width: 60px;
-  }
-
-  .fs-time-display {
-    display: none;
-  }
-
   .fs-speed-btn {
     padding: 0 10px;
     font-size: 12px;
-  }
-
-  .fs-speed-menu {
-    min-width: 100px;
-    bottom: 48px;
-  }
-
-  .fs-speed-option {
-    padding: 8px 14px;
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .fs-bottom-controls {
-    padding: 0 10px 10px;
-    gap: 8px;
-  }
-
-  .fs-controls-left,
-  .fs-controls-right {
-    gap: 4px;
-  }
-
-  .fs-btn {
-    width: 34px;
-    height: 34px;
-  }
-
-  .fs-vol-slider {
-    width: 50px;
-  }
-
-  .fs-center-play {
-    width: 56px;
-    height: 56px;
-  }
-
-  .fs-center-play svg {
-    width: 24px;
-    height: 24px;
+    height: 40px;
   }
 }
 
@@ -2896,13 +2919,21 @@ input[type="range"] {
 
   /* Video Player controls - responsive */
   .vp-controls-row {
-    gap: 6px;
+    gap: 8px;
+    padding: 8px 0;
   }
 
   .vp-icon-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .vp-icon-btn svg {
+    width: 18px;
+    height: 18px;
   }
 
   .vp-shortcuts-row {
@@ -2918,7 +2949,13 @@ input[type="range"] {
   }
 
   .vp-select {
-    padding: 6px 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    min-width: 55px;
+  }
+
+  .vp-time {
+    font-size: 12px;
   }
 
   .iconBtn {
